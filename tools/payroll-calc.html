@@ -7,15 +7,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
         :root {
-            --bg-main: #0b0f19;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --bg-card-hover: rgba(255, 255, 255, 0.06);
-            --border-color: rgba(255, 255, 255, 0.08);
+            --bg-main: #060913;
+            --bg-card: rgba(255, 255, 255, 0.02);
+            --border-color: rgba(255, 255, 255, 0.06);
             --text-primary: #FFFFFF;
-            --text-secondary: #9CA3AF;
-            --accent-1: #6366F1; /* Indigo */
-            --accent-2: #8B5CF6; /* Violet */
-            --accent-3: #06B6D4; /* Cyan */
+            --text-secondary: #8E96A4;
+            --accent-1: #6366F1; 
+            --accent-2: #8B5CF6; 
+            --accent-3: #06B6D4; 
             --font-sans: 'Inter', '-apple-system', 'SF Pro Display', system-ui, sans-serif;
         }
 
@@ -32,84 +31,100 @@
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
-            perspective: 1000px;
         }
 
-        /* Aurora Fluid Background */
+        /* Top Navigation Bar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(6, 9, 19, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        /* Hardware Accelerated Ultra-Smooth Background */
         .aurora-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -2;
-            background: #0b0f19;
+            background: #060913;
             overflow: hidden;
+            transform: translateZ(0); /* Force GPU Isolation */
         }
 
         .blob {
             position: absolute;
             background: linear-gradient(45deg, var(--accent-1), var(--accent-2));
-            filter: blur(120px);
-            mix-blend-mode: screen;
-            opacity: 0.4;
+            filter: blur(140px);
+            opacity: 0.25;
             border-radius: 50%;
-            transition: all 1s ease-in-out;
-            animation: float 20s infinite alternate;
+            will-change: transform;
+            animation: float 25s infinite alternate linear;
         }
 
-        .blob-1 { width: 600px; height: 600px; top: -10%; left: -10%; animation-delay: 0s; }
-        .blob-2 { width: 500px; height: 500px; bottom: -10%; right: -10%; background: linear-gradient(45deg, var(--accent-2), var(--accent-3)); animation-delay: -5s; }
-        .blob-3 { width: 400px; height: 400px; top: 40%; left: 50%; background: var(--accent-3); opacity: 0.2; animation-delay: -10s; }
+        .blob-1 { width: 500px; height: 500px; top: -10%; left: -10%; }
+        .blob-2 { width: 400px; height: 400px; bottom: -10%; right: -10%; background: linear-gradient(45deg, var(--accent-2), var(--accent-3)); animation-delay: -5s; }
 
         @keyframes float {
-            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-            50% { transform: translate(100px, 80px) scale(1.2) rotate(180deg); }
-            100% { transform: translate(-50px, -40px) scale(0.9) rotate(360deg); }
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(60px, 40px, 0) scale(1.1); }
         }
 
-        /* Global Interactive Glow System */
         .interactive-glow {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
             pointer-events: none;
-            background: radial-gradient(600px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(99, 102, 241, 0.08), transparent 40%);
+            background: radial-gradient(450px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(99, 102, 241, 0.05), transparent 60%);
         }
 
-        /* Container Layout */
         .wrapper {
-            max-width: 1400px;
+            max-width: 1440px;
             margin: 0 auto;
             padding: 40px 20px;
         }
 
         header {
             text-align: center;
-            margin-bottom: 60px;
-            animation: fadeInDown 1s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-bottom: 48px;
         }
 
         header h1 {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 800;
             letter-spacing: -0.04em;
-            background: linear-gradient(to right, #fff, #9CA3AF, var(--accent-3));
+            background: linear-gradient(to right, #fff, var(--text-secondary), var(--accent-3));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         header p {
             color: var(--text-secondary);
-            font-size: 1.2rem;
-            font-weight: 400;
+            font-size: 1.1rem;
         }
 
-        /* Grid Framework */
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 1.2fr;
@@ -117,69 +132,58 @@
             align-items: start;
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 1100px) {
             .dashboard { grid-template-columns: 1fr; }
         }
 
-        /* Glassmorphism Card Premium Stack */
+        /* Optimized Card Layouts */
         .card {
             background: var(--bg-card);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s, box-shadow 0.4s;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
             position: relative;
-            overflow: hidden;
+            transform: translateZ(0);
         }
 
-        .card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255, 255, 255, 0.1);
-            transform: translateY(-4px);
+        .card-section {
+            margin-bottom: 32px;
         }
 
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(800px circle at var(--card-mouse-x, 0px) var(--card-mouse-y, 0px), rgba(255,255,255,0.04), transparent 40%);
-            z-index: 1;
-            pointer-events: none;
+        .card-section:last-child {
+            margin-bottom: 0;
         }
 
         .card-title {
-            font-size: 1.3rem;
+            font-size: 1.15rem;
             font-weight: 600;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 10px;
         }
 
         .card-title i {
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent-3);
         }
 
-        /* Custom Modern Forms */
         .form-group {
-            margin-bottom: 24px;
-            position: relative;
-            z-index: 2;
+            margin-bottom: 20px;
         }
 
         label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
         }
 
@@ -191,181 +195,60 @@
 
         .input-wrapper span.prefix {
             position: absolute;
-            left: 16px;
+            left: 14px;
             color: var(--text-secondary);
-            font-size: 1.2rem;
-            font-weight: 500;
+            font-size: 1.1rem;
         }
 
-        input[type="number"], select {
+        input[type="number"], select, .range-slider {
             width: 100%;
-            padding: 16px 16px 16px 36px;
-            background: rgba(0, 0, 0, 0.2);
+            padding: 14px 14px 14px 32px;
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: 10px;
             color: #fff;
-            font-size: 1.2rem;
-            font-weight: 500;
-            transition: all 0.3s;
+            font-size: 1.1rem;
             outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
 
         select {
-            padding-left: 16px;
-            appearance: none;
+            padding-left: 14px;
             cursor: pointer;
         }
 
         input[type="number"]:focus, select:focus {
             border-color: var(--accent-3);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
         }
 
-        /* Custom Toggle Switch */
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(0,0,0,0.15);
-            padding: 14px 18px;
-            border-radius: 14px;
-            border: 1px solid var(--border-color);
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 26px;
-        }
-
-        .switch input { opacity: 0; width: 0; height: 0; }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255,255,255,0.1);
-            transition: .4s cubic-bezier(0.16, 1, 0.3, 1);
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px; width: 18px;
-            left: 4px; bottom: 4px;
-            background-color: white;
-            transition: .4s cubic-bezier(0.16, 1, 0.3, 1);
-            border-radius: 50%;
-        }
-
-        input:checked + .slider { background-color: var(--accent-1); }
-        input:checked + .slider:before { transform: translateX(24px); }
-
-        /* Output / Display Panels */
+        /* Metrics Framework */
         .main-display {
-            background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-            border-radius: 24px;
-            padding: 40px;
+            background: rgba(255,255,255,0.01);
+            border-radius: 20px;
+            padding: 36px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
-            margin-bottom: 32px;
-            position: relative;
-        }
-
-        .main-display::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 24px;
-            padding: 1px;
-            background: linear-gradient(to bottom right, rgba(255,255,255,0.1), transparent, rgba(6, 182, 212, 0.1));
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-        }
-
-        .take-home-label {
-            font-size: 0.95rem;
-            color: var(--accent-3);
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 8px;
-            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.04);
+            margin-bottom: 24px;
         }
 
         .take-home-amount {
-            font-size: 4.5rem;
+            font-size: 4rem;
             font-weight: 800;
-            letter-spacing: -0.05em;
-            margin-bottom: 16px;
-            background: linear-gradient(to right, #fff, #e0e0e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.04em;
+            margin-bottom: 12px;
+            color: #fff;
         }
 
-        /* Breakdown Metrics */
-        .breakdown-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .metric-card {
-            background: rgba(0, 0, 0, 0.15);
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .metric-card.tax-negative .metric-val { color: #F87171; }
-        .metric-card.take-home-sub .metric-val { color: #34D399; }
-
-        .metric-lbl { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; }
-        .metric-val { font-size: 1.4rem; font-weight: 600; }
-
-        /* Novel Feature: The Splurge Sandbox */
-        .splurge-box {
-            background: rgba(99, 102, 241, 0.05);
-            border: 1px dashed rgba(99, 102, 241, 0.3);
-            border-radius: 16px;
-            padding: 24px;
-            margin-top: 24px;
-        }
-
-        .splurge-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .splurge-select {
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            border-radius: 8px;
-            background: #0b0f19;
-            width: auto;
-        }
-
-        /* Novel Feature: Realtime Time Value Clock */
         .time-ticker {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 12px;
-            font-size: 1.1rem;
+            gap: 8px;
+            font-size: 0.95rem;
             color: var(--text-secondary);
-            background: rgba(6, 182, 212, 0.05);
-            padding: 12px;
-            border-radius: 12px;
+            background: rgba(6, 182, 212, 0.06);
+            padding: 8px 16px;
+            border-radius: 30px;
             border: 1px solid rgba(6, 182, 212, 0.1);
         }
 
@@ -375,42 +258,86 @@
             font-family: monospace;
         }
 
-        /* Keyframes */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
         }
 
-        /* Custom Slider Styling */
+        .metric-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .metric-card.negative .metric-val { color: #F87171; }
+        .metric-card.positive .metric-val { color: #34D399; }
+        .metric-lbl { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+        .metric-val { font-size: 1.25rem; font-weight: 600; }
+
+        /* Novel Sandbox Widgets */
+        .sandbox-panel {
+            background: rgba(139, 92, 246, 0.03);
+            border: 1px dashed rgba(139, 92, 246, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .sandbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .panel-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
         .range-slider {
             -webkit-appearance: none;
-            width: 100%;
+            padding: 0;
             height: 6px;
             background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            outline: none;
-            margin: 15px 0;
+            cursor: pointer;
         }
+
         .range-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 16px; height: 16px;
             border-radius: 50%;
-            background: var(--accent-3);
-            cursor: pointer;
-            transition: transform 0.1s;
+            background: var(--accent-2);
         }
-        .range-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.3);
+
+        .dynamic-stat {
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        .dynamic-stat span {
+            font-weight: 700;
+            color: var(--accent-3);
         }
     </style>
 </head>
 <body>
 
+    <nav class="navbar">
+        <a href="https://iggym.github.io/utility-belt/" class="nav-link">
+            <i class="fa-solid fa-arrow-left-long"></i> Home
+        </a>
+        <div style="font-size: 0.85rem; letter-spacing: 0.05em; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+            Quantum Ecosystem
+        </div>
+    </nav>
+
     <div class="aurora-bg">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
     </div>
     
     <div class="interactive-glow" id="mouseGlow"></div>
@@ -418,263 +345,227 @@
     <div class="wrapper">
         <header>
             <h1>QuantumCalc</h1>
-            <p>The high-fidelity financial sandboxing experience for US workers.</p>
+            <p>High-fidelity financial telemetry engine.</p>
         </header>
 
         <div class="dashboard">
-            <div class="card" id="inputCard">
-                <div class="card-title">
-                    <i class="fa-solid fa-sliders"></i> Income Parameters
-                </div>
-                
-                <div class="form-group">
-                    <label>Gross Annual Income</label>
-                    <div class="input-wrapper">
-                        <span class="prefix">$</span>
-                        <input type="number" id="grossIncome" value="120000" step="5000">
+            <!-- INPUT COMPARTMENT -->
+            <div class="card">
+                <div class="card-section">
+                    <div class="card-title">
+                        <i class="fa-solid fa-wallet"></i> Core Compensation
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Filing Status</label>
-                    <select id="filingStatus">
-                        <option value="single">Single</option>
-                        <option value="married">Married Filing Jointly</option>
-                        <option value="head">Head of Household</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>State of Residence (Est. Tax)</label>
-                    <select id="stateSelect">
-                        <option value="0">California (High Tax ~9.3%)</option>
-                        <option value="1">New York (Mid-High Tax ~6.5%)</option>
-                        <option value="2">Texas / Florida / Washington (No State Tax 0%)</option>
-                        <option value="3">Standard State Average (4.5%)</option>
-                    </select>
-                </div>
-
-                <div class="card-title" style="margin-top: 40px;">
-                    <i class="fa-solid fa-shield-halved"></i> Pre-Tax Ecosystem
-                </div>
-
-                <div class="form-group">
-                    <label>401(k) Traditional Contribution ($)</label>
-                    <div class="input-wrapper">
-                        <span class="prefix">$</span>
-                        <input type="number" id="preTax401k" value="10000" step="500">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Medical / HSA Monthly Premium</label>
-                    <div class="input-wrapper">
-                        <span class="prefix">$</span>
-                        <input type="number" id="medicalPremium" value="250" step="50">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="toggle-container">
-                        <div>
-                            <label style="margin: 0;">Exempt from FICA</label>
-                            <p style="font-size: 0.75rem; color: var(--text-secondary);">Student visas/Certain visa structures</p>
+                    <div class="form-group">
+                        <label>Gross Annual base</label>
+                        <div class="input-wrapper">
+                            <span class="prefix">$</span>
+                            <input type="number" id="grossIncome" value="125000" step="5000">
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="ficaExempt">
-                            <span class="slider"></span>
-                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Filing Configuration</label>
+                        <select id="filingStatus">
+                            <option value="single">Single Filer</option>
+                            <option value="married">Married Filing Jointly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Geographic Tax Matrix</label>
+                        <select id="stateSelect">
+                            <option value="0">California (High Multiplier)</option>
+                            <option value="1">New York (Mid-High Multiplier)</option>
+                            <option value="2">Zero-Tax Jurisdiction (TX, FL, WA)</option>
+                            <option value="3">Baseline National Average (4.5%)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card-section">
+                    <div class="card-title">
+                        <i class="fa-solid fa-piggy-bank"></i> Tax Shields & Protection
+                    </div>
+                    <div class="form-group">
+                        <label>Annual Traditional 401(k) Allocation</label>
+                        <div class="input-wrapper">
+                            <span class="prefix">$</span>
+                            <input type="number" id="preTax401k" value="12000" step="500">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Post-Tax Savings Target</label>
+                        <div class="input-wrapper">
+                            <span class="prefix">$</span>
+                            <input type="number" id="monthlySavings" value="2000" step="100">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card" id="outputCard">
+            <!-- ANALYTICS ENGINE OUTPUTS -->
+            <div class="card">
                 <div class="main-display">
-                    <div class="take-home-label">Est. Take-Home Pay / Year</div>
+                    <div style="font-size: 0.85rem; color: var(--accent-3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; font-weight: 700;">
+                        Net Liquid Remittance / Annum
+                    </div>
                     <div class="take-home-amount" id="netPayDisplay">$0</div>
                     
                     <div class="time-ticker">
-                        <i class="fa-solid fa-stopwatch"></i>
-                        <span>Right now, you are generating:</span>
-                        <span class="highlight" id="liveTicker">$0.0000</span>
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Streaming:</span>
+                        <span class="highlight" id="liveTicker">$0.00000</span>
                         <span>/ sec</span>
                     </div>
                 </div>
 
                 <div class="breakdown-grid">
-                    <div class="metric-card tax-negative">
-                        <span class="metric-lbl">Federal Income Tax</span>
-                        <span class="metric-val" id="fedTaxDisplay">$0</span>
+                    <div class="metric-card negative">
+                        <div class="metric-lbl">Federal Obligation</div>
+                        <div class="metric-val" id="fedTaxDisplay">$0</div>
                     </div>
-                    <div class="metric-card tax-negative">
-                        <span class="metric-lbl">FICA (SS + Medicare)</span>
-                        <span class="metric-val" id="ficaTaxDisplay">$0</span>
+                    <div class="metric-card negative">
+                        <div class="metric-lbl">State Allocation</div>
+                        <div class="metric-val" id="stateTaxDisplay">$0</div>
                     </div>
-                    <div class="metric-card tax-negative">
-                        <span class="metric-lbl">State Deductions</span>
-                        <span class="metric-val" id="stateTaxDisplay">$0</span>
+                    <div class="metric-card positive">
+                        <div class="metric-lbl">Est. Monthly Payout</div>
+                        <div class="metric-val" id="monthlyNetDisplay">$0</div>
                     </div>
-                    <div class="metric-card take-home-sub">
-                        <span class="metric-lbl">Est. Monthly Net</span>
-                        <span class="metric-val" id="monthlyNetDisplay">$0</span>
+                    <div class="metric-card positive">
+                        <div class="metric-lbl">True Hourly Value</div>
+                        <div class="metric-val" id="hourlyValueDisplay">$0</div>
                     </div>
                 </div>
 
-                <div class="splurge-box">
-                    <div class="splurge-header">
-                        <div>
-                            <h4 style="font-weight: 600; margin-bottom: 4px;">Lifestyle Splurge Reality Check</h4>
-                            <p style="font-size: 0.8rem; color: var(--text-secondary);">How much working time funds this luxury?</p>
-                        </div>
-                        <select class="splurge-select" id="splurgeItem">
-                            <option value="1200">iPhone Pro ($1,200)</option>
-                            <option value="3500">Apple Vision Pro ($3,500)</option>
-                            <option value="150">Fancy Dinner Date ($150)</option>
-                            <option value="4500">Premium Luxury Vacation ($4,500)</option>
-                            <option value="85000">Porsche Cayman base ($85,000)</option>
-                        </select>
+                <!-- Novel Simulator 1: Effort vs Effective Income -->
+                <div class="sandbox-panel" style="background: rgba(6, 182, 212, 0.02); border-color: rgba(6, 182, 212, 0.2);">
+                    <div class="sandbox-header">
+                        <h4 style="font-weight: 600;">"Quiet Quitting" Cost Arbitrage</h4>
+                        <div id="effortPercent" style="font-weight: 700; color: var(--accent-3);">100% Effort</div>
                     </div>
-                    <p style="font-size: 1rem; font-weight: 500;">
-                        💸 This purchase requires <span style="color: var(--accent-2); font-weight: 700;" id="splurgeCostTime">0 hours</span> of your dedicated post-tax life energy.
-                    </p>
+                    <p class="panel-desc">Sliding your actual workplace effort scales your true effective hourly valuation against your base salary parameters.</p>
+                    <input type="range" id="effortSlider" class="range-slider" min="20" max="100" value="100">
+                    <div class="dynamic-stat" style="margin-top: 10px;">
+                        Your effective hourly rate climbs to: <span id="effectiveHourly">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Novel Simulator 2: Runway Calculator -->
+                <div class="sandbox-panel">
+                    <div class="sandbox-header">
+                        <h4 style="font-weight: 600;">Financial Autonomy Runway Engine</h4>
+                    </div>
+                    <p class="panel-desc">Calculates exactly how many future days of total lifestyle freedom you buy yourself for every single month you remain in this role.</p>
+                    <div class="dynamic-stat">
+                        Every month worked buys you: <span id="runwayDisplay">0.0 Days</span> of Sovereignty.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Track Mouse Move global spotlight effect
-        const mouseGlow = document.getElementById('mouseGlow');
+        // High-Performance Event Debouncing/Streamlining
         document.addEventListener('mousemove', (e) => {
+            // Throttled lookups via direct style mutations
             document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
             document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
         });
 
-        // Track spotlight context for individual cards
-        document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--card-mouse-x', `${x}px`);
-                card.style.setProperty('--card-mouse-y', `${y}px`);
-            });
-        });
+        const UI = {
+            grossIncome: document.getElementById('grossIncome'),
+            filingStatus: document.getElementById('filingStatus'),
+            stateSelect: document.getElementById('stateSelect'),
+            preTax401k: document.getElementById('preTax401k'),
+            monthlySavings: document.getElementById('monthlySavings'),
+            effortSlider: document.getElementById('effortSlider'),
+            effortPercent: document.getElementById('effortPercent'),
+            netPayDisplay: document.getElementById('netPayDisplay'),
+            fedTaxDisplay: document.getElementById('fedTaxDisplay'),
+            stateTaxDisplay: document.getElementById('stateTaxDisplay'),
+            monthlyNetDisplay: document.getElementById('monthlyNetDisplay'),
+            hourlyValueDisplay: document.getElementById('hourlyValueDisplay'),
+            effectiveHourly: document.getElementById('effectiveHourly'),
+            runwayDisplay: document.getElementById('runwayDisplay'),
+            liveTicker: document.getElementById('liveTicker')
+        };
 
-        // Calculation & Business Rules Logic
-        const inputs = ['grossIncome', 'filingStatus', 'stateSelect', 'preTax401k', 'medicalPremium', 'ficaExempt', 'splurgeItem'];
-        inputs.forEach(id => document.getElementById(id).addEventListener('input', calculateSalary));
+        // Attach listeners directly for instantaneous UI updates
+        const inputs = [UI.grossIncome, UI.filingStatus, UI.stateSelect, UI.preTax401k, UI.monthlySavings, UI.effortSlider];
+        inputs.forEach(el => el.addEventListener('input', compute));
 
-        let currentNetAnnualPay = 0;
+        let netAnnualGlobal = 0;
 
-        function calculateSalary() {
-            const grossIncome = parseFloat(document.getElementById('grossIncome').value) || 0;
-            const filingStatus = document.getElementById('filingStatus').value;
-            const stateTaxIndex = parseInt(document.getElementById('stateSelect').value);
-            const preTax401k = parseFloat(document.getElementById('preTax401k').value) || 0;
-            const medicalAnnual = (parseFloat(document.getElementById('medicalPremium').value) || 0) * 12;
-            const ficaExempt = document.getElementById('ficaExempt').checked;
+        function compute() {
+            const gross = parseFloat(UI.grossIncome.value) || 0;
+            const filing = UI.filingStatus.value;
+            const stateIdx = parseInt(UI.stateSelect.value);
+            const preTax = parseFloat(UI.preTax401k.value) || 0;
+            const savingsTarget = parseFloat(UI.monthlySavings.value) || 0;
+            const effort = parseInt(UI.effortSlider.value);
 
-            // 1. Calculate Taxable Income base
-            const preTaxDeductions = preTax401k + medicalAnnual;
-            let taxableIncome = Math.max(0, grossIncome - preTaxDeductions);
+            // Update slider label immediately
+            UI.effortPercent.innerText = `${effort}% Effort`;
 
-            // 2. Progressive Federal Bracket System (Simplified modern bracket representation)
+            // Core Tax Computation Block
+            const taxable = Math.max(0, gross - preTax);
+            
+            // Modernized Bracket Logic
             let fedTax = 0;
-            if (filingStatus === 'single') {
-                if (taxableIncome > 243725) fedTax = 40000 + (taxableIncome - 243725) * 0.35;
-                else if (taxableIncome > 100525) fedTax = 15000 + (taxableIncome - 100525) * 0.24;
-                else if (taxableIncome > 47150) fedTax = 5000 + (taxableIncome - 47150) * 0.22;
-                else fedTax = taxableIncome * 0.12;
-            } else { // Married or Head of Household scaling
-                if (taxableIncome > 487450) fedTax = 80000 + (taxableIncome - 487450) * 0.35;
-                else if (taxableIncome > 201050) fedTax = 30000 + (taxableIncome - 201050) * 0.24;
-                else if (taxableIncome > 94300) fedTax = 10000 + (taxableIncome - 94300) * 0.22;
-                else fedTax = taxableIncome * 0.10;
-            }
-
-            // 3. FICA Calculus (6.2% SS up to limit, 1.45% Medicare)
-            let ficaTax = 0;
-            if (!ficaExempt) {
-                const ssTax = Math.min(grossIncome, 168600) * 0.062;
-                const medicareTax = grossIncome * 0.0145;
-                ficaTax = ssTax + medicareTax;
-            }
-
-            // 4. State Multiplier Matrix
-            const stateRates = [0.093, 0.065, 0.0, 0.045];
-            let stateTax = taxableIncome * stateRates[stateTaxIndex];
-
-            // 5. Aggregate Results
-            let totalDeductions = fedTax + ficaTax + stateTax + preTaxDeductions;
-            let netPay = Math.max(0, grossIncome - (fedTax + ficaTax + stateTax));
-            currentNetAnnualPay = netPay;
-
-            // Trigger Counter Updates and Text Injection
-            animateValue("netPayDisplay", netPay, true);
-            animateValue("fedTaxDisplay", fedTax, true);
-            animateValue("ficaTaxDisplay", ficaTax, true);
-            animateValue("stateTaxDisplay", stateTax, true);
-            animateValue("monthlyNetDisplay", netPay / 12, true);
-
-            // Calculate Lifestyle Splurge Conversion
-            const postTaxHourlyWage = netPay / (2080); // Standard US working hours per year
-            const splurgeCost = parseFloat(document.getElementById('splurgeItem').value);
-            const hoursRequired = (splurgeCost / postTaxHourlyWage).toFixed(1);
-            document.getElementById('splurgeCostTime').innerText = `${hoursRequired} working hours`;
-        }
-
-        // Clean Numeric Interceptor Counter Animation Engine
-        function animateValue(id, value, isCurrency) {
-            const obj = document.getElementById(id);
-            const target = Math.round(value);
-            let current = parseInt(obj.innerText.replace(/[^0-9.-]+/g,"")) || 0;
-            
-            if(current === target) {
-                obj.innerText = formatNumber(target, isCurrency);
-                return;
-            }
-            
-            const duration = 400; // ms
-            const start = performance.now();
-            
-            function step(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                // Ease out quad formula
-                const ease = progress * (2 - progress);
-                const currentVal = current + (target - current) * ease;
-                obj.innerText = formatNumber(currentVal, isCurrency);
-                
-                if (progress < 1) {
-                    requestAnimationFrame(step);
-                } else {
-                    obj.innerText = formatNumber(target, isCurrency);
-                }
-            }
-            requestAnimationFrame(step);
-        }
-
-        function formatNumber(num, isCurrency) {
-            if (isNaN(num)) num = 0;
-            return isCurrency 
-                ? '$' + Math.round(num).toLocaleString() 
-                : Math.round(num).toLocaleString();
-        }
-
-        // Live Quantum Realtime Per-Second Earning Clock Engine
-        setInterval(() => {
-            if (currentNetAnnualPay > 0) {
-                // 31,536,000 Total Seconds in a standard Gregorian Calendar Year
-                const earningsPerSecond = currentNetAnnualPay / 31536000;
-                document.getElementById('liveTicker').innerText = `$${earningsPerSecond.toFixed(5)}`;
+            if (filing === 'single') {
+                if (taxable > 100000) fedTax = 15000 + (taxable - 100000) * 0.24;
+                else if (taxable > 45000) fedTax = 5000 + (taxable - 45000) * 0.22;
+                else fedTax = taxable * 0.12;
             } else {
-                document.getElementById('liveTicker').innerText = `$0.00000`;
+                if (taxable > 200000) fedTax = 30000 + (taxable - 200000) * 0.24;
+                else if (taxable > 90000) fedTax = 10000 + (taxable - 90000) * 0.22;
+                else fedTax = taxable * 0.10;
+            }
+
+            const stateRates = [0.085, 0.060, 0.0, 0.045];
+            const stateTax = taxable * stateRates[stateIdx];
+            const ficaTax = gross * 0.0765; // Consolidated base FICA multiplier
+
+            const netAnnual = Math.max(0, gross - (fedTax + stateTax + ficaTax));
+            netAnnualGlobal = netAnnual;
+
+            const monthlyNet = netAnnual / 12;
+            const standardHourly = netAnnual / 2080; 
+            
+            // Novel Tool Updates
+            const actualHoursWorked = 2080 * (effort / 100);
+            const computedEffectiveHourly = netAnnual / actualHoursWorked;
+
+            // Runway Engine Math (How many days of freedom purchased per month worked)
+            // Monthly Savings / Monthly Total Spend = Ratio of freedom earned
+            const monthlyExpenses = Math.max(1, monthlyNet - savingsTarget);
+            const safetyRunwayDays = (savingsTarget / monthlyExpenses) * 30.4;
+
+            // Instantaneous DOM updates (avoids the counter engine lag during active typing)
+            UI.netPayDisplay.innerText = format(netAnnual);
+            UI.fedTaxDisplay.innerText = format(fedTax);
+            UI.stateTaxDisplay.innerText = format(stateTax);
+            UI.monthlyNetDisplay.innerText = format(monthlyNet);
+            UI.hourlyValueDisplay.innerText = format(standardHourly);
+            UI.effectiveHourly.innerText = format(computedEffectiveHourly);
+            UI.runwayDisplay.innerText = `${Math.max(0, safetyRunwayDays).toFixed(1)} Days`;
+        }
+
+        function format(val) {
+            return '$' + Math.round(val).toLocaleString();
+        }
+
+        // Dedicated ticking thread for high frequency telemetry updates
+        setInterval(() => {
+            if (netAnnualGlobal > 0) {
+                const perSecond = netAnnualGlobal / 31536000;
+                UI.liveTicker.innerText = `$${perSecond.toFixed(5)}`;
+            } else {
+                UI.liveTicker.innerText = `$0.00000`;
             }
         }, 100);
 
-        // Run Initial Calculations Loop upon frame ready
-        calculateSalary();
+        // Bootstrap Core
+        compute();
     </script>
 </body>
 </html>
