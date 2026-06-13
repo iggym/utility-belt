@@ -1,5 +1,10 @@
 [
   {
+    "title":"Time Toolls",
+    "file":"tools/time-command-center.html",
+    "description":"Time Tools."
+  },
+  {
     "title":"Prompt Generator",
     "file":"tools/prompt-generator.html",
     "description":"Generate prompts for AI models."
