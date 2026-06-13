@@ -1,0 +1,12 @@
+[
+  {
+    "title":"Prompt Generator",
+    "file":"tools/prompt-generator.html",
+    "description":"Generate prompts for AI models."
+  },
+  {
+    "title":"JSON Formatter",
+    "file":"tools/json-formatter.html",
+    "description":"Format and validate JSON."
+  }
+]
