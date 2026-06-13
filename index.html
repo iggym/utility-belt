@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Utility Belt</title>
+<style>
+:root{
+--bg:#060816;--text:#fff;--muted:#aab;--glass:rgba(255,255,255,.08);
+}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.blob{position:absolute;width:40rem;height:40rem;border-radius:50%;filter:blur(100px);opacity:.35;animation:f 18s ease-in-out infinite}
+.b1{background:#4f46e5;left:-10rem;top:-10rem}.b2{background:#8b5cf6;right:-10rem;top:10rem}.b3{background:#06b6d4;bottom:-10rem;left:30%}
+@keyframes f{50%{transform:translate(80px,-60px)}}
+nav{position:sticky;top:0;padding:1rem 2rem;background:rgba(0,0,0,.2);backdrop-filter:blur(16px);display:flex;justify-content:space-between}
+.hero{min-height:70vh;display:grid;place-items:center;text-align:center;padding:2rem}
+h1{font-size:clamp(3rem,9vw,7rem);margin:.2em 0}
+.grad{background:linear-gradient(90deg,#fff,#8bd3ff,#d7b4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.wrap{max-width:1200px;margin:auto;padding:2rem}
+.search{width:100%;padding:1rem;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:var(--glass);color:white}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-top:1.5rem}
+.card{background:var(--glass);border:1px solid rgba(255,255,255,.12);padding:1.2rem;border-radius:24px;backdrop-filter:blur(20px);transition:.25s}
+.card:hover{transform:translateY(-6px)}
+a{color:white;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<nav><strong>🛠 Utility Belt</strong><span id="count">0 Tools</span></nav>
+<section class="hero">
+<div>
+<div>Collection of Useful Tools</div>
+<h1>Build. Create.<br><span class="grad">Utility.</span></h1>
+<p>Beautiful, lightweight tools hosted on GitHub Pages.</p>
+</div>
+</section>
+<div class="wrap">
+<input id="search" class="search" placeholder="Search tools...">
+<div id="grid" class="grid"></div>
+</div>
+<script>
+let tools=[];
+async function load(){
+ const r=await fetch('manifest.json');
+ tools=await r.json();
+ render(tools);
+ document.getElementById('count').textContent=`${tools.length} Tools`;
+}
+function render(items){
+ const g=document.getElementById('grid');
+ g.innerHTML='';
+ items.forEach(t=>{
+   g.innerHTML+=`<div class="card"><h3>${t.title}</h3><p>${t.description||''}</p><a href="${t.file}">Open →</a></div>`;
+ });
+}
+document.getElementById('search').addEventListener('input',e=>{
+ const q=e.target.value.toLowerCase();
+ render(tools.filter(t=>t.title.toLowerCase().includes(q)));
+});
+load();
+</script>
+</body>
+</html>
