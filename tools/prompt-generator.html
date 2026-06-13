@@ -1,0 +1,741 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Generator — iggym</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;
+  --surface:#1a1a1a;
+  --surface2:#222;
+  --surface3:#2a2a2a;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.14);
+  --text:#f0ece4;
+  --muted:#888;
+  --muted2:#555;
+  --accent:#D85A30;
+  --accent2:#e8733f;
+}
+
+/* LLM brand colors */
+--claude:#D97757;
+--gemini:#4285F4;
+--chatgpt:#10a37f;
+--deepseek:#4D6BFE;
+--copilot:#0078D4;
+
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;font-size:15px;line-height:1.6}
+a{color:var(--muted);text-decoration:none}
+a:hover{color:var(--accent)}
+
+.shell{max-width:680px;margin:0 auto;padding:0 0 4rem}
+
+/* Header */
+header{padding:1.75rem 1.5rem 1.5rem;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.logo{font-family:'Fraunces',serif;font-size:21px;font-weight:500;letter-spacing:-0.02em}
+.logo span{color:var(--accent);font-style:italic}
+.tagline{font-size:11px;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase;margin-top:3px}
+.home-link{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;border-bottom:0.5px solid var(--muted2);padding-bottom:1px;transition:color .15s;margin-top:4px}
+.home-link:hover{color:var(--accent)}
+
+/* Steps indicator */
+.steps{display:flex;align-items:center;padding:1.25rem 1.5rem;gap:0;border-bottom:0.5px solid var(--border)}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);letter-spacing:0.04em}
+.step.active{color:var(--text)}
+.step.done{color:var(--accent)}
+.step-num{width:20px;height:20px;border-radius:50%;border:0.5px solid var(--muted2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.step.active .step-num{border-color:var(--accent);color:var(--accent)}
+.step.done .step-num{background:var(--accent);border-color:var(--accent);color:#fff}
+.step-line{flex:1;height:0.5px;background:var(--border2);margin:0 8px}
+.step-line.done{background:var(--accent)}
+
+/* LLM selector */
+.llm-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:1.5rem}
+.llm-card{border:0.5px solid var(--border2);border-radius:10px;padding:.875rem .5rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface)}
+.llm-card:hover{border-color:var(--border);background:var(--surface2)}
+.llm-card.selected{border-color:var(--llm-color);background:color-mix(in srgb, var(--llm-color) 10%, var(--surface))}
+.llm-icon{font-size:22px;margin-bottom:5px;line-height:1}
+.llm-name{font-size:11px;color:var(--muted);letter-spacing:0.03em}
+.llm-card.selected .llm-name{color:var(--text)}
+
+/* Section label */
+.section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:0 1.5rem;margin-bottom:.625rem}
+
+/* Panel */
+.panel{display:none;padding:0 1.5rem;flex-direction:column;gap:1rem}
+.panel.active{display:flex}
+
+/* Form card */
+.form-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:.875rem}
+.form-title{font-family:'Fraunces',serif;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:.125rem}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--muted);letter-spacing:0.03em}
+.field .hint{font-size:11px;color:var(--muted2);margin-top:2px}
+input[type=text],textarea,select{
+  width:100%;font-size:13px;padding:8px 11px;
+  background:var(--surface2);border:0.5px solid var(--border2);
+  border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;
+  appearance:none;-webkit-appearance:none;resize:vertical;
+  transition:border-color .15s
+}
+input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+select option{background:#222}
+textarea{min-height:80px}
+
+/* Tag pills */
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--border2);color:var(--muted);cursor:pointer;transition:all .12s;background:var(--surface2);user-select:none}
+.tag:hover{border-color:var(--border);color:var(--text)}
+.tag.active{background:color-mix(in srgb, var(--accent) 15%, transparent);border-color:var(--accent);color:var(--accent)}
+
+/* Row2 */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Actions */
+.actions{display:flex;gap:8px;padding:0 1.5rem;flex-wrap:wrap}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s;border:0.5px solid var(--border2);background:var(--surface2);color:var(--text)}
+.btn:hover{background:var(--surface3);border-color:var(--border)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Output */
+.output-wrap{display:none;padding:0 1.5rem;flex-direction:column;gap:1rem}
+.output-wrap.active{display:flex}
+.output-header{display:flex;justify-content:space-between;align-items:center}
+.output-title{font-family:'Fraunces',serif;font-size:16px;font-weight:500}
+.output-badge{font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid;letter-spacing:0.04em}
+.output-tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border)}
+.otab{font-size:12px;padding:8px 14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;letter-spacing:0.03em}
+.otab.active{color:var(--text);border-bottom-color:var(--accent)}
+.output-box{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;word-break:break-word;min-height:200px;font-family:'Inter',sans-serif}
+.output-box.structured{font-family:'Inter',sans-serif}
+.structured-section{margin-bottom:1rem}
+.structured-section:last-child{margin-bottom:0}
+.structured-key{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:4px}
+.structured-val{font-size:13px;color:var(--text);line-height:1.7;padding-left:.75rem;border-left:2px solid var(--accent)}
+.copy-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Notification toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:0.5px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text);transition:transform .25s;z-index:100;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* LLM tip */
+.llm-tip{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:.875rem 1rem;font-size:12px;color:var(--muted);line-height:1.7}
+.llm-tip strong{color:var(--text);font-weight:500}
+
+/* Mobile */
+@media(max-width:480px){
+  .llm-grid{grid-template-columns:repeat(3,1fr)}
+  .row2{grid-template-columns:1fr}
+  .steps .step-label{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header>
+    <div>
+      <div class="logo">Prompt<span>Forge</span></div>
+      <div class="tagline">Optimal prompts for every LLM</div>
+    </div>
+    <a href="https://iggym.github.io/utility-belt/" class="home-link" target="_blank" rel="noopener">Home</a>
+  </header>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1">
+      <div class="step-num">1</div>
+      <span class="step-label" style="font-size:12px">Choose LLM</span>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <span class="step-label" style="font-size:12px">Build prompt</span>
+    </div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <span class="step-label" style="font-size:12px">Export</span>
+    </div>
+  </div>
+
+  <!-- STEP 1: LLM Selector -->
+  <div id="s1" style="padding:1.5rem 1.5rem .5rem">
+    <p class="section-label" style="padding:0;margin-bottom:1rem">Select your target LLM</p>
+    <div class="llm-grid" style="padding:0">
+      <div class="llm-card" id="llm-claude" style="--llm-color:#D97757" onclick="selectLLM('claude')">
+        <div class="llm-icon">✦</div>
+        <div class="llm-name">Claude</div>
+      </div>
+      <div class="llm-card" id="llm-gemini" style="--llm-color:#4285F4" onclick="selectLLM('gemini')">
+        <div class="llm-icon">✦</div>
+        <div class="llm-name">Gemini</div>
+      </div>
+      <div class="llm-card" id="llm-chatgpt" style="--llm-color:#10a37f" onclick="selectLLM('chatgpt')">
+        <div class="llm-icon">✦</div>
+        <div class="llm-name">ChatGPT</div>
+      </div>
+      <div class="llm-card" id="llm-deepseek" style="--llm-color:#4D6BFE" onclick="selectLLM('deepseek')">
+        <div class="llm-icon">✦</div>
+        <div class="llm-name">DeepSeek</div>
+      </div>
+      <div class="llm-card" id="llm-copilot" style="--llm-color:#0078D4" onclick="selectLLM('copilot')">
+        <div class="llm-icon">✦</div>
+        <div class="llm-name">Copilot</div>
+      </div>
+    </div>
+    <div id="llm-tip-wrap" style="padding:0;margin-top:1rem"></div>
+    <div style="margin-top:1.25rem">
+      <button class="btn primary" id="btn-next1" onclick="goStep(2)" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Prompt Builder (shared fields + LLM-specific) -->
+  <div class="panel" id="s2" style="padding-top:1.5rem">
+
+    <!-- Universal fields -->
+    <div class="form-card">
+      <div class="form-title">Core intent</div>
+      <div class="field">
+        <label>What do you want the LLM to do?</label>
+        <textarea id="f-task" placeholder="e.g. Write a competitive analysis of SaaS CRM tools for a B2B startup" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label>Role / persona for the LLM</label>
+        <input type="text" id="f-role" placeholder="e.g. Senior product strategist with B2B SaaS expertise">
+        <span class="hint">Defining a role dramatically improves output quality.</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Output format</label>
+          <select id="f-format">
+            <option value="">— choose —</option>
+            <option>Prose / essay</option>
+            <option>Bullet points</option>
+            <option>Numbered list</option>
+            <option>Table</option>
+            <option>Markdown document</option>
+            <option>JSON</option>
+            <option>Code</option>
+            <option>Step-by-step guide</option>
+            <option>Email</option>
+            <option>Script / dialogue</option>
+            <option>Executive summary</option>
+            <option>Report</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Response length</label>
+          <select id="f-length">
+            <option value="">— choose —</option>
+            <option>Concise (under 200 words)</option>
+            <option>Medium (200–500 words)</option>
+            <option>Detailed (500–1000 words)</option>
+            <option>Comprehensive (1000+ words)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Tone</label>
+        <div class="tag-row" id="tone-tags">
+          <span class="tag" onclick="toggleTag(this,'tone')">Professional</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Casual</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Technical</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Persuasive</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Direct</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Empathetic</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Academic</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Executive</span>
+          <span class="tag" onclick="toggleTag(this,'tone')">Creative</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Audience</label>
+        <input type="text" id="f-audience" placeholder="e.g. Non-technical C-suite executives, junior developers, investors">
+      </div>
+    </div>
+
+    <!-- Context & constraints -->
+    <div class="form-card">
+      <div class="form-title">Context & constraints</div>
+      <div class="field">
+        <label>Background context</label>
+        <textarea id="f-context" placeholder="Any relevant info, facts, data, or background the LLM should know" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label>Constraints — what to avoid</label>
+        <div class="tag-row" id="avoid-tags">
+          <span class="tag" onclick="toggleTag(this,'avoid')">No jargon</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No bullet points</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No hedging</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No repetition</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No filler phrases</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No passive voice</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No markdown</span>
+          <span class="tag" onclick="toggleTag(this,'avoid')">No emojis</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Additional constraints (free text)</label>
+        <input type="text" id="f-constraints" placeholder="e.g. Keep under 3 minutes reading time, cite sources, use US English">
+      </div>
+    </div>
+
+    <!-- LLM-specific fields -->
+    <div id="llm-specific-wrap"></div>
+
+    <!-- Examples -->
+    <div class="form-card">
+      <div class="form-title">Examples (optional but powerful)</div>
+      <div class="field">
+        <label>Example of good output style</label>
+        <textarea id="f-example" placeholder="Paste a short example of the kind of output you want" rows="3"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="goStep(1)">← Back</button>
+      <button class="btn primary" onclick="generatePrompt()">Generate prompt →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Output -->
+  <div class="output-wrap" id="s3">
+    <div class="output-header">
+      <div class="output-title">Generated prompt</div>
+      <div class="output-badge" id="out-badge"></div>
+    </div>
+    <div class="output-tabs">
+      <div class="otab active" onclick="switchOutput('plain')">Plain text</div>
+      <div class="otab" onclick="switchOutput('structured')">Structured</div>
+    </div>
+    <div class="output-box" id="out-plain"></div>
+    <div class="output-box structured" id="out-structured" style="display:none"></div>
+    <div class="copy-actions">
+      <button class="btn primary" onclick="copyPrompt()">Copy to clipboard</button>
+      <button class="btn" onclick="downloadTxt()">Download .txt</button>
+      <button class="btn" onclick="downloadMd()">Download .md</button>
+      <button class="btn" onclick="goStep(1)">Start over</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LLM_META = {
+  claude: {
+    color: '#D97757',
+    label: 'Claude (Anthropic)',
+    tip: '<strong>Claude</strong> excels with explicit role assignment, XML-structured context blocks, multi-step reasoning chains, and clear output specs. It responds well to direct, honest framing and benefits from being told what <em>not</em> to do.',
+    fields: [
+      { id: 'cl-xml', label: 'Use XML structure?', type: 'select', options: ['Yes — wrap context in tags', 'No — plain text'], hint: 'Claude is trained on XML-formatted prompts and follows them precisely.' },
+      { id: 'cl-thinking', label: 'Reasoning mode', type: 'select', options: ['Standard', 'Think step-by-step before answering', 'Show reasoning then give final answer'], hint: 'Extended thinking produces higher quality on complex tasks.' },
+      { id: 'cl-cot', label: 'Chain-of-thought guidance', type: 'text', placeholder: 'e.g. First analyze X, then compare Y, finally recommend Z' }
+    ]
+  },
+  gemini: {
+    color: '#4285F4',
+    label: 'Gemini (Google)',
+    tip: '<strong>Gemini</strong> handles multimodal context well. It benefits from grounded, factual framing, explicit output structure, and breaking complex tasks into numbered sub-tasks. Works best with Google Workspace context when relevant.',
+    fields: [
+      { id: 'gm-modality', label: 'Input modality', type: 'select', options: ['Text only', 'Text + image', 'Text + document', 'Text + data/table'], hint: 'Gemini is natively multimodal — specifying input type sharpens its approach.' },
+      { id: 'gm-grounding', label: 'Grounding requirement', type: 'select', options: ['None', 'Base on factual/verified info only', 'Search-grounded (Gemini with tools)', 'Cite sources inline'] },
+      { id: 'gm-subtasks', label: 'Break into sub-tasks?', type: 'select', options: ['Let Gemini decide', 'Yes — number each step', 'No — single unified response'] }
+    ]
+  },
+  chatgpt: {
+    color: '#10a37f',
+    label: 'ChatGPT (OpenAI)',
+    tip: '<strong>ChatGPT</strong> (GPT-4o) responds well to system + user message framing, persona assignment, temperature cues, and explicit step-by-step instructions. Few-shot examples are especially effective.',
+    fields: [
+      { id: 'cg-system', label: 'System message framing', type: 'text', placeholder: 'e.g. You are an expert financial analyst. Always be concise and data-driven.', hint: 'Acts as persistent context for the conversation.' },
+      { id: 'cg-fewshot', label: 'Include few-shot examples?', type: 'select', options: ['No', 'Yes — 1 example', 'Yes — 2–3 examples'] },
+      { id: 'cg-temp', label: 'Creativity level', type: 'select', options: ['Deterministic (factual tasks)', 'Balanced (default)', 'Creative (ideation, writing)'] }
+    ]
+  },
+  deepseek: {
+    color: '#4D6BFE',
+    label: 'DeepSeek',
+    tip: '<strong>DeepSeek</strong> excels at technical reasoning, code generation, and math. It benefits from precise problem definitions, explicit step-by-step breakdowns, and specifying whether to use its reasoning (R1) vs. standard chat mode.',
+    fields: [
+      { id: 'ds-mode', label: 'DeepSeek mode', type: 'select', options: ['Chat (standard)', 'Reasoner / R1 (complex reasoning)', 'Coder (code generation priority)'], hint: 'R1 mode enables extended chain-of-thought reasoning.' },
+      { id: 'ds-precision', label: 'Precision level', type: 'select', options: ['General answer', 'Step-by-step breakdown', 'Exhaustive analysis with edge cases'] },
+      { id: 'ds-lang', label: 'Code language (if applicable)', type: 'text', placeholder: 'e.g. Python, TypeScript, Rust, SQL' }
+    ]
+  },
+  copilot: {
+    color: '#0078D4',
+    label: 'Microsoft Copilot',
+    tip: '<strong>Copilot</strong> is optimized for workplace productivity. It responds best to task-framed prompts with clear deliverable specs, Microsoft 365 context (Word, Excel, Teams, Outlook), and explicit output format requests.',
+    fields: [
+      { id: 'cp-context', label: 'Microsoft 365 context', type: 'select', options: ['None / general', 'Word document', 'Excel spreadsheet', 'PowerPoint presentation', 'Outlook email', 'Teams message', 'OneNote'] },
+      { id: 'cp-workflow', label: 'Workflow integration', type: 'select', options: ['Standalone task', 'Part of a larger workflow', 'Template to reuse'] },
+      { id: 'cp-collab', label: 'Collaboration scope', type: 'select', options: ['Individual use', 'Team sharing', 'Executive presentation'] }
+    ]
+  }
+};
+
+let selectedLLM = null;
+let currentOutputMode = 'plain';
+let generatedData = {};
+
+function selectLLM(llm) {
+  selectedLLM = llm;
+  document.querySelectorAll('.llm-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('llm-' + llm).classList.add('selected');
+  document.getElementById('btn-next1').disabled = false;
+
+  const meta = LLM_META[llm];
+  document.getElementById('llm-tip-wrap').innerHTML = `<div class="llm-tip">${meta.tip}</div>`;
+}
+
+function renderLLMFields(llm) {
+  const meta = LLM_META[llm];
+  const wrap = document.getElementById('llm-specific-wrap');
+  if (!meta.fields.length) { wrap.innerHTML = ''; return; }
+
+  let html = `<div class="form-card"><div class="form-title">${meta.label} — specific settings</div>`;
+  meta.fields.forEach(f => {
+    html += `<div class="field"><label>${f.label}</label>`;
+    if (f.type === 'select') {
+      html += `<select id="${f.id}">` + f.options.map(o => `<option>${o}</option>`).join('') + '</select>';
+    } else {
+      html += `<input type="text" id="${f.id}" placeholder="${f.placeholder || ''}">`;
+    }
+    if (f.hint) html += `<span class="hint">${f.hint}</span>`;
+    html += '</div>';
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+function goStep(n) {
+  document.getElementById('s1').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('s2').classList.toggle('active', n === 2);
+  document.getElementById('s3').classList.toggle('active', n === 3);
+
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active','done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  });
+  [1,2].forEach(i => {
+    const el = document.getElementById('line' + i);
+    el.classList.toggle('done', i < n);
+  });
+
+  if (n === 2) renderLLMFields(selectedLLM);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function toggleTag(el, group) {
+  if (group === 'tone') {
+    document.querySelectorAll('#tone-tags .tag').forEach(t => t.classList.remove('active'));
+  }
+  el.classList.toggle('active');
+}
+
+function getActiveTags(containerId) {
+  return [...document.querySelectorAll('#' + containerId + ' .tag.active')].map(t => t.textContent).join(', ');
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function generatePrompt() {
+  const task = val('f-task');
+  if (!task) { showToast('Please enter what you want the LLM to do.'); return; }
+
+  const role = val('f-role');
+  const format = val('f-format');
+  const length = val('f-length');
+  const tone = getActiveTags('tone-tags');
+  const audience = val('f-audience');
+  const context = val('f-context');
+  const constraints = val('f-constraints');
+  const avoidTags = getActiveTags('avoid-tags');
+  const example = val('f-example');
+  const llm = selectedLLM;
+  const meta = LLM_META[llm];
+
+  // LLM-specific values
+  const llmVals = {};
+  meta.fields.forEach(f => { llmVals[f.id] = val(f.id); });
+
+  // Build structured data
+  const sd = { role, task, context, tone, audience, format, length, constraints: [avoidTags, constraints].filter(Boolean).join('. '), example, llm, llmVals };
+  generatedData = sd;
+
+  // ---- PLAIN TEXT PROMPT ----
+  let plain = '';
+
+  // Claude
+  if (llm === 'claude') {
+    const useXML = llmVals['cl-xml'] && llmVals['cl-xml'].includes('XML');
+    const thinking = llmVals['cl-thinking'] || '';
+    const cot = llmVals['cl-cot'] || '';
+
+    if (role) plain += `You are ${role}.\n\n`;
+
+    if (useXML) {
+      if (context) plain += `<context>\n${context}\n</context>\n\n`;
+      if (audience) plain += `<audience>\n${audience}\n</audience>\n\n`;
+      plain += `<task>\n${task}\n</task>\n\n`;
+      if (cot) plain += `<approach>\n${cot}\n</approach>\n\n`;
+    } else {
+      if (context) plain += `Context: ${context}\n\n`;
+      if (audience) plain += `Audience: ${audience}\n\n`;
+      plain += `Task: ${task}\n\n`;
+      if (cot) plain += `Approach: ${cot}\n\n`;
+    }
+
+    if (thinking && thinking !== 'Standard') plain += `${thinking}.\n\n`;
+
+    const specs = [];
+    if (format) specs.push(`Format: ${format}`);
+    if (length) specs.push(`Length: ${length}`);
+    if (tone) specs.push(`Tone: ${tone}`);
+    if (specs.length) plain += specs.join('\n') + '\n\n';
+
+    const avoid = [avoidTags, constraints].filter(Boolean).join('. ');
+    if (avoid) plain += `Do not: ${avoid}.\n\n`;
+    if (example) plain += `Example of desired style:\n${example}\n\n`;
+
+    plain = plain.trim();
+  }
+
+  // Gemini
+  else if (llm === 'gemini') {
+    const modality = llmVals['gm-modality'] || '';
+    const grounding = llmVals['gm-grounding'] || '';
+    const subtasks = llmVals['gm-subtasks'] || '';
+
+    if (role) plain += `Role: You are ${role}.\n\n`;
+    plain += `Task: ${task}\n\n`;
+    if (context) plain += `Background:\n${context}\n\n`;
+    if (audience) plain += `Target audience: ${audience}\n\n`;
+    if (modality && modality !== 'Text only') plain += `Input provided: ${modality}.\n\n`;
+
+    if (subtasks && subtasks.includes('number')) {
+      plain += `Please complete this in numbered steps:\n1. Analyze the context\n2. Draft the response\n3. Review for accuracy and clarity\n\n`;
+    }
+
+    if (grounding && grounding !== 'None') plain += `${grounding}.\n\n`;
+
+    const specs = [];
+    if (format) specs.push(`Output format: ${format}`);
+    if (length) specs.push(`Length: ${length}`);
+    if (tone) specs.push(`Tone: ${tone}`);
+    if (specs.length) plain += specs.join('\n') + '\n\n';
+
+    const avoid = [avoidTags, constraints].filter(Boolean).join('. ');
+    if (avoid) plain += `Constraints: ${avoid}.\n\n`;
+    if (example) plain += `Reference style:\n${example}\n\n`;
+    plain = plain.trim();
+  }
+
+  // ChatGPT
+  else if (llm === 'chatgpt') {
+    const system = llmVals['cg-system'] || '';
+    const fewshot = llmVals['cg-fewshot'] || '';
+    const temp = llmVals['cg-temp'] || '';
+
+    if (system) plain += `[SYSTEM]\n${system}\n\n[USER]\n`;
+    if (role) plain += `Act as ${role}.\n\n`;
+    plain += task + '\n\n';
+    if (context) plain += `Context:\n${context}\n\n`;
+    if (audience) plain += `Write for: ${audience}.\n\n`;
+
+    const specs = [];
+    if (format) specs.push(`Format: ${format}`);
+    if (length) specs.push(`Length: ${length}`);
+    if (tone) specs.push(`Tone: ${tone}`);
+    if (temp && temp !== 'Balanced (default)') specs.push(`Creativity: ${temp}`);
+    if (specs.length) plain += specs.join('\n') + '\n\n';
+
+    const avoid = [avoidTags, constraints].filter(Boolean).join('. ');
+    if (avoid) plain += `Avoid: ${avoid}.\n\n`;
+
+    if (fewshot && fewshot !== 'No' && example) {
+      plain += `Example:\n---\n${example}\n---\n\n`;
+    } else if (example) {
+      plain += `Desired style:\n${example}\n\n`;
+    }
+
+    plain = plain.trim();
+  }
+
+  // DeepSeek
+  else if (llm === 'deepseek') {
+    const mode = llmVals['ds-mode'] || '';
+    const precision = llmVals['ds-precision'] || '';
+    const lang = llmVals['ds-lang'] || '';
+
+    if (mode && mode.includes('R1')) plain += `[Use extended reasoning mode]\n\n`;
+    if (mode && mode.includes('Coder')) plain += `[Code generation task]\n\n`;
+
+    if (role) plain += `You are ${role}.\n\n`;
+    plain += task + '\n\n';
+    if (context) plain += `Context:\n${context}\n\n`;
+    if (lang) plain += `Language/stack: ${lang}\n\n`;
+
+    if (precision === 'Step-by-step breakdown') {
+      plain += `Break your response into clear numbered steps. Show your reasoning at each step before giving the final answer.\n\n`;
+    } else if (precision && precision.includes('Exhaustive')) {
+      plain += `Provide an exhaustive analysis. Cover edge cases, tradeoffs, and potential failure modes.\n\n`;
+    }
+
+    const specs = [];
+    if (format) specs.push(`Format: ${format}`);
+    if (length) specs.push(`Length: ${length}`);
+    if (tone) specs.push(`Tone: ${tone}`);
+    if (audience) specs.push(`Audience: ${audience}`);
+    if (specs.length) plain += specs.join('\n') + '\n\n';
+
+    const avoid = [avoidTags, constraints].filter(Boolean).join('. ');
+    if (avoid) plain += `Do not: ${avoid}.\n\n`;
+    if (example) plain += `Reference example:\n${example}\n\n`;
+    plain = plain.trim();
+  }
+
+  // Copilot
+  else if (llm === 'copilot') {
+    const m365ctx = llmVals['cp-context'] || '';
+    const workflow = llmVals['cp-workflow'] || '';
+    const collab = llmVals['cp-collab'] || '';
+
+    if (role) plain += `You are ${role}.\n\n`;
+    if (m365ctx && m365ctx !== 'None / general') plain += `Working in: Microsoft ${m365ctx}\n\n`;
+    plain += task + '\n\n';
+    if (context) plain += `Background:\n${context}\n\n`;
+    if (audience) plain += `Audience: ${audience}\n\n`;
+    if (workflow && workflow !== 'Standalone task') plain += `This is ${workflow.toLowerCase()}.\n\n`;
+    if (collab && collab !== 'Individual use') plain += `Scope: ${collab}.\n\n`;
+
+    const specs = [];
+    if (format) specs.push(`Output format: ${format}`);
+    if (length) specs.push(`Length: ${length}`);
+    if (tone) specs.push(`Tone: ${tone}`);
+    if (specs.length) plain += specs.join('\n') + '\n\n';
+
+    const avoid = [avoidTags, constraints].filter(Boolean).join('. ');
+    if (avoid) plain += `Constraints: ${avoid}.\n\n`;
+    if (example) plain += `Style reference:\n${example}\n\n`;
+    plain = plain.trim();
+  }
+
+  // ---- OUTPUT ----
+  const badge = document.getElementById('out-badge');
+  badge.textContent = meta.label;
+  badge.style.color = meta.color;
+  badge.style.borderColor = meta.color;
+
+  document.getElementById('out-plain').textContent = plain;
+  renderStructured(sd, plain, llm);
+
+  goStep(3);
+}
+
+function renderStructured(sd, plain, llm) {
+  const meta = LLM_META[llm];
+  const sections = [];
+
+  if (sd.role) sections.push({ key: 'Role', val: sd.role });
+  sections.push({ key: 'Task', val: sd.task });
+  if (sd.context) sections.push({ key: 'Context', val: sd.context });
+  if (sd.audience) sections.push({ key: 'Audience', val: sd.audience });
+  if (sd.tone) sections.push({ key: 'Tone', val: sd.tone });
+
+  const output = [];
+  if (sd.format) output.push('Format: ' + sd.format);
+  if (sd.length) output.push('Length: ' + sd.length);
+  if (output.length) sections.push({ key: 'Output spec', val: output.join('\n') });
+  if (sd.constraints) sections.push({ key: 'Constraints', val: sd.constraints });
+
+  // LLM-specific
+  const llmLines = [];
+  meta.fields.forEach(f => {
+    const v = sd.llmVals[f.id];
+    if (v) llmLines.push(`${f.label}: ${v}`);
+  });
+  if (llmLines.length) sections.push({ key: `${meta.label} settings`, val: llmLines.join('\n') });
+  if (sd.example) sections.push({ key: 'Style reference', val: sd.example });
+
+  const html = sections.map(s => `
+    <div class="structured-section">
+      <div class="structured-key">${s.key}</div>
+      <div class="structured-val">${s.val.replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+
+  document.getElementById('out-structured').innerHTML = html;
+}
+
+function switchOutput(mode) {
+  currentOutputMode = mode;
+  document.querySelectorAll('.otab').forEach((el,i) => el.classList.toggle('active', ['plain','structured'][i] === mode));
+  document.getElementById('out-plain').style.display = mode === 'plain' ? 'block' : 'none';
+  document.getElementById('out-structured').style.display = mode === 'structured' ? 'block' : 'none';
+}
+
+function getPlainText() {
+  return document.getElementById('out-plain').textContent;
+}
+
+function copyPrompt() {
+  const text = getPlainText();
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+}
+
+function downloadTxt() {
+  download(getPlainText(), 'prompt-' + selectedLLM + '.txt', 'text/plain');
+}
+
+function downloadMd() {
+  const sd = generatedData;
+  const meta = LLM_META[selectedLLM];
+  let md = `# Prompt — ${meta.label}\n\n`;
+  if (sd.role) md += `**Role:** ${sd.role}\n\n`;
+  md += `**Task:**\n\n${sd.task}\n\n`;
+  if (sd.context) md += `**Context:**\n\n${sd.context}\n\n`;
+  if (sd.audience) md += `**Audience:** ${sd.audience}\n\n`;
+  if (sd.tone) md += `**Tone:** ${sd.tone}\n\n`;
+  if (sd.format) md += `**Format:** ${sd.format}\n\n`;
+  if (sd.length) md += `**Length:** ${sd.length}\n\n`;
+  if (sd.constraints) md += `**Constraints:** ${sd.constraints}\n\n`;
+  md += `---\n\n## Prompt (plain)\n\n\`\`\`\n${getPlainText()}\n\`\`\`\n`;
+  download(md, 'prompt-' + selectedLLM + '.md', 'text/markdown');
+}
+
+function download(content, filename, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = filename;
+  a.click();
+  showToast('Downloaded ' + filename);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
