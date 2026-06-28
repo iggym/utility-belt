@@ -13,5 +13,10 @@
     "title":"Payroll Calc",
     "file":"tools/payroll-calc.html",
     "description":"Calculate Payroll."
+  },
+  {
+    "title":"Password generator.",
+    "file":"tools/prompt-generator.html",
+    "description":"Password generator."
   }
 ]
