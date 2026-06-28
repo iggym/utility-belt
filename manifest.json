@@ -33,5 +33,13 @@
     "description": "Write prompts, Transform them (rewrite, compress, expand, modularize)",
     "category": "AI",
     "icon": "🔐"
+  },
+  {
+    "title": "Theme Select",
+    "file": "tools/theme-select.html",
+    "description": "Select Theme for web app",
+    "category": "AI",
+    "icon": "🔐"
   }
+ 
 ]
