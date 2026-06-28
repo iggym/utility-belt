@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Prompt Studio</title>
+    <style>
+        :root {
+            --bg: #f5f5f7;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text: #1d1d1f;
+            --accent: #0066cc;
+            --border: rgba(0,0,0,0.1);
+            --radius: 16px;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        [data-theme='dark'] {
+            --bg: #000;
+            --card-bg: rgba(30, 30, 30, 0.8);
+            --text: #f5f5f7;
+            --border: rgba(255,255,255,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
+        body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        
+        /* Layout */
+        aside { width: 300px; border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; }
+        main { flex: 1; padding: 40px; overflow-y: auto; }
+        .prompt-panel { width: 350px; border-left: 1px solid var(--border); padding: 20px; background: var(--card-bg); backdrop-filter: blur(10px); }
+
+        /* Components */
+        .bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+        .card { background: var(--card-bg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); cursor: pointer; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); }
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <h2>Studio</h2>
+    <input type="text" id="search" placeholder="Search themes...">
+    <div id="categories"></div>
+</aside>
+
+<main>
+    <div class="bento-grid" id="themeGrid"></div>
+</main>
+
+<section class="prompt-panel">
+    <h3>Prompt Builder</h3>
+    <select id="type"><option>Landing Page</option><option>SaaS Dashboard</option></select>
+    <select id="industry"><option>Fintech</option><option>AI Startup</option></select>
+    <button onclick="generatePrompt()">Generate Final Prompt</button>
+    <textarea id="output" rows="10" readonly style="margin-top: 20px;"></textarea>
+</section>
+
+<script>
+const themes = [
+    { name: "Apple Minimalism", cat: "Minimal", desc: "Clean, whitespace-heavy, focus on typography and high-end imagery." },
+    { name: "Glassmorphism 2.0", cat: "Modern", desc: "Blurred translucent backgrounds, vibrant gradients, depth focus." },
+    { name: "Neo Brutalism", cat: "Creative", desc: "Bold black borders, high-contrast colors, harsh shadows." }
+];
+
+function render() {
+    const grid = document.getElementById('themeGrid');
+    grid.innerHTML = themes.map(t => `
+        <div class="card" onclick="selectTheme('${t.name}')">
+            <h3>${t.name}</h3>
+            <p>${t.desc}</p>
+        </div>
+    `).join('');
+}
+
+function generatePrompt() {
+    const type = document.getElementById('type').value;
+    const ind = document.getElementById('industry').value;
+    document.getElementById('output').value = `Build a professional ${type} for a ${ind} company. Incorporate the design philosophy of ${themes[0].name}. Use a color palette focused on high-contrast accessibility, clean typography, and modern UI components.`;
+}
+
+render();
+</script>
+</body>
+</html>
