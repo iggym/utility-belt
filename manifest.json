@@ -26,5 +26,12 @@
     "description": "Generate strong, customizable passwords with entropy scoring.",
     "category": "Security",
     "icon": "🔐"
+  },
+  {
+    "title": "Prompt Workbench",
+    "file": "tools/prompt-workbench.html",
+    "description": "Write prompts, Transform them (rewrite, compress, expand, modularize)",
+    "category": "AI",
+    "icon": "🔐"
   }
 ]
