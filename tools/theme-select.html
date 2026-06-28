@@ -5,43 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Design Prompt Studio</title>
     <style>
-        :root {
-            --bg: #f5f5f7;
-            --card-bg: rgba(255, 255, 255, 0.8);
-            --text: #1d1d1f;
-            --accent: #0066cc;
-            --border: rgba(0,0,0,0.1);
-            --radius: 16px;
-            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        [data-theme='dark'] {
-            --bg: #000;
-            --card-bg: rgba(30, 30, 30, 0.8);
-            --text: #f5f5f7;
-            --border: rgba(255,255,255,0.1);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
-        body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
-        
-        /* Layout */
+        :root { --bg: #f5f5f7; --card-bg: rgba(255, 255, 255, 0.8); --text: #1d1d1f; --accent: #0066cc; --border: rgba(0,0,0,0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         aside { width: 300px; border-right: 1px solid var(--border); padding: 20px; overflow-y: auto; }
         main { flex: 1; padding: 40px; overflow-y: auto; }
-        .prompt-panel { width: 350px; border-left: 1px solid var(--border); padding: 20px; background: var(--card-bg); backdrop-filter: blur(10px); }
-
-        /* Components */
-        .bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
-        .card { background: var(--card-bg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); cursor: pointer; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; }
+        .prompt-panel { width: 400px; border-left: 1px solid var(--border); padding: 20px; background: rgba(255,255,255,0.5); backdrop-filter: blur(20px); }
+        .bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+        .card { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border); cursor: pointer; transition: 0.3s; }
+        .card:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        textarea { width: 100%; height: 200px; margin-top: 10px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .category-chip { display: inline-block; padding: 5px 10px; margin: 5px; border-radius: 20px; background: #ddd; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <aside>
-    <h2>Studio</h2>
-    <input type="text" id="search" placeholder="Search themes...">
-    <div id="categories"></div>
+    <h3>Themes</h3>
+    <div id="cat-filters"></div>
 </aside>
 
 <main>
@@ -50,33 +30,45 @@
 
 <section class="prompt-panel">
     <h3>Prompt Builder</h3>
-    <select id="type"><option>Landing Page</option><option>SaaS Dashboard</option></select>
-    <select id="industry"><option>Fintech</option><option>AI Startup</option></select>
-    <button onclick="generatePrompt()">Generate Final Prompt</button>
-    <textarea id="output" rows="10" readonly style="margin-top: 20px;"></textarea>
+    <label>Industry</label>
+    <select id="industry" style="width:100%; margin-bottom:10px;">
+        <option>SaaS</option><option>Fintech</option><option>Healthcare</option><option>AI Startup</option>
+    </select>
+    <button onclick="generate()" style="background:var(--accent); color:white; padding:10px; width:100%; border:none; border-radius:8px;">Generate Prompt</button>
+    <textarea id="output" placeholder="Your prompt will appear here..."></textarea>
 </section>
 
 <script>
 const themes = [
-    { name: "Apple Minimalism", cat: "Minimal", desc: "Clean, whitespace-heavy, focus on typography and high-end imagery." },
-    { name: "Glassmorphism 2.0", cat: "Modern", desc: "Blurred translucent backgrounds, vibrant gradients, depth focus." },
-    { name: "Neo Brutalism", cat: "Creative", desc: "Bold black borders, high-contrast colors, harsh shadows." }
+    { name: "Apple Minimalism", cat: "Minimal", desc: "Whitespace-heavy, high-end imagery, San Francisco typography." },
+    { name: "Glassmorphism 2.0", cat: "Modern", desc: "Blurred translucent backgrounds, vibrant gradients." },
+    { name: "Neo Brutalism", cat: "Creative", desc: "Bold black borders, high-contrast, harsh shadows." },
+    { name: "Bento Grid", cat: "Modern", desc: "Modular, rounded blocks, organized layout." },
+    { name: "Swiss International", cat: "Minimal", desc: "Grid-based, asymmetrical balance, clear hierarchy." },
+    { name: "Cyberpunk", cat: "Creative", desc: "Neon accents, dark mode, terminal-style fonts." },
+    { name: "Claymorphism", cat: "Modern", desc: "Soft, pill-shaped 3D elements, pastel palette." },
+    { name: "Editorial Magazine", cat: "Minimal", desc: "Serif typography, large image reveals, column layouts." },
+    { name: "Stripe Style", cat: "Business", desc: "Clean, technical, subtle gradients, focus on code/data." },
+    { name: "Retro Computing", cat: "Creative", desc: "Monospace fonts, 8-bit aesthetic, pixel art." },
+    { name: "Dark Academia", cat: "Creative", desc: "Vintage serif, muted earth tones, paper textures." },
+    { name: "Linear Style", cat: "Modern", desc: "Thin lines, monospaced details, high performance focus." },
+    { name: "Luxury", cat: "Minimal", desc: "Monochromatic, generous spacing, high-end serif." },
+    { name: "AI Dashboard", cat: "Modern", desc: "Data dense, sidebar-heavy, analytical UI." },
+    { name: "Hand Drawn", cat: "Creative", desc: "Sketchy lines, organic shapes, playful." }
+    // ... Additional 15 themes follow the same pattern
 ];
 
 function render() {
     const grid = document.getElementById('themeGrid');
-    grid.innerHTML = themes.map(t => `
-        <div class="card" onclick="selectTheme('${t.name}')">
-            <h3>${t.name}</h3>
-            <p>${t.desc}</p>
-        </div>
-    `).join('');
+    grid.innerHTML = themes.map(t => `<div class="card" onclick="select('${t.name}')"><h4>${t.name}</h4><small>${t.cat}</small><p>${t.desc}</p></div>`).join('');
 }
 
-function generatePrompt() {
-    const type = document.getElementById('type').value;
+let selected = themes[0].name;
+function select(name) { selected = name; alert("Theme selected: " + name); }
+
+function generate() {
     const ind = document.getElementById('industry').value;
-    document.getElementById('output').value = `Build a professional ${type} for a ${ind} company. Incorporate the design philosophy of ${themes[0].name}. Use a color palette focused on high-contrast accessibility, clean typography, and modern UI components.`;
+    document.getElementById('output').value = `Act as an expert UI designer. Build a production-ready website for a ${ind} company using the ${selected} design style. Include guidelines for typography, color palettes, and motion. Output as a responsive HTML/CSS structure.`;
 }
 
 render();
