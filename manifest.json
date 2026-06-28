@@ -1,22 +1,30 @@
 [
   {
-    "title":"Time Tools",
-    "file":"tools/time-command-center.html",
-    "description":"Useful Time Tools."
+    "title": "Time Tools",
+    "file": "tools/time-command-center.html",
+    "description": "Useful time utilities — timers, world clocks, countdowns, and more.",
+    "category": "Productivity",
+    "icon": "⏱"
   },
   {
-    "title":"Prompt Generator",
-    "file":"tools/prompt-generator.html",
-    "description":"Generate prompts for AI models."
+    "title": "Prompt Generator",
+    "file": "tools/prompt-generator.html",
+    "description": "Generate structured prompts for AI models across any use case.",
+    "category": "AI",
+    "icon": "✨"
   },
   {
-    "title":"Payroll Calc",
-    "file":"tools/payroll-calc.html",
-    "description":"Calculate Payroll."
+    "title": "Payroll Calculator",
+    "file": "tools/payroll-calc.html",
+    "description": "Calculate gross pay, deductions, and net payroll quickly.",
+    "category": "Finance",
+    "icon": "💰"
   },
   {
-    "title":"Password generator.",
-    "file":"tools/password-generator.html",
-    "description":"Password generator."
+    "title": "Password Generator",
+    "file": "tools/password-generator.html",
+    "description": "Generate strong, customizable passwords with entropy scoring.",
+    "category": "Security",
+    "icon": "🔐"
   }
 ]
