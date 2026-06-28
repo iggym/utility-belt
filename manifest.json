@@ -16,7 +16,7 @@
   },
   {
     "title":"Password generator.",
-    "file":"tools/prompt-generator.html",
+    "file":"tools/password-generator.html",
     "description":"Password generator."
   }
 ]
