@@ -32,14 +32,21 @@
     "file": "tools/prompt-workbench.html",
     "description": "Write prompts, Transform them (rewrite, compress, expand, modularize)",
     "category": "AI",
-    "icon": "🔐"
+    "icon": "💫"
   },
   {
     "title": "Theme Select",
     "file": "tools/theme-select.html",
     "description": "Select Theme for web app",
     "category": "AI",
-    "icon": "🔐"
+    "icon": "🎭"
   }
- 
+ ,
+  {
+    "title": "Theme Select with options",
+    "file": "tools/theme-select-options.html",
+    "description": "Select Theme for web app with lots of options",
+    "category": "AI",
+    "icon": "🧩"
+  }
 ]
