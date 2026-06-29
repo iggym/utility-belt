@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Design Prompt Studio | Professional</title>
+    <style>
+        :root { --sidebar-w: 260px; --panel-w: 380px; --accent: #007aff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f2f2f7; display: flex; height: 100vh; margin: 0; }
+        aside { width: var(--sidebar-w); background: #fff; border-right: 1px solid #d1d1d6; padding: 24px; }
+        main { flex: 1; overflow-y: auto; padding: 40px; }
+        .prompt-panel { width: var(--panel-w); border-left: 1px solid #d1d1d6; padding: 24px; background: #f9f9f9; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e5e5ea; cursor: pointer; transition: 0.2s; }
+        .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        select, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #c6c6c6; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <h3>Design Library</h3>
+    <small>Select a style to view details.</small>
+</aside>
+
+<main>
+    <div class="grid" id="themeGrid"></div>
+</main>
+
+<aside class="prompt-panel">
+    <h3>Prompt Builder</h3>
+    <label>Target Industry</label>
+    <select id="industry">
+        <option>SaaS / Enterprise Software</option>
+        <option>Fintech / Banking</option>
+        <option>Healthcare / Telemedicine</option>
+        <option>AI / Machine Learning Startup</option>
+        <option>E-commerce / Retail</option>
+        <option>Creative Agency / Portfolio</option>
+        <option>Education / EdTech</option>
+        <option>Real Estate / Property Tech</option>
+        <option>Non-Profit / NGO</option>
+    </select>
+    <button onclick="generate()" style="width:100%; padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer;">Generate Prompt</button>
+    <textarea id="output" rows="12"></textarea>
+</aside>
+
+<script>
+const themes = [
+    { name: "Apple Minimalism", philosophy: "Extreme whitespace, focus on typography.", palette: "Muted greys/whites", components: "Floating nav" },
+    { name: "Cyberpunk", philosophy: "High-contrast, neon accents.", palette: "Neon blue, acid green", components: "Glowing widgets" },
+    { name: "Bento Grid", philosophy: "Modular, organized blocks.", palette: "Neutral backgrounds", components: "2x2 grid system" }
+];
+
+let selectedTheme = themes[0];
+
+function render() {
+    document.getElementById('themeGrid').innerHTML = themes.map(t => `
+        <div class="card" onclick="selectedTheme = themes.find(x => x.name === '${t.name}'); alert('Selected: ${t.name}');">
+            <h4>${t.name}</h4>
+            <p style="font-size: 12px;">${t.philosophy}</p>
+        </div>
+    `).join('');
+}
+
+function generate() {
+    const industry = document.getElementById('industry').value;
+    document.getElementById('output').value = `Create a high-fidelity website design for a ${industry} project. 
+    
+    STYLE: ${selectedTheme.name}
+    DESIGN PHILOSOPHY: ${selectedTheme.philosophy}
+    
+    Requirements:
+    1. Optimize for ${industry} user patterns (e.g., trust, data visualization, clarity).
+    2. Incorporate ${selectedTheme.components} layout.
+    3. Use a ${selectedTheme.palette} color scheme.
+    4. Ensure responsiveness and web accessibility standards.`;
+}
+
+render();
+</script>
+</body>
+</html>
