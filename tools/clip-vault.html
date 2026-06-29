@@ -5,37 +5,28 @@
     <title>ClipVault | Command Center</title>
     <style>
         :root { --bg: #ffffff; --sidebar: #f8f9fa; --accent: #007aff; --text: #1d1d1f; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; margin: 0; }
-        
-        /* Navigation */
-        nav { width: 240px; background: var(--sidebar); border-right: 1px solid #e5e5e5; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-        .nav-link { font-weight: 600; color: #555; text-decoration: none; }
-        
-        /* Main View */
-        main { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Cards */
-        .card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: 0.2s; }
-        .card:hover { border-color: var(--accent); }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; height: 100vh; margin: 0; }
+        nav { width: 240px; background: var(--sidebar); border-right: 1px solid #e5e5e5; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+        main { flex: 1; padding: 40px; overflow-y: auto; }
+        .card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; cursor: pointer; margin-bottom: 12px; transition: 0.2s; }
+        .card:hover { border-color: var(--accent); transform: scale(1.005); }
         .badge { font-size: 10px; font-weight: bold; background: #eee; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
-        
-        button { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <nav>
     <h2>ClipVault</h2>
-    <a href="https://iggym.github.io/utility-belt/" class="nav-link">← Utility Belt</a>
-    <hr style="width:100%; border:0; border-top:1px solid #ddd;">
-    <div id="category-list"></div>
+    <a href="https://iggym.github.io/utility-belt/" style="color:var(--accent); text-decoration:none; font-weight:600;">← Utility Belt</a>
+    <hr style="width:100%; border-top:1px solid #ddd;">
+    <button onclick="exportTXT()">Export Archive (.txt)</button>
 </nav>
 
 <main>
-    <div class="header">
-        <h1>Dashboard</h1>
-        <button onclick="syncClipboard()">+ Add from Clipboard</button>
+    <div style="display:flex; gap:10px;">
+        <input type="text" id="search" placeholder="Search history..." oninput="render()">
+        <button onclick="syncClipboard()" style="white-space:nowrap;">Sync Clipboard</button>
     </div>
     <div id="historyList"></div>
 </main>
@@ -45,32 +36,46 @@ let clips = JSON.parse(localStorage.getItem('clips')) || [];
 
 function getSmartCategory(text) {
     if (text.includes('http')) return 'Link';
-    if (text.includes('{') || text.includes('function')) return 'Code';
+    if (text.includes('{') || text.includes('function') || text.includes('=>')) return 'Code';
     return 'General';
 }
 
-function syncClipboard() {
-    navigator.clipboard.readText().then(text => {
-        if(!text) return;
-        clips.unshift({ 
-            id: Date.now(), 
-            text, 
-            tag: getSmartCategory(text), 
-            timestamp: Date.now() 
-        });
-        localStorage.setItem('clips', JSON.stringify(clips));
-        render();
-    });
+async function syncClipboard() {
+    const text = await navigator.clipboard.readText();
+    // DUPLICATE PREVENTION
+    if(!text || (clips.length > 0 && clips[0].text === text)) return;
+    
+    clips.unshift({ id: Date.now(), text, tag: getSmartCategory(text), timestamp: Date.now() });
+    localStorage.setItem('clips', JSON.stringify(clips));
+    render();
 }
 
 function render() {
-    document.getElementById('historyList').innerHTML = clips.map(c => `
-        <div class="card">
-            <span class="badge">${c.tag}</span>
-            <p style="margin: 10px 0; font-family: monospace; white-space: pre-wrap;">${c.text.substring(0, 150)}</p>
-            <small style="color: #888;">${new Date(c.timestamp).toLocaleString()}</small>
-        </div>
-    `).join('');
+    const q = document.getElementById('search').value.toLowerCase();
+    document.getElementById('historyList').innerHTML = clips
+        .filter(c => c.text.toLowerCase().includes(q))
+        .map(c => `
+            <div class="card" onclick="copyToClipboard('${c.text.replace(/'/g, "\\'")}')">
+                <span class="badge">${c.tag}</span>
+                <p style="margin: 10px 0; font-family: monospace;">${c.text.substring(0, 150)}</p>
+                <small style="color:#888;">${new Date(c.timestamp).toLocaleTimeString()}</small>
+            </div>
+        `).join('');
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+    // Simple visual feedback
+    alert("Copied to clipboard!");
+}
+
+function exportTXT() {
+    const text = clips.map(c => `[${c.tag}] ${c.text}`).join('\n\n---\n\n');
+    const blob = new Blob([text], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'clipboard_archive.txt';
+    a.click();
 }
 
 render();
