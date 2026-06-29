@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ClipVault | Pro Manager</title>
+    <style>
+        :root { --sidebar-w: 260px; --accent: #5856d6; --bg: #f5f5f7; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; height: 100vh; margin: 0; background: var(--bg); }
+        aside { width: var(--sidebar-w); background: white; border-right: 1px solid #d2d2d7; padding: 24px; }
+        main { flex: 1; padding: 40px; overflow-y: auto; }
+        .card { background: white; padding: 16px; border-radius: 12px; border: 1px solid #d2d2d7; margin-bottom: 12px; }
+        .tag-btn { background: #eee; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+<aside>
+    <h2>ClipVault</h2>
+    <a href="index.html">Home</a>
+    <hr>
+    <p><b>Filter by Category:</b></p>
+    <div id="catFilter"></div>
+</aside>
+
+<main>
+    <input type="text" id="search" placeholder="Search history..." oninput="render()" style="width:100%; padding:10px; margin-bottom:20px;">
+    <div id="historyList"></div>
+</main>
+
+<script>
+let clips = JSON.parse(localStorage.getItem('clips')) || [];
+
+// AUTO-CLEANUP: Runs on startup
+function autoCleanup() {
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    clips = clips.filter(c => c.timestamp > thirtyDaysAgo);
+    localStorage.setItem('clips', JSON.stringify(clips));
+}
+
+function render(filterCat = 'All') {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = clips.filter(c => 
+        (filterCat === 'All' || c.tag === filterCat) && 
+        c.text.toLowerCase().includes(q)
+    );
+    
+    document.getElementById('historyList').innerHTML = filtered.map(c => `
+        <div class="card">
+            <p>${c.text}</p>
+            <small><b>${c.tag}</b> | ${new Date(c.timestamp).toLocaleDateString()}</small>
+        </div>
+    `).join('');
+}
+
+// Initial Run
+autoCleanup();
+render();
+</script>
+</body>
+</html>
