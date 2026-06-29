@@ -8,12 +8,10 @@
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; height: 100vh; margin: 0; }
         nav { width: 240px; background: var(--sidebar); border-right: 1px solid #e5e5e5; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
         main { flex: 1; padding: 40px; overflow-y: auto; }
-        .card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; transition: 0.2s; }
-        .card:hover { border-color: var(--accent); }
-        .badge { font-size: 10px; font-weight: bold; background: #eee; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
+        .card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; cursor: pointer; margin-bottom: 12px; transition: 0.2s; }
+        .card:hover { border-color: var(--accent); transform: scale(1.005); }
+        .badge { font-size: 10px; font-weight: bold; background: #eee; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
         input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
-        .btn-copy { background: #f0f0f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .btn-copy:hover { background: #e0e0e0; }
     </style>
 </head>
 <body>
@@ -43,14 +41,13 @@ function getSmartCategory(text) {
 }
 
 async function syncClipboard() {
-    try {
-        const text = await navigator.clipboard.readText();
-        if(!text || (clips.length > 0 && clips[0].text === text)) return;
-        
-        clips.unshift({ id: Date.now(), text, tag: getSmartCategory(text), timestamp: Date.now() });
-        localStorage.setItem('clips', JSON.stringify(clips));
-        render();
-    } catch (e) { alert("Access denied. Please ensure clipboard permissions are granted."); }
+    const text = await navigator.clipboard.readText();
+    // DUPLICATE PREVENTION
+    if(!text || (clips.length > 0 && clips[0].text === text)) return;
+    
+    clips.unshift({ id: Date.now(), text, tag: getSmartCategory(text), timestamp: Date.now() });
+    localStorage.setItem('clips', JSON.stringify(clips));
+    render();
 }
 
 function render() {
@@ -58,20 +55,18 @@ function render() {
     document.getElementById('historyList').innerHTML = clips
         .filter(c => c.text.toLowerCase().includes(q))
         .map(c => `
-            <div class="card">
-                <div>
-                    <span class="badge">${c.tag}</span>
-                    <p style="margin: 5px 0; font-family: monospace; white-space: pre-wrap;">${c.text.substring(0, 150)}</p>
-                    <small style="color:#888;">${new Date(c.timestamp).toLocaleTimeString()}</small>
-                </div>
-                <button class="btn-copy" onclick="copyToClipboard('${c.text.replace(/'/g, "\\'")}')">Copy</button>
+            <div class="card" onclick="copyToClipboard('${c.text.replace(/'/g, "\\'")}')">
+                <span class="badge">${c.tag}</span>
+                <p style="margin: 10px 0; font-family: monospace;">${c.text.substring(0, 150)}</p>
+                <small style="color:#888;">${new Date(c.timestamp).toLocaleTimeString()}</small>
             </div>
         `).join('');
 }
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
-    alert("Copied!");
+    // Simple visual feedback
+    alert("Copied to clipboard!");
 }
 
 function exportTXT() {
