@@ -2,58 +2,77 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ClipVault | Pro Manager</title>
+    <title>ClipVault | Command Center</title>
     <style>
-        :root { --sidebar-w: 260px; --accent: #5856d6; --bg: #f5f5f7; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; height: 100vh; margin: 0; background: var(--bg); }
-        aside { width: var(--sidebar-w); background: white; border-right: 1px solid #d2d2d7; padding: 24px; }
-        main { flex: 1; padding: 40px; overflow-y: auto; }
-        .card { background: white; padding: 16px; border-radius: 12px; border: 1px solid #d2d2d7; margin-bottom: 12px; }
-        .tag-btn { background: #eee; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; margin-right: 5px; }
+        :root { --bg: #ffffff; --sidebar: #f8f9fa; --accent: #007aff; --text: #1d1d1f; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; margin: 0; }
+        
+        /* Navigation */
+        nav { width: 240px; background: var(--sidebar); border-right: 1px solid #e5e5e5; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+        .nav-link { font-weight: 600; color: #555; text-decoration: none; }
+        
+        /* Main View */
+        main { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Cards */
+        .card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: 0.2s; }
+        .card:hover { border-color: var(--accent); }
+        .badge { font-size: 10px; font-weight: bold; background: #eee; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+        
+        button { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<aside>
+<nav>
     <h2>ClipVault</h2>
-    <a href="index.html">Home</a>
-    <hr>
-    <p><b>Filter by Category:</b></p>
-    <div id="catFilter"></div>
-</aside>
+    <a href="https://iggym.github.io/utility-belt/" class="nav-link">← Utility Belt</a>
+    <hr style="width:100%; border:0; border-top:1px solid #ddd;">
+    <div id="category-list"></div>
+</nav>
 
 <main>
-    <input type="text" id="search" placeholder="Search history..." oninput="render()" style="width:100%; padding:10px; margin-bottom:20px;">
+    <div class="header">
+        <h1>Dashboard</h1>
+        <button onclick="syncClipboard()">+ Add from Clipboard</button>
+    </div>
     <div id="historyList"></div>
 </main>
 
 <script>
 let clips = JSON.parse(localStorage.getItem('clips')) || [];
 
-// AUTO-CLEANUP: Runs on startup
-function autoCleanup() {
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    clips = clips.filter(c => c.timestamp > thirtyDaysAgo);
-    localStorage.setItem('clips', JSON.stringify(clips));
+function getSmartCategory(text) {
+    if (text.includes('http')) return 'Link';
+    if (text.includes('{') || text.includes('function')) return 'Code';
+    return 'General';
 }
 
-function render(filterCat = 'All') {
-    const q = document.getElementById('search').value.toLowerCase();
-    const filtered = clips.filter(c => 
-        (filterCat === 'All' || c.tag === filterCat) && 
-        c.text.toLowerCase().includes(q)
-    );
-    
-    document.getElementById('historyList').innerHTML = filtered.map(c => `
+function syncClipboard() {
+    navigator.clipboard.readText().then(text => {
+        if(!text) return;
+        clips.unshift({ 
+            id: Date.now(), 
+            text, 
+            tag: getSmartCategory(text), 
+            timestamp: Date.now() 
+        });
+        localStorage.setItem('clips', JSON.stringify(clips));
+        render();
+    });
+}
+
+function render() {
+    document.getElementById('historyList').innerHTML = clips.map(c => `
         <div class="card">
-            <p>${c.text}</p>
-            <small><b>${c.tag}</b> | ${new Date(c.timestamp).toLocaleDateString()}</small>
+            <span class="badge">${c.tag}</span>
+            <p style="margin: 10px 0; font-family: monospace; white-space: pre-wrap;">${c.text.substring(0, 150)}</p>
+            <small style="color: #888;">${new Date(c.timestamp).toLocaleString()}</small>
         </div>
     `).join('');
 }
 
-// Initial Run
-autoCleanup();
 render();
 </script>
 </body>
