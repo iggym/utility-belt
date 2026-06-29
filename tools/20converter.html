@@ -86,16 +86,18 @@ function selectCat(cat) {
 }
 
 function calculate() {
-    const cat = document.getElementById('cat-title').innerText.substring(2).trim();
+    const catTitle = document.getElementById('cat-title').innerText;
+    const cat = catTitle.substring(2).trim(); // Removes the icon from the title string
+    const icon = registry[cat].icon; // Dynamically get the category icon
     const val = parseFloat(document.getElementById('val').value);
     const from = document.getElementById('fromUnit').value;
     const to = document.getElementById('toUnit').value;
     
-    // Simple logic for standard units; Temp handled by switch if needed
+    // Note: If you want specific unit emojis later, you could expand the registry structure.
+    // For now, this uses the category's primary icon for a consistent, premium feel.
     const factor = registry[cat].units[to] / registry[cat].units[from];
-    document.getElementById('output').innerHTML = `${(val * factor).toFixed(4)} ${to} 🚀`;
+    document.getElementById('output').innerHTML = `${(val * factor).toFixed(4)} ${to} ${icon}`;
 }
-
 init();
 </script>
 </body>
