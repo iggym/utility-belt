@@ -2,85 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Design Prompt Studio | Professional</title>
+    <title>Design Prompt Studio</title>
     <style>
-        :root {
-            --sidebar-w: 280px; --panel-w: 360px;
-            --bg: #f9f9f9; --glass: rgba(255,255,255,0.7);
-            --text: #1a1a1a; --accent: #0071e3;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-               background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
-
-        /* Navigation */
-        nav { width: var(--sidebar-w); border-right: 1px solid #e5e5e5; padding: 32px; display: flex; flex-direction: column; gap: 20px; }
-        .nav-item { padding: 10px; cursor: pointer; border-radius: 8px; font-weight: 500; }
-        .nav-item:hover { background: #eee; }
-
-        /* Main Workspace */
+        :root { --sidebar-w: 260px; --panel-w: 380px; --bg: #ffffff; --text: #111; --accent: #007aff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f2f2f7; color: var(--text); display: flex; height: 100vh; margin: 0; }
+        
+        aside { width: var(--sidebar-w); background: #fff; border-right: 1px solid #d1d1d6; padding: 24px; }
         main { flex: 1; overflow-y: auto; padding: 40px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
-        .theme-card { background: white; padding: 24px; border-radius: 20px; border: 1px solid #e5e5e5; 
-                      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
-        .theme-card:hover { border-color: var(--accent); transform: translateY(-4px); }
-
-        /* Prompt Panel */
-        aside { width: var(--panel-w); border-left: 1px solid #e5e5e5; padding: 32px; background: var(--glass); backdrop-filter: blur(10px); }
-        textarea { width: 100%; height: 300px; margin-top: 15px; padding: 15px; border-radius: 12px; border: 1px solid #d1d1d1; resize: none; font-family: monospace; }
-        .btn { background: var(--accent); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .prompt-panel { width: var(--panel-w); border-left: 1px solid #d1d1d6; padding: 24px; background: #f9f9f9; }
+        
+        .card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e5e5ea; cursor: pointer; transition: 0.2s; }
+        .card:hover { border-color: var(--accent); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        textarea { width: 100%; height: 250px; margin-top: 15px; border-radius: 12px; border: 1px solid #c6c6c6; padding: 12px; font-size: 13px; line-height: 1.5; }
     </style>
 </head>
 <body>
 
-<nav>
-    <h2>Design Studio</h2>
-    <div class="nav-item" onclick="filterThemes('All')">All Themes</div>
-    <div class="nav-item" onclick="filterThemes('Minimal')">Minimal</div>
-    <div class="nav-item" onclick="filterThemes('Modern')">Modern</div>
-    <div class="nav-item" onclick="filterThemes('Business')">Business</div>
-</nav>
+<aside>
+    <h3>Categories</h3>
+    <div id="filters"></div>
+</aside>
 
 <main>
     <div class="grid" id="themeGrid"></div>
 </main>
 
-<aside>
+<aside class="prompt-panel">
     <h3>Prompt Builder</h3>
-    <p style="font-size: 0.8em; margin: 10px 0;">Select a theme to configure.</p>
-    <button class="btn" onclick="generate()">Generate Optimized Prompt</button>
-    <textarea id="output" placeholder="Prompt will render here..."></textarea>
+    <label>Industry</label>
+    <select id="industry" style="width:100%; margin: 10px 0;">
+        <option>AI Startup</option><option>Fintech Platform</option><option>Creative Portfolio</option>
+    </select>
+    <button onclick="generate()" style="width:100%; padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer;">Generate Specific Prompt</button>
+    <textarea id="output"></textarea>
 </aside>
 
 <script>
 const themes = [
-    { name: "Apple Minimalism", cat: "Minimal", desc: "Whitespace focus, high-end typography." },
-    { name: "Glassmorphism 2.0", cat: "Modern", desc: "Blurred surfaces, vibrant depth." },
-    { name: "Bento Grid", cat: "Modern", desc: "Modular, organized layout system." },
-    { name: "Neo Brutalism", cat: "Business", desc: "High contrast, bold borders." },
-    { name: "Swiss Style", cat: "Minimal", desc: "Grid-based, asymmetrical balance." }
+    { name: "Apple Minimalism", philosophy: "Extreme whitespace, San Francisco font, subtle shadows, focus on core content.", palette: "Monochromatic with muted greys", components: "Floating nav, large typography" },
+    { name: "Cyberpunk", philosophy: "High-contrast, neon accents, terminal-style monospace fonts, dark mode.", palette: "Electric blue, acid green, deep black", components: "Glowing borders, data-heavy widgets" },
+    { name: "Bento Grid", philosophy: "Modular, organized, rounded corners, responsive block structure.", palette: "Neutral backgrounds with accent-colored cards", components: "Nested 2x2 grids" },
+    { name: "Neo Brutalism", philosophy: "Raw, unrefined, bold black outlines, high-contrast, harsh geometric shapes.", palette: "High saturation yellow, blue, and black", components: "Thick borders, drop-shadowless buttons" }
 ];
 
-function render(list) {
-    document.getElementById('themeGrid').innerHTML = list.map(t => `
-        <div class="theme-card" onclick="select('${t.name}')">
-            <h4 style="margin-bottom:8px;">${t.name}</h4>
-            <span style="font-size:12px; color:var(--accent);">${t.cat}</span>
-            <p style="margin-top:10px; font-size:14px; opacity:0.8;">${t.desc}</p>
+let selectedTheme = themes[0];
+
+function render() {
+    document.getElementById('themeGrid').innerHTML = themes.map(t => `
+        <div class="card" onclick="select('${t.name}')">
+            <h4>${t.name}</h4>
+            <p style="font-size: 12px; opacity: 0.7;">${t.philosophy}</p>
         </div>
     `).join('');
 }
 
-function filterThemes(cat) {
-    if(cat === 'All') render(themes);
-    else render(themes.filter(t => t.cat === cat));
+function select(name) {
+    selectedTheme = themes.find(t => t.name === name);
+    alert(`Selected: ${name}`);
 }
 
 function generate() {
-    document.getElementById('output').value = "Create a high-fidelity design system for a landing page featuring [Selected Theme]. Focus on whitespace, mobile-first responsiveness, and semantic HTML5 architecture.";
+    const ind = document.getElementById('industry').value;
+    document.getElementById('output').value = `Design a website for an ${ind}. 
+    
+    STYLE: ${selectedTheme.name}
+    PHILOSOPHY: ${selectedTheme.philosophy}
+    COLOR PALETTE: ${selectedTheme.palette}
+    KEY COMPONENTS: ${selectedTheme.components}
+    
+    Instructions: Create a responsive layout using these principles. Ensure high accessibility scores and clean CSS grid usage.`;
 }
 
-render(themes);
+render();
 </script>
 </body>
 </html>
