@@ -8,7 +8,8 @@ A growing collection of useful tools, utilities, experiments, calculators, gener
 
 Built with simplicity, speed, and usefulness in mind.
 
-[Launch Website](https://iggym.github.io/utility-belt)
+[Launch Website](https://iggym.github.io/utility-belt/)
+
 
 </div>
 
