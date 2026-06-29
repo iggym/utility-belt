@@ -60,7 +60,7 @@
     ,
   {
     "title": "Clip Vault",
-    "file": "tools/ clip-vault.html",
+    "file": "tools/clip-vault.html",
     "description": "clipboard designed to store, organize",
     "category": "Productivity",
     "icon": "📋"
