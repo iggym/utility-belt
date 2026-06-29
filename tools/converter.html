@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unit Bridge 🌉</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .home-btn { padding: 8px 16px; background: #333; color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; }
+        .math-box { background: #eef2ff; padding: 20px; border-radius: 16px; margin-top: 20px; border-left: 5px solid #4f46e5; animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h1>🌉 Unit Bridge</h1>
+        <a href="https://iggym.github.io/utility-belt/" class="home-btn">Home</a>
+    </div>
+    
+    <select id="type" onchange="updateUnits()">
+        <option value="length">Length 📏</option>
+        <option value="mass">Mass ⚖️</option>
+        <option value="temp">Temperature 🌡️</option>
+    </select>
+    
+    <input type="number" id="inputVal" value="1" oninput="convert()">
+    
+    <div style="display: flex; gap: 10px;">
+        <select id="fromUnit" onchange="convert()"></select>
+        <select id="toUnit" onchange="convert()"></select>
+    </div>
+
+    <div class="math-box" id="explanation">
+        <p>Enter a value to see the bridge! ✨</p>
+    </div>
+</div>
+
+<script>
+const data = {
+    length: { m: 1, km: 0.001, mi: 0.000621, ft: 3.28084 },
+    mass: { kg: 1, g: 1000, lb: 2.20462, oz: 35.274 },
+    temp: { C: 'c', F: 'f' }
+};
+
+function convert() {
+    const type = document.getElementById('type').value;
+    const val = parseFloat(document.getElementById('inputVal').value);
+    const from = document.getElementById('fromUnit').value;
+    const to = document.getElementById('toUnit').value;
+    
+    if (isNaN(val)) return;
+    
+    let result, formula;
+    
+    if (type === 'temp') {
+        if(from === to) { result = val; formula = `${val}°${from} = ${val}°${to} (Identical!)`; }
+        else if(from === 'C') { result = (val * 9/5) + 32; formula = `(${val}°C × 1.8) + 32 = ${result.toFixed(1)}°F`; }
+        else { result = (val - 32) * 5/9; formula = `(${val}°F - 32) ÷ 1.8 = ${result.toFixed(1)}°C`; }
+    } else {
+        const factor = data[type][to] / data[type][from];
+        result = val * factor;
+        formula = `${val} ${from} × ${factor.toFixed(4)} = ${result.toFixed(2)} ${to}`;
+    }
+    
+    document.getElementById('explanation').innerHTML = `<strong>The Bridge:</strong><br>${formula} 🚀`;
+}
+
+function updateUnits() {
+    const type = document.getElementById('type').value;
+    const units = Object.keys(data[type]);
+    document.getElementById('fromUnit').innerHTML = units.map(u => `<option>${u}</option>`).join('');
+    document.getElementById('toUnit').innerHTML = units.map(u => `<option>${u}</option>`).join('');
+    convert();
+}
+
+updateUnits();
+</script>
+</body>
+</html>
