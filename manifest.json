@@ -64,6 +64,13 @@
     "description": "clipboard designed to store, organize",
     "category": "Productivity",
     "icon": "📋"
+  } ,
+  {
+    "title": "Unit Converter",
+    "file": "tools/converter.html",
+    "description": "live, step-by-step breakdown of the math for every conversion",
+    "category": "Productivity",
+    "icon": "📋"
   }
  
 ]
