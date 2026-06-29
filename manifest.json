@@ -49,4 +49,12 @@
     "category": "AI",
     "icon": "🧩"
   }
+   ,
+  {
+    "title": "Theme Select with options + blending",
+    "file": "tools/theme-select-options-blend.html",
+    "description": "Select Theme for web app with lots of options and theme blending",
+    "category": "AI",
+    "icon": "🧩"
+  }
 ]
