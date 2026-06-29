@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultimate Bridge 🌉</title>
+    <style>
+        :root { --accent: #6366f1; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; height: 100vh; margin: 0; }
+        aside { width: 280px; background: white; border-right: 1px solid #e2e8f0; padding: 20px; overflow-y: auto; }
+        main { flex: 1; padding: 40px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+        .unit-btn { display: block; width: 100%; text-align: left; padding: 10px; margin: 5px 0; border-radius: 8px; border: none; background: transparent; cursor: pointer; }
+        .unit-btn:hover { background: #f1f5f9; }
+        .math-box { background: #eef2ff; padding: 20px; border-radius: 16px; margin-top: 20px; animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<aside id="sidebar">
+    <a href="https://iggym.github.io/utility-belt/" style="font-weight:bold; color:var(--accent);">← Home</a>
+    <h3>Categories</h3>
+    <div id="cat-list"></div>
+</aside>
+
+<main>
+    <div class="card" id="converter-ui">
+        <h2 id="cat-title">Length 📏</h2>
+        <input type="number" id="val" value="1" oninput="calculate()" style="width:100%; padding:15px; border-radius:12px; border:1px solid #ddd; font-size:18px;">
+        <select id="fromUnit" onchange="calculate()" style="width:100%; padding:10px; margin-top:10px;"></select>
+        <select id="toUnit" onchange="calculate()" style="width:100%; padding:10px; margin-top:10px;"></select>
+        <div class="math-box" id="output">Result appears here...</div>
+    </div>
+</main>
+
+<script>
+const registry = {
+    "Length": { "Meter (m)": 1, "Kilometer (km)": 0.001, "Mile (mi)": 0.00062, "Foot (ft)": 3.28 },
+    "Mass": { "Kilogram (kg)": 1, "Gram (g)": 1000, "Pound (lb)": 2.2, "Ounce (oz)": 35.27 },
+    "Energy": { "Joule (J)": 1, "Kilojoule (kJ)": 0.001, "Calorie (cal)": 0.239 },
+    "Speed": { "m/s": 1, "km/h": 3.6, "mph": 2.237 },
+    "Pressure": { "Pascal (Pa)": 1, "Bar": 0.00001, "PSI": 0.000145 },
+    "Power": { "Watt (W)": 1, "Kilowatt (kW)": 0.001, "Horsepower (hp)": 0.00134 },
+    "Temperature": { "Celsius": "C", "Fahrenheit": "F", "Kelvin": "K" }
+};
+
+function init() {
+    const list = document.getElementById('cat-list');
+    Object.keys(registry).forEach(cat => {
+        list.innerHTML += `<button class="unit-btn" onclick="selectCat('${cat}')">${cat}</button>`;
+    });
+    selectCat('Length');
+}
+
+function selectCat(cat) {
+    document.getElementById('cat-title').innerText = cat;
+    const units = Object.keys(registry[cat]);
+    document.getElementById('fromUnit').innerHTML = units.map(u => `<option>${u}</option>`).join('');
+    document.getElementById('toUnit').innerHTML = units.map(u => `<option>${u}</option>`).join('');
+    calculate();
+}
+
+function calculate() {
+    const cat = document.getElementById('cat-title').innerText;
+    const val = parseFloat(document.getElementById('val').value);
+    const from = document.getElementById('fromUnit').value;
+    const to = document.getElementById('toUnit').value;
+    
+    // Note: Temp requires special logic due to non-zero offset
+    const factor = registry[cat][to] / registry[cat][from];
+    const result = val * factor;
+    
+    document.getElementById('output').innerHTML = `
+        <strong>Factor:</strong> ${factor.toExponential(3)}<br>
+        <span style="font-size:24px;">${result.toFixed(4)} ${to.split(' ')[0]} 🚀</span>
+    `;
+}
+
+init();
+</script>
+</body>
+</html>
