@@ -35,6 +35,28 @@
             padding-bottom: 60px;
         }
 
+        /* Enhanced Diagnostic Error Console Style */
+        #systemErrorConsole {
+            display: none;
+            background: rgba(218, 54, 51, 0.12);
+            border-bottom: 1px solid var(--accent-red);
+            padding: 12px 16px;
+            color: #ff7b72;
+            font-family: monospace;
+            font-size: 13px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        #systemErrorConsole .close-err-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
         header {
             background-color: var(--bg-surface);
             border-bottom: 1px solid var(--border-color);
@@ -45,6 +67,10 @@
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+
+        header.with-error {
+            top: 45px;
         }
 
         .brand-zone {
@@ -310,6 +336,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            margin-bottom: 4px;
         }
 
         .field-group label {
@@ -332,7 +359,7 @@
         .form-textarea {
             font-family: monospace;
             resize: vertical;
-            min-height: 60px;
+            min-height: 80px;
         }
 
         .io-zone {
@@ -386,7 +413,12 @@
 </head>
 <body>
 
-    <header>
+    <div id="systemErrorConsole">
+        <button class="close-err-btn" onclick="document.getElementById('systemErrorConsole').style.display='none'">×</button>
+        <div id="errorMessageText"></div>
+    </div>
+
+    <header id="mainHeader">
         <div class="brand-zone">
             <a href="https://iggym.github.io/utility-belt/" class="back-link">← Utility Belt</a>
             <h1>Task Engine</h1>
@@ -407,36 +439,30 @@
         <button class="tab-btn" onclick="window.engine.switchTab('io')" data-tab="io">IO System</button>
     </nav>
 
-    <!-- INBOX VIEW -->
     <div id="view-inbox" class="content-view active">
         <div class="quick-capture-box">
-            <input type="text" id="inboxInput" class="quick-input" placeholder="Capture intent or exploration concept... (Ctrl+N)" onkeydown="if(event.key==='Enter') window.engine.quickCapture()">
+            <input type="text" id="inboxInput" class="quick-input" placeholder="Capture intent or exploration concept..." onkeydown="if(event.key==='Enter') window.engine.quickCapture()">
             <button class="btn btn-primary" onclick="window.engine.quickCapture()">Capture</button>
         </div>
         <div id="list-inbox" class="list-container"></div>
     </div>
 
-    <!-- TASKS VIEW -->
     <div id="view-tasks" class="content-view">
         <div id="list-tasks" class="list-container"></div>
     </div>
 
-    <!-- WORKING VIEW -->
     <div id="view-working" class="content-view">
         <div id="list-working" class="list-container"></div>
     </div>
 
-    <!-- DISCOVERY VIEW -->
     <div id="view-discovery" class="content-view">
         <div id="list-discovery" class="list-container"></div>
     </div>
 
-    <!-- COMPLETED VIEW -->
     <div id="view-completed" class="content-view">
         <div id="list-completed" class="list-container"></div>
     </div>
 
-    <!-- IO SYSTEM VIEW -->
     <div id="view-io" class="content-view">
         <div class="io-zone">
             <div class="io-box">
@@ -455,6 +481,16 @@
     </div>
 
     <script>
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         class TaskEngine {
             constructor() {
                 this.storageKey = 'task_engine_state';
@@ -463,25 +499,342 @@
                 this.loadState();
             }
 
-            loadState() {
-                try {
-                    const raw = localStorage.getItem(this.storageKey);
-                    this.items = raw ? JSON.parse(raw) : this.getDefaultData();
-                } catch(e) {
-                    console.error("Hydration fault. Rebuilding engine.", e);
-                    this.items = this.getDefaultData();
+            reportError(context, error) {
+                console.error(`[Engine Exception Error: ${context}]`, error);
+                const consoleDiv = document.getElementById('systemErrorConsole');
+                const textDiv = document.getElementById('errorMessageText');
+                if (consoleDiv && textDiv) {
+                    textDiv.innerHTML = `<strong>CRITICAL ERROR [${escapeHtml(context)}]:</strong> ${escapeHtml(error.message || error)}`;
+                    consoleDiv.style.display = 'block';
+                    document.getElementById('mainHeader').classList.add('with-error');
                 }
             }
 
+            clearError() {
+                const consoleDiv = document.getElementById('systemErrorConsole');
+                if (consoleDiv) {
+                    consoleDiv.style.display = 'none';
+                    document.getElementById('mainHeader').classList.remove('with-error');
+                }
+            }
+
+            loadState() {
+                try {
+                    const raw = localStorage.getItem(this.storageKey);
+                    let parsedData = raw ? JSON.parse(raw) : this.getDefaultData();
+                    
+                    // Defense array structure checking logic
+                    if (!Array.isArray(parsedData)) {
+                        throw new TypeError("State cache is corrupted or not an index array.");
+                    }
+                    
+                    this.items = parsedData.map(item => this.normalizeItemSchema(item));
+                    this.clearError();
+                } catch(e) {
+                    this.reportError("Cache Hydration Phase", e);
+                    this.items = this.normalizeDatasetIds(this.getDefaultData());
+                }
+            }
+
+            normalizeItemSchema(rawItem) {
+                // Ensures all expected structural metrics are safe from missing field exceptions
+                return {
+                    id: String(rawItem.id || '').trim(),
+                    type: String(rawItem.type || 'Task').trim(),
+                    title: String(rawItem.title || 'Untitled Operation Instance').trim(),
+                    status: String(rawItem.status || 'Inbox').trim(),
+                    priority: String(rawItem.priority || 'P2').trim(),
+                    project: String(rawItem.project || '').trim(),
+                    tags: Array.isArray(rawItem.tags) ? rawItem.tags : [],
+                    created: String(rawItem.created || new Date().toISOString().split('T')[0]),
+                    due: String(rawItem.due || ''),
+                    eta: String(rawItem.eta || ''),
+                    energy: String(rawItem.energy || 'Medium'),
+                    notes: String(rawItem.notes || ''),
+                    subtasks: Array.isArray(rawItem.subtasks) ? rawItem.subtasks : [],
+                    outputs: Array.isArray(rawItem.outputs) ? rawItem.outputs : [],
+                    pinned: !!rawItem.pinned,
+                    nextAction: String(rawItem.nextAction || '')
+                };
+            }
+
+            normalizeDatasetIds(dataset) {
+                return dataset.map(item => this.normalizeItemSchema(item));
+            }
+
             saveState() {
-                localStorage.setItem(this.storageKey, JSON.stringify(this.items));
-                this.updateBadges();
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.items));
+                    this.updateBadges();
+                    this.clearError();
+                } catch(e) {
+                    this.reportError("State Persistent Sync", e);
+                }
             }
 
             getDefaultData() {
                 return [
-                    { id: '1', type: 'Task', title: 'investigate OpenRouter pricing structures', status: 'Inbox', priority: 'P1', project: 'AI', tags: ['#research'], created: new Date().toISOString().split('T')[0], due: '', eta: '15 min', energy: 'Medium', notes: 'Compare context window token costs vs performance metrics.', subtasks: [], outputs: [], pinned: false, nextAction: 'Pull down API price sheet' },
-                    { id: '2', type: 'Discovery', title: 'Investigate native MCP architecture models', status: 'Discovery', priority: 'P2', project: 'AI', tags: ['#architecture'], created: new Date().toISOString().split('T')[0], due: '', eta: '1 hr', energy: 'High', notes: 'Assess model capability matrices', subtasks: [], outputs: [], pinned: true, nextAction: '' }
+                  {
+                    "id": "755239b1",
+                    "type": "Task",
+                    "title": "Recurring List Engine execution & improvements",
+                    "status": "Working",
+                    "priority": "P0",
+                    "eta": "60m",
+                    "energy": "High",
+                    "project": "Core",
+                    "tags": ["#monetization", "#framework"],
+                    "notes": "Core Philosophy: Build, Measure, Learn, Monetize within a strict 60-minute sprint window. Focus is entirely on identifying, deconstructing, and delivering small, validated, and verified pieces of monetizable value by treating constraints as the primary vehicle for unlocking opportunities.",
+                    "outputs": ["monetization_sprint_framework.json", "validated_micro_asset.md"],
+                    "nextAction": "Deconstruct immediate primary constraint to formulate the next high-velocity test hypothesis.",
+                    "subtasks": [
+                      { "title": "Primary Constraints Identification", "description": "Isolate the core bottlenecks blocking immediate execution or monetization to unlock new asset surface areas.", "done": false },
+                      { "title": "Hypothesis Formulation", "description": "Deconstruct the identified constraint to ideate actionable tasks and define strict success metrics.", "done": false },
+                      { "title": "Hypothesis Testing & Verification", "description": "Execute the test within the sprint window, verify success/failure, and document localized lessons to inform the next cycle.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "eeb9f278",
+                    "type": "Task",
+                    "title": "Rapid value creation sandboxes for digital assets domains",
+                    "status": "Ready",
+                    "priority": "P1",
+                    "eta": "120m",
+                    "energy": "Medium",
+                    "project": "Core",
+                    "tags": ["#infrastructure", "#sandboxes"],
+                    "notes": "Focuses on identifying and creating cross-domain artifacts and high-performance, low-friction sandboxes that enable rapid, intent-driven value creation across multiple digital asset domains simultaneously.",
+                    "outputs": ["ships_manifest.md", "domain_env_config.json"],
+                    "nextAction": "Define the minimal cross-domain asset template in the ship's log manifest.",
+                    "subtasks": [
+                      { "title": "Asset Environment Scoping", "description": "Map the required local single-file frameworks to spin up rapid sandboxes for new digital assets.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "74a1ec78",
+                    "type": "Discovery",
+                    "title": "AI Foundation Labs & Open Weight creators strategies",
+                    "status": "Discovery",
+                    "priority": "P1",
+                    "eta": "180m",
+                    "energy": "High",
+                    "project": "AI-Research",
+                    "tags": ["#intelligence", "#openweights"],
+                    "notes": "Dual-track architectural intelligence mapping: 1) Analyze the accelerating release plays, model capabilities, and strategic direction of premier AI Foundation Labs. 2) Systematically match this against top open-weight creators (e.g., DeepSeek) to build aggressive counter-strategies and infrastructure that fully exploit their continuous shifts.",
+                    "outputs": ["labs_playbook_response.md", "open_weights_arbitrage.json"],
+                    "nextAction": "Audit latest open-weight performance baselines against high-tier proprietary model release patterns.",
+                    "subtasks": [
+                      { "title": "Foundation Labs Strategy Mapping", "description": "Deconstruct closed ecosystem telemetry, API capability maps, and multi-modal feature drops.", "done": false },
+                      { "title": "Open Weight Playbook Alignment", "description": "Track open-weights continuous model merges and efficiency baselines to structure cost-effective local fallbacks.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "981ae4e0",
+                    "type": "Task",
+                    "title": "Develop key LLM prompts, contexts, evaluations and artifacts",
+                    "status": "Ready",
+                    "priority": "P1",
+                    "eta": "90m",
+                    "energy": "High",
+                    "project": "AI-Architecture",
+                    "tags": ["#context-engineering", "#harness"],
+                    "notes": "Mastery of advanced context engineering and orchestration. Develop high-signal prompts, specialized system memory harnesses, runtime evaluation mechanisms, and supporting toolsets that translate high-level aspirations into deterministic execution loops. Includes building lightweight local infrastructure to ensure these artifacts are immediately useful.",
+                    "outputs": ["harness_config.json", "eval_harness.js"],
+                    "nextAction": "Refine the core system context architecture to lower token overhead during rapid prompt injection loops.",
+                    "subtasks": [
+                      { "title": "Context Engineering Tooling", "description": "Build lightweight utility functions to trim, structure, and preserve high-signal context memory arrays.", "done": false },
+                      { "title": "Frictionless Environment Deployment", "description": "Verify prompt templates pass evaluation assertions when executed inside local mobile code environments.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "d9ec3bbd",
+                    "type": "Task",
+                    "title": "Book-story sales strategy & promotion for existing artifacts",
+                    "status": "Inbox",
+                    "priority": "P2",
+                    "eta": "120m",
+                    "energy": "Medium",
+                    "project": "Monetization",
+                    "tags": ["#sales", "#distribution"],
+                    "notes": "Architecting a strategic, narrative-driven sales and launch blueprint tailored to existing digital assets, utilities, and structured documentation kits.",
+                    "outputs": ["book_story_funnel.md", "promo_distribution_map.json"],
+                    "nextAction": "Extract core narrative angles from existing high-performance asset specs to form the foundational marketing copy.",
+                    "subtasks": [
+                      { "title": "Asset Narrative Extraction", "description": "Align technical product requirements documents with compelling developer-centric case studies.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "4f9b6fc2",
+                    "type": "Task",
+                    "title": "Sakana AI deep dive: automated models & role review",
+                    "status": "Working",
+                    "priority": "P1",
+                    "eta": "120m",
+                    "energy": "High",
+                    "project": "AI-Research",
+                    "tags": ["#sakana", "#evolutionary-merge"],
+                    "notes": "Comprehensive evaluation of Sakana AI's operational roles, engineering workflow tasks, and a deep architectural dive into their evolutionary model merging papers and automated code generation mechanisms.",
+                    "outputs": ["sakana_deep_dive_analysis.md", "evolutionary_merge_test.json"],
+                    "nextAction": "Review mathematical constraints outlined in Sakana's evolutionary algorithm papers for automated layer merging.",
+                    "subtasks": [
+                      { "title": "Evolutionary Model Merging Review", "description": "Deconstruct how continuous structural combinations of open-weights models bypass traditional backpropagation training limits.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "479a91c9",
+                    "type": "Task",
+                    "title": "Distribution network design for science-fact fictional artifacts",
+                    "status": "Ready",
+                    "priority": "P1",
+                    "eta": "150m",
+                    "energy": "High",
+                    "project": "Sci-Fi-Engine",
+                    "tags": ["#distribution", "#marketplaces", "#agents"],
+                    "notes": "Building a comprehensive distribution network for science-fact fictional assets. This covers structural web presence, landing pages, low-overhead digital marketplaces, monetization hooks, and automated pipelines leveraging standalone agent scripts to continuously produce and refine complex narrative artifacts.",
+                    "outputs": ["distribution_engine_spec.json", "agent_runtime.py", "world_context.json"],
+                    "nextAction": "Map out the schema for the agent-driven marketplace integration endpoints.",
+                    "subtasks": [
+                      { "title": "Marketplace & Monetization Design", "description": "Identify low-friction, high-margin checkout models and zero-maintenance storefront options for narrative files.", "done": false },
+                      { "title": "Agent Production Engine Setup", "description": "Refine agent_runtime.py to handle contextual state transitions during continuous file generation cycles.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "d47925c6",
+                    "type": "Task",
+                    "title": "Complete unified github profile index page overhaul",
+                    "status": "Working",
+                    "priority": "P0",
+                    "eta": "60m",
+                    "energy": "High",
+                    "project": "Website",
+                    "tags": ["#ui", "#vanilla", "#control-plane"],
+                    "notes": "Complete visual and structural overhaul of iggym.github.io. Transition from a classic utility card index into a premium, terminal-chic AI Control Plane. Requires full performance analysis of the live site to strip heavy out-bound news feeds, condense navigation into 3 elite system architectural suites, and integrate a token-saving calculation engine component.",
+                    "outputs": ["index.html", "app.css", "performance_audit.json"],
+                    "nextAction": "Run a comprehensive manual element and request analysis on the live profile URL to identify layout bottlenecks.",
+                    "subtasks": [
+                      { "title": "Live Profile Analysis", "description": "Inspect current asset links, external scripts, and resource loading behaviors on iggym.github.io.", "done": false },
+                      { "title": "Structural Asset Condensation", "description": "Refactor the UI grid to collapse disparate tools down into centralized, high-leverage functional suites.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "c4c10f78",
+                    "type": "Task",
+                    "title": "Formalize and streamline iterative unit framework",
+                    "status": "Ready",
+                    "priority": "P1",
+                    "eta": "45m",
+                    "energy": "Medium",
+                    "project": "Core",
+                    "tags": ["#workflow", "#optimization"],
+                    "notes": "Formalizing and streamlining the operational step-by-step checklist to work through every isolated 60-minute sprint unit with zero cognitive friction, particularly under a mobile-only workflow constraint.",
+                    "outputs": ["sprint_unit_framework.md"],
+                    "nextAction": "Codify the precise phase progression boundaries (e.g., first 10 minutes allocated to primary constraint identification).",
+                    "subtasks": [
+                      { "title": "Mobile Checklist Optimization", "description": "Format the execution loop to be cleanly interactable and trackable inside Textastic or local markdown notes.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "a9bf1204",
+                    "type": "Task",
+                    "title": "Streamline Task manager inbox data using CLEPT framework",
+                    "status": "Inbox",
+                    "priority": "P2",
+                    "eta": "60m",
+                    "energy": "Low",
+                    "project": "Core",
+                    "tags": ["#inbox-triage", "#clept"],
+                    "notes": "Aggressively cleaning and processing the incoming task manager inbox. Consolidate raw notes, technical emails, and incomplete 'undones' using the structured CLEPT framework to radically optimize digital correspondence, team/agent corroboration, and data filtering protocols.",
+                    "outputs": ["clept_optimized_inbox.json"],
+                    "nextAction": "Apply the CLEPT framework filter rules to the top 5 unresolved incoming email blocks.",
+                    "subtasks": [
+                      { "title": "Inbox Data Triage", "description": "Categorize backlog notes into clear single-file utility arrays or actionable task entries.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "f516ba99",
+                    "type": "Task",
+                    "title": "Target Role Development & Evolution: AI Systems Architect",
+                    "status": "Ready",
+                    "priority": "P1",
+                    "eta": "90m",
+                    "energy": "High",
+                    "project": "Brand",
+                    "tags": ["#positioning", "#synergy"],
+                    "notes": "Elite professional presence alignment. Formulate a targeted positioning strategy for an advanced AI Systems Architect role. This is explicitly tied to task d47925c6; the github profile index overhaul must directly reflect the technical expertise, context engineering mastery, and agentic design capabilities defined here.",
+                    "outputs": ["architect_alignment_strategy.md"],
+                    "nextAction": "Map core architectural capabilities directly to the new structural sections of the github home index.",
+                    "subtasks": [
+                      { "title": "Profile Synergy Mapping", "description": "Ensure the single-file utility belt showcase explicitly highlights high-performance vanilla architecture paradigms for technical review.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "83fb1b12",
+                    "type": "Task",
+                    "title": "High-leverage skills and attributes for rapid solo liquidity",
+                    "status": "Working",
+                    "priority": "P1",
+                    "eta": "120m",
+                    "energy": "High",
+                    "project": "Monetization",
+                    "tags": ["#solo-liquidity", "#micro-saas"],
+                    "notes": "Researching, modeling, and executing high-leverage skill frameworks built for lightning-fast solo liquidity loops. This involves identifying and packing proprietary knowledge engines or autonomous micro-agents that yield maximum margin with zero operational overhead.",
+                    "outputs": ["solo_liquidity_playbook.json"],
+                    "nextAction": "Isolate the top three zero-cost micro-SaaS agent architectures positioned for rapid rollout.",
+                    "subtasks": [
+                      { "title": "Micro-Asset Viability Audit", "description": "Evaluate current vanilla code utilities for quick adaptation into modular, standalone digital products.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "3be2b3cf",
+                    "type": "Task",
+                    "title": "Mitigate Anthropic Export Ban risk parameters",
+                    "status": "Ready",
+                    "priority": "P0",
+                    "eta": "120m",
+                    "energy": "High",
+                    "project": "Risk-Mitigation",
+                    "tags": ["#open-weights", "#mythos", "#fallbacks"],
+                    "notes": "Immediate macro-risk structural fallback execution. Mitigate local impact of regional model export restrictions or access bans on top-tier proprietary APIs. Build out reliable, zero-downtime structural fallbacks leveraging robust open-weights defaults (e.g., DeepSeek) alongside alternative low-friction APIs like Mythos.",
+                    "outputs": ["api_fallback_matrix.json", "local_inference_harness.js"],
+                    "nextAction": "Standardize payload schemas between main proprietary endpoints and secondary open-weight provider formats.",
+                    "subtasks": [
+                      { "title": "Open Weight Schema Alignment", "description": "Configure request parameters to ensure single-file client utilities can flip providers with zero UI breaking changes.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "c12d4d9a",
+                    "type": "Task",
+                    "title": "Build autonomous agent orchestration architectures",
+                    "status": "Working",
+                    "priority": "P1",
+                    "eta": "150m",
+                    "energy": "High",
+                    "project": "AI-Architecture",
+                    "tags": ["#agents", "#serverless"],
+                    "notes": "Designing, tuning, and testing lightweight autonomous agent orchestration architectures. Explores serverless cloud-hosted agent runtimes (e.g., Cloudflare Workers) that maintain persistent state, utilize external tools, and compute complex reasoning loops without infrastructure bloat.",
+                    "outputs": ["agent_orchestrator_core.js", "serverless_runtime_spec.md"],
+                    "nextAction": "Optimize worker memory usage limits during complex concurrent tool-calling loops.",
+                    "subtasks": [
+                      { "title": "Cloud-Hosted Agent Architecture", "description": "Benchmark lightweight event-driven serverless environments for hosting state-machine micro-agents completely for free or at extreme scale.", "done": false }
+                    ]
+                  },
+                  {
+                    "id": "7bf34211",
+                    "type": "Task",
+                    "title": "Capitalize AI Assets: Reframe token metrics from OpEx to CapEx",
+                    "status": "Ready",
+                    "priority": "P1",
+                    "eta": "60m",
+                    "energy": "Medium",
+                    "project": "Finance",
+                    "tags": ["#token-burn", "#capex"],
+                    "notes": "Developing deep conceptual and mathematical frameworks to reframe prompt engineering and LLM inference spend. Shifts the operational paradigm: viewing token burn that yields persistent, deterministic, reusable code or assets as an enduring Capital Expenditure (CapEx) instead of a transient Operational Expense (OpEx) loss.",
+                    "outputs": ["capex_token_framework.md", "amortization_calculator.json"],
+                    "nextAction": "Integrate the CapEx calculation logic directly into the new github index centerpiece widget.",
+                    "subtasks": [
+                      { "title": "Asset Capitalization Modeling", "description": "Formulate formulas to measure the lifelong token value generated by automated agent code vs. raw conversation history.", "done": false }
+                    ]
+                  }
                 ];
             }
 
@@ -494,145 +847,149 @@
             }
 
             quickCapture() {
-                const input = document.getElementById('inboxInput');
-                const title = input.value.trim();
-                if(!title) return;
+                try {
+                    const input = document.getElementById('inboxInput');
+                    const title = input.value.trim();
+                    if(!title) return;
 
-                const newItem = {
-                    id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
-                    type: 'Task',
-                    title: title,
-                    status: 'Inbox',
-                    priority: 'P2',
-                    project: '',
-                    tags: [],
-                    created: new Date().toISOString().split('T')[0],
-                    due: '',
-                    eta: '15 min',
-                    energy: 'Medium',
-                    notes: '',
-                    subtasks: [],
-                    outputs: [],
-                    pinned: false,
-                    nextAction: ''
-                };
+                    const shortId = Math.random().toString(16).substring(2, 10);
+                    const newItem = this.normalizeItemSchema({
+                        id: shortId,
+                        type: 'Task',
+                        title: title,
+                        status: 'Inbox'
+                    });
 
-                this.items.unshift(newItem);
-                this.saveState();
-                input.value = '';
-                this.render();
+                    this.items.unshift(newItem);
+                    this.saveState();
+                    input.value = '';
+                    this.render();
+                } catch(e) {
+                    this.reportError("Quick Capture Failure", e);
+                }
             }
 
             createNewBlankTask() {
                 this.switchTab('inbox');
                 const input = document.getElementById('inboxInput');
-                input.focus();
+                if (input) input.focus();
             }
 
             updateBadges() {
-                const query = document.getElementById('globalSearch')?.value.toLowerCase() || '';
-                const match = (item) => {
-                    if(!query) return true;
-                    return item.title.toLowerCase().includes(query) || 
-                           item.notes.toLowerCase().includes(query) ||
-                           item.project.toLowerCase().includes(query) ||
-                           item.nextAction.toLowerCase().includes(query) ||
-                           item.tags.some(t => t.toLowerCase().includes(query)) ||
-                           item.outputs.some(o => o.toLowerCase().includes(query));
-                };
+                try {
+                    const query = document.getElementById('globalSearch')?.value.toLowerCase() || '';
+                    const match = (item) => {
+                        if(!query) return true;
+                        return String(item.title).toLowerCase().includes(query) || 
+                               String(item.notes).toLowerCase().includes(query) ||
+                               String(item.id).toLowerCase().includes(query) ||
+                               String(item.project).toLowerCase().includes(query) ||
+                               String(item.nextAction).toLowerCase().includes(query) ||
+                               item.tags.some(t => String(t).toLowerCase().includes(query)) ||
+                               item.outputs.some(o => String(o).toLowerCase().includes(query));
+                    };
 
-                const filtered = this.items.filter(match);
+                    const filtered = this.items.filter(match);
 
-                document.getElementById('b-inbox').innerText = filtered.filter(i => i.status === 'Inbox').length;
-                document.getElementById('b-tasks').innerText = filtered.filter(i => i.status === 'Ready' || i.status === 'Blocked').length;
-                document.getElementById('b-working').innerText = filtered.filter(i => i.status === 'Working').length;
-                document.getElementById('b-discovery').innerText = filtered.filter(i => i.status === 'Discovery').length;
-                document.getElementById('b-completed').innerText = filtered.filter(i => i.status === 'Done' || i.status === 'Archived').length;
+                    document.getElementById('b-inbox').innerText = filtered.filter(i => i.status === 'Inbox').length;
+                    document.getElementById('b-tasks').innerText = filtered.filter(i => i.status === 'Ready' || i.status === 'Blocked').length;
+                    document.getElementById('b-working').innerText = filtered.filter(i => i.status === 'Working').length;
+                    document.getElementById('b-discovery').innerText = filtered.filter(i => i.status === 'Discovery').length;
+                    document.getElementById('b-completed').innerText = filtered.filter(i => i.status === 'Done' || i.status === 'Archived').length;
+                } catch(e) {
+                    this.reportError("Badge Matrix Refresh Error", e);
+                }
             }
 
             render() {
-                this.updateBadges();
-                if(this.currentTab === 'io') return;
+                try {
+                    this.updateBadges();
+                    if(this.currentTab === 'io') return;
 
-                const container = document.getElementById(`list-${this.currentTab}`);
-                if(!container) return;
-                container.innerHTML = '';
+                    const container = document.getElementById(`list-${this.currentTab}`);
+                    if(!container) return;
+                    container.innerHTML = '';
 
-                const searchQuery = document.getElementById('globalSearch').value.toLowerCase();
+                    const searchQuery = document.getElementById('globalSearch')?.value.toLowerCase() || '';
 
-                let filtered = this.items.filter(item => {
-                    if (searchQuery) {
-                        return item.title.toLowerCase().includes(searchQuery) || 
-                               item.notes.toLowerCase().includes(searchQuery) ||
-                               item.project.toLowerCase().includes(searchQuery) ||
-                               item.nextAction.toLowerCase().includes(searchQuery) ||
-                               item.tags.some(t => t.toLowerCase().includes(searchQuery)) ||
-                               item.outputs.some(o => o.toLowerCase().includes(searchQuery));
-                    }
-                    
-                    // Route views cleanly based on structural state
-                    if (this.currentTab === 'inbox') return item.status === 'Inbox';
-                    if (this.currentTab === 'tasks') return item.status === 'Ready' || item.status === 'Blocked';
-                    if (this.currentTab === 'working') return item.status === 'Working';
-                    if (this.currentTab === 'discovery') return item.status === 'Discovery';
-                    if (this.currentTab === 'completed') return item.status === 'Done' || item.status === 'Archived';
-                    return false;
-                });
-
-                // Enforce Pinning priority sort order logic
-                filtered.sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || a.priority.localeCompare(b.priority));
-
-                if(filtered.length === 0) {
-                    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:14px;">No items inside processing partition.</div>`;
-                    return;
-                }
-
-                filtered.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = `task-card ${item.pinned ? 'pinned' : ''} ${item.status === 'Done' ? 'done-state' : ''}`;
-                    card.id = `card-${item.id}`;
-
-                    // Compile subtask tracking status
-                    const totalSubs = item.subtasks.length;
-                    const doneSubs = item.subtasks.filter(s => s.done).length;
-                    const subString = totalSubs > 0 ? `[${doneSubs}/${totalSubs}]` : '';
-
-                    card.innerHTML = `
-                        <div class="task-header">
-                            <input type="checkbox" class="task-check" ${item.status === 'Done' ? 'checked' : ''} onclick="window.engine.toggleComplete('${item.id}')">
-                            <div class="task-title" onclick="window.engine.toggleEditPane('${item.id}')" style="cursor:pointer;">
-                                ${item.project ? `<span style="color:var(--accent); font-weight:bold; font-size:13px; margin-right:4px;">[${item.project}]</span>` : ''}
-                                ${escapeHtml(item.title)} <span style="font-size:12px; color:var(--text-muted);">${subString}</span>
-                            </div>
-                            <button class="mini-btn" onclick="window.engine.togglePin('${item.id}')" style="color: ${item.pinned ? 'var(--accent-orange)' : 'var(--text-muted)'}">★</button>
-                        </div>
-                        <div class="meta-line" onclick="window.engine.toggleEditPane('${item.id}')" style="cursor:pointer;">
-                            <span class="tag-pill p-pill p-${item.priority}">${item.priority}</span>
-                            <span class="tag-pill" style="color:var(--accent-purple); border-color:rgba(137,87,229,0.3);">${item.status}</span>
-                            ${item.type === 'Discovery' ? `<span class="tag-pill" style="color:cyan; border-color:rgba(0,255,255,0.2);">🔬 Discovery</span>` : ''}
-                            ${item.eta ? `<span class="tag-pill">⏳ ${escapeHtml(item.eta)}</span>` : ''}
-                            ${item.energy ? `<span class="tag-pill">⚡ ${escapeHtml(item.energy)}</span>` : ''}
-                            ${item.tags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}
-                            ${item.outputs.map(o => `<span class="tag-pill artifact-pill">📦 ${escapeHtml(o)}</span>`).join('')}
-                        </div>
-                        ${item.nextAction ? `<div style="font-size:12px; color:var(--accent-orange); background:rgba(210,153,34,0.05); padding:4px 8px; border-radius:4px; border:1px dashed rgba(210,153,34,0.2);"><strong>Next Action:</strong> ${escapeHtml(item.nextAction)}</div>` : ''}
+                    let filtered = this.items.filter(item => {
+                        // Global evaluation matching engine
+                        if (searchQuery) {
+                            return String(item.title).toLowerCase().includes(searchQuery) || 
+                                   String(item.notes).toLowerCase().includes(searchQuery) ||
+                                   String(item.id).toLowerCase().includes(searchQuery) ||
+                                   String(item.project).toLowerCase().includes(searchQuery) ||
+                                   String(item.nextAction).toLowerCase().includes(searchQuery) ||
+                                   item.tags.some(t => String(t).toLowerCase().includes(searchQuery)) ||
+                                   item.outputs.some(o => String(o).toLowerCase().includes(searchQuery));
+                        }
                         
-                        <!-- Triage Actions Context Bar -->
-                        <div class="triage-actions">
-                            <span style="font-size:11px; color:var(--text-muted); align-self:center; margin-right:4px;">Triage:</span>
-                            <button class="mini-btn ${item.status==='Inbox'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Inbox')">Inbox</button>
-                            <button class="mini-btn ${item.status==='Ready'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Ready')">Ready</button>
-                            <button class="mini-btn ${item.status==='Working'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Working')">Working</button>
-                            <button class="mini-btn ${item.status==='Discovery'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Discovery')">Discovery</button>
-                            <button class="mini-btn ${item.status==='Blocked'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Blocked')">Blocked</button>
-                            <button class="mini-btn ${item.status==='Done'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Done')">Done</button>
-                            <button class="mini-btn" onclick="window.engine.removeItem('${item.id}')" style="color:var(--accent-red); margin-left:auto;">Drop</button>
-                        </div>
+                        // Strict partition routing logic (Case Insensitive Protected)
+                        const normalizedStatus = item.status.toLowerCase();
+                        if (this.currentTab === 'inbox') return normalizedStatus === 'inbox';
+                        if (this.currentTab === 'tasks') return normalizedStatus === 'ready' || normalizedStatus === 'blocked';
+                        if (this.currentTab === 'working') return normalizedStatus === 'working';
+                        if (this.currentTab === 'discovery') return normalizedStatus === 'discovery';
+                        if (this.currentTab === 'completed') return normalizedStatus === 'done' || normalizedStatus === 'archived';
+                        return false;
+                    });
 
-                        <div id="pane-${item.id}" class="expanded-pane" style="display:none;"></div>
-                    `;
-                    container.appendChild(card);
-                });
+                    // Priority order stacking
+                    filtered.sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || a.priority.localeCompare(b.priority));
+
+                    if(filtered.length === 0) {
+                        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:14px;">No items inside processing partition.</div>`;
+                        return;
+                    }
+
+                    filtered.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = `task-card ${item.pinned ? 'pinned' : ''} ${item.status === 'Done' ? 'done-state' : ''}`;
+                        card.id = `card-${item.id}`;
+
+                        const totalSubs = item.subtasks.length;
+                        const doneSubs = item.subtasks.filter(s => s.done).length;
+                        const subString = totalSubs > 0 ? `[${doneSubs}/${totalSubs}]` : '';
+
+                        card.innerHTML = `
+                            <div class="task-header">
+                                <input type="checkbox" class="task-check" ${item.status === 'Done' ? 'checked' : ''} onclick="event.stopPropagation(); window.engine.toggleComplete('${item.id}')">
+                                <div class="task-title" onclick="window.engine.toggleEditPane('${item.id}')" style="cursor:pointer;">
+                                    <span style="color:var(--text-muted); font-family:monospace; font-size:12px; margin-right:6px;">${escapeHtml(item.id)}</span>
+                                    ${item.project ? `<span style="color:var(--accent); font-weight:bold; font-size:13px; margin-right:4px;">[${escapeHtml(item.project)}]</span>` : ''}
+                                    ${escapeHtml(item.title)} <span style="font-size:12px; color:var(--text-muted);">${subString}</span>
+                                </div>
+                                <button class="mini-btn" onclick="event.stopPropagation(); window.engine.togglePin('${item.id}')" style="color: ${item.pinned ? 'var(--accent-orange)' : 'var(--text-muted)'}">★</button>
+                            </div>
+                            <div class="meta-line" onclick="window.engine.toggleEditPane('${item.id}')" style="cursor:pointer;">
+                                <span class="tag-pill p-pill p-${escapeHtml(item.priority)}">${escapeHtml(item.priority)}</span>
+                                <span class="tag-pill" style="color:var(--accent-purple); border-color:rgba(137,87,229,0.3);">${escapeHtml(item.status)}</span>
+                                ${item.type === 'Discovery' ? `<span class="tag-pill" style="color:cyan; border-color:rgba(0,255,255,0.2);">🔬 Discovery</span>` : ''}
+                                ${item.eta ? `<span class="tag-pill">⏳ ${escapeHtml(item.eta)}</span>` : ''}
+                                ${item.energy ? `<span class="tag-pill">⚡ ${escapeHtml(item.energy)}</span>` : ''}
+                                ${item.tags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}
+                                ${item.outputs.map(o => `<span class="tag-pill artifact-pill">📦 ${escapeHtml(o)}</span>`).join('')}
+                            </div>
+                            ${item.nextAction ? `<div style="font-size:12px; color:var(--accent-orange); background:rgba(210,153,34,0.05); padding:4px 8px; border-radius:4px; border:1px dashed rgba(210,153,34,0.2);"><strong>Next Action:</strong> ${escapeHtml(item.nextAction)}</div>` : ''}
+                            
+                            <div class="triage-actions" onclick="event.stopPropagation();">
+                                <span style="font-size:11px; color:var(--text-muted); align-self:center; margin-right:4px;">Triage:</span>
+                                <button class="mini-btn ${item.status==='Inbox'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Inbox')">Inbox</button>
+                                <button class="mini-btn ${item.status==='Ready'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Ready')">Ready</button>
+                                <button class="mini-btn ${item.status==='Working'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Working')">Working</button>
+                                <button class="mini-btn ${item.status==='Discovery'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Discovery')">Discovery</button>
+                                <button class="mini-btn ${item.status==='Blocked'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Blocked')">Blocked</button>
+                                <button class="mini-btn ${item.status==='Done'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Done')">Done</button>
+                                <button class="mini-btn" onclick="window.engine.removeItem('${item.id}')" style="color:var(--accent-red); margin-left:auto;">Drop</button>
+                            </div>
+
+                            <div id="pane-${item.id}" class="expanded-pane" style="display:none;" onclick="event.stopPropagation();"></div>
+                        `;
+                        container.appendChild(card);
+                    });
+                } catch(e) {
+                    this.reportError("Render Execution Engine Stack", e);
+                }
             }
 
             toggleComplete(id) {
@@ -668,257 +1025,247 @@
                 }
             }
 
-            toggleEditPane(id) {
-                const pane = document.getElementById(`pane-${id}`);
-                if(!pane) return;
-                if(pane.style.display === 'block') {
-                    pane.style.display = 'none';
-                    return;
-                }
-                
-                // Render detail form layout safely
-                const item = this.items.find(i => i.id === id);
-                pane.innerHTML = `
-                    <div class="form-grid">
-                        <div class="field-group">
-                            <label>Structure Classification</label>
-                            <select onchange="window.engine.patchItem('${id}', 'type', this.value)" class="form-select">
-                                <option value="Task" ${item.type==='Task'?'selected':''}>Task Container</option>
-                                <option value="Discovery" ${item.type==='Discovery'?'selected':''}>Discovery Asset</option>
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label>Execution Tier</label>
-                            <select onchange="window.engine.patchItem('${id}', 'priority', this.value)" class="form-select">
-                                <option value="P0" ${item.priority==='P0'?'selected':''}>P0 - Focus Direct</option>
-                                <option value="P1" ${item.priority==='P1'?'selected':''}>P1 - Mission Crit</option>
-                                <option value="P2" ${item.priority==='P2'?'selected':''}>P2 - Balanced</option>
-                                <option value="P3" ${item.priority==='P3'?'selected':''}>P3 - Backburner</option>
-                                <option value="P4" ${item.priority==='P4'?'selected':''}>P4 - Speculative</option>
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label>Project Domain</label>
-                            <input type="text" value="${escapeHtml(item.project || '')}" placeholder="e.g. Website, AI" onchange="window.engine.patchItem('${id}', 'project', this.value)" class="form-input">
-                        </div>
-                        <div class="field-group">
-                            <label>Context Footprint (ETA)</label>
-                            <input type="text" value="${escapeHtml(item.eta || '')}" placeholder="5 min, 1 hr" onchange="window.engine.patchItem('${id}', 'eta', this.value)" class="form-input">
-                        </div>
-                        <div class="field-group">
-                            <label>Energy Required</label>
-                            <select onchange="window.engine.patchItem('${id}', 'energy', this.value)" class="form-select">
-                                <option value="Low" ${item.energy==='Low'?'selected':''}>Low Energy</option>
-                                <option value="Medium" ${item.energy==='Medium'?'selected':''}>Medium Energy</option>
-                                <option value="High" ${item.energy==='High'?'selected':''}>High Energy</option>
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label>Target Execution Lock</label>
-                            <input type="date" value="${item.due || ''}" onchange="window.engine.patchItem('${id}', 'due', this.value)" class="form-input">
-                        </div>
-                    </div>
-
-                    <div class="field-group">
-                        <label>Core Manifest Title</label>
-                        <input type="text" value="${escapeHtml(item.title)}" onchange="window.engine.patchItem('${id}', 'title', this.value)" class="form-input">
-                    </div>
-
-                    <div class="field-group">
-                        <label>Immediate Next Step</label>
-                        <input type="text" value="${escapeHtml(item.nextAction || '')}" placeholder="Atomic step required to unlock item..." onchange="window.engine.patchItem('${id}', 'nextAction', this.value)" class="form-input">
-                    </div>
-
-                    <div class="field-group">
-                        <label>Metadata Tags (Comma delim)</label>
-                        <input type="text" value="${escapeHtml(item.tags.join(', '))}" placeholder="#writing, #research" onchange="window.engine.patchTags('${id}', this.value)" class="form-input">
-                    </div>
-
-                    <div class="field-group">
-                        <label>Technical Manifest / Raw Notes (Markdown Safe)</label>
-                        <textarea class="form-textarea" onchange="window.engine.patchItem('${id}', 'notes', this.value)" placeholder="Enter technical design specs, criteria or payload context structures...">${escapeHtml(item.notes || '')}</textarea>
-                    </div>
-
-                    <div class="field-group">
-                        <label>Subtask Arrays</label>
-                        <div id="subtasks-list-${id}"></div>
-                        <div style="display:flex; gap:4px; margin-top:4px;">
-                            <input type="text" id="new-sub-${id}" class="form-input" placeholder="Append structural subtask step...">
-                            <button class="mini-btn" onclick="window.engine.addSubtask('${id}')">+</button>
-                        </div>
-                    </div>
-
-                    <div class="field-group">
-                        <label>Produced Work Artifacts / Outputs</label>
-                        <div id="artifacts-list-${id}"></div>
-                        <div style="display:flex; gap:4px; margin-top:4px;">
-                            <input type="text" id="new-art-${id}" class="form-input" placeholder="e.g. index.html, payload.json">
-                            <button class="mini-btn" onclick="window.engine.addArtifact('${id}')">+</button>
-                        </div>
-                    </div>
-                `;
-                pane.style.display = 'block';
-                this.renderSubtasks(id);
-                this.renderArtifacts(id);
-            }
-
-            patchItem(id, field, value) {
-                const item = this.items.find(i => i.id === id);
-                if(item) {
-                    item[field] = value;
+            patchItem(id, key, value) {
+                try {
+                    const item = this.items.find(i => i.id === id);
+                    if(!item) return;
+                    item[key] = value;
                     this.saveState();
-                    this.updateBadges();
+                } catch(e) {
+                    this.reportError("Field Patch Mutation", e);
                 }
             }
 
             patchTags(id, value) {
                 const item = this.items.find(i => i.id === id);
-                if(item) {
-                    item.tags = value.split(',').map(t => t.trim()).filter(t => t.length > 0);
-                    this.saveState();
+                if(!item) return;
+                item.tags = value.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                this.saveState();
+            }
+
+            patchOutputs(id, value) {
+                const item = this.items.find(i => i.id === id);
+                if(!item) return;
+                item.outputs = value.split(',').map(o => o.trim()).filter(o => o.length > 0);
+                this.saveState();
+            }
+
+            toggleEditPane(id) {
+                try {
+                    const pane = document.getElementById(`pane-${id}`);
+                    if(!pane) return;
+                    if(pane.style.display === 'block') {
+                        pane.style.display = 'none';
+                        this.render(); // Smooth update save layout
+                        return;
+                    }
+                    
+                    const item = this.items.find(i => i.id === id);
+                    if(!item) return;
+
+                    pane.innerHTML = `
+                        <div class="form-grid">
+                            <div class="field-group">
+                                <label>Structure Classification</label>
+                                <select onchange="window.engine.patchItem('${id}', 'type', this.value)" class="form-select">
+                                    <option value="Task" ${item.type==='Task'?'selected':''}>Task Container</option>
+                                    <option value="Discovery" ${item.type==='Discovery'?'selected':''}>Discovery Asset</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Execution Tier</label>
+                                <select onchange="window.engine.patchItem('${id}', 'priority', this.value)" class="form-select">
+                                    <option value="P0" ${item.priority==='P0'?'selected':''}>P0 - Focus Direct</option>
+                                    <option value="P1" ${item.priority==='P1'?'selected':''}>P1 - Mission Crit</option>
+                                    <option value="P2" ${item.priority==='P2'?'selected':''}>P2 - Balanced</option>
+                                    <option value="P3" ${item.priority==='P3'?'selected':''}>P3 - Backburner</option>
+                                    <option value="P4" ${item.priority==='P4'?'selected':''}>P4 - Speculative</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Project Domain</label>
+                                <input type="text" value="${escapeHtml(item.project || '')}" placeholder="e.g. Website, AI" onchange="window.engine.patchItem('${id}', 'project', this.value)" class="form-input">
+                            </div>
+                            <div class="field-group">
+                                <label>Context Footprint (ETA)</label>
+                                <input type="text" value="${escapeHtml(item.eta || '')}" placeholder="5 min, 1 hr" onchange="window.engine.patchItem('${id}', 'eta', this.value)" class="form-input">
+                            </div>
+                            <div class="field-group">
+                                <label>Energy Required</label>
+                                <select onchange="window.engine.patchItem('${id}', 'energy', this.value)" class="form-select">
+                                    <option value="Low" ${item.energy==='Low'?'selected':''}>Low Energy</option>
+                                    <option value="Medium" ${item.energy==='Medium'?'selected':''}>Medium Energy</option>
+                                    <option value="High" ${item.energy==='High'?'selected':''}>High Energy</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Target Execution Lock</label>
+                                <input type="date" value="${item.due || ''}" onchange="window.engine.patchItem('${id}', 'due', this.value)" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Core Manifest Title</label>
+                            <input type="text" value="${escapeHtml(item.title)}" onchange="window.engine.patchItem('${id}', 'title', this.value)" class="form-input">
+                        </div>
+
+                        <div class="field-group">
+                            <label>Immediate Next Step</label>
+                            <input type="text" value="${escapeHtml(item.nextAction || '')}" placeholder="Atomic step required to unlock item..." onchange="window.engine.patchItem('${id}', 'nextAction', this.value)" class="form-input">
+                        </div>
+
+                        <div class="field-group">
+                            <label>Metadata Tags (Comma delim)</label>
+                            <input type="text" value="${escapeHtml(item.tags.join(', '))}" placeholder="#writing, #research" onchange="window.engine.patchTags('${id}', this.value)" class="form-input">
+                        </div>
+
+                        <div class="field-group">
+                            <label>Produced Work Artifacts / Outputs (Comma delim)</label>
+                            <input type="text" value="${escapeHtml(item.outputs.join(', '))}" placeholder="output.html, spec.json" onchange="window.engine.patchOutputs('${id}', this.value)" class="form-input">
+                        </div>
+
+                        <div class="field-group">
+                            <label>Technical Manifest / Raw Notes (Markdown Safe)</label>
+                            <textarea class="form-textarea" onchange="window.engine.patchItem('${id}', 'notes', this.value)" placeholder="Enter technical design specs, criteria or payload context structures...">${escapeHtml(item.notes || '')}</textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Subtask Arrays</label>
+                            <div id="subtasks-list-${id}"></div>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <input type="text" id="new-sub-${id}" class="form-input" placeholder="Append structural subtask step...">
+                                <button class="btn btn-primary" style="padding:4px 12px;" onclick="window.engine.addSubtask('${id}')">+</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    this.renderSubtasksPane(id);
+                    pane.style.display = 'block';
+                } catch(e) {
+                    this.reportError("Editor Overlay Launch Failure", e);
                 }
+            }
+
+            renderSubtasksPane(id) {
+                const item = this.items.find(i => i.id === id);
+                const subContainer = document.getElementById(`subtasks-list-${id}`);
+                if (!item || !subContainer) return;
+                subContainer.innerHTML = '';
+
+                item.subtasks.forEach((sub, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'subtask-item';
+                    div.innerHTML = `
+                        <input type="checkbox" ${sub.done ? 'checked' : ''} onclick="window.engine.toggleSubtask('${id}', ${idx})">
+                        <span class="subtask-text ${sub.done ? 'done' : ''}"><strong>${escapeHtml(sub.title)}</strong> ${sub.description ? `- ${escapeHtml(sub.description)}` : ''}</span>
+                        <button class="mini-btn" style="color:var(--accent-red);" onclick="window.engine.deleteSubtask('${id}', ${idx})">×</button>
+                    `;
+                    subContainer.appendChild(div);
+                });
             }
 
             addSubtask(id) {
-                const el = document.getElementById(`new-sub-${id}`);
-                const txt = el.value.trim();
-                if(!txt) return;
+                const input = document.getElementById(`new-sub-${id}`);
+                const val = input?.value.trim();
+                if (!val) return;
+
                 const item = this.items.find(i => i.id === id);
-                if(item) {
-                    item.subtasks.push({ text: txt, done: false });
-                    this.saveState();
-                    this.renderSubtasks(id);
-                    el.value = '';
-                }
+                if (!item) return;
+
+                item.subtasks.push({ title: val, description: '', done: false });
+                this.saveState();
+                this.renderSubtasksPane(id);
+                if (input) input.value = '';
             }
 
-            toggleSubtask(id, index) {
+            toggleSubtask(id, idx) {
                 const item = this.items.find(i => i.id === id);
-                if(item && item.subtasks[index]) {
-                    item.subtasks[index].done = !item.subtasks[index].done;
-                    this.saveState();
-                    this.renderSubtasks(id);
-                }
+                if (!item || !item.subtasks[idx]) return;
+                item.subtasks[idx].done = !item.subtasks[idx].done;
+                this.saveState();
+                this.renderSubtasksPane(id);
             }
 
-            renderSubtasks(id) {
+            deleteSubtask(id, idx) {
                 const item = this.items.find(i => i.id === id);
-                const container = document.getElementById(`subtasks-list-${id}`);
-                if(!item || !container) return;
-                container.innerHTML = item.subtasks.map((s, idx) => `
-                    <div class="subtask-item">
-                        <input type="checkbox" ${s.done ? 'checked' : ''} onclick="window.engine.toggleSubtask('${id}', ${idx})">
-                        <span class="subtask-text ${s.done ? 'done' : ''}">${escapeHtml(s.text)}</span>
-                    </div>
-                `).join('');
-            }
-
-            addArtifact(id) {
-                const el = document.getElementById(`new-art-${id}`);
-                const txt = el.value.trim();
-                if(!txt) return;
-                const item = this.items.find(i => i.id === id);
-                if(item) {
-                    item.outputs.push(txt);
-                    this.saveState();
-                    this.renderArtifacts(id);
-                    el.value = '';
-                }
-            }
-
-            removeArtifact(id, idx) {
-                const item = this.items.find(i => i.id === id);
-                if(item) {
-                    item.outputs.splice(idx, 1);
-                    this.saveState();
-                    this.renderArtifacts(id);
-                }
-            }
-
-            renderArtifacts(id) {
-                const item = this.items.find(i => i.id === id);
-                const container = document.getElementById(`artifacts-list-${id}`);
-                if(!item || !container) return;
-                container.innerHTML = item.outputs.map((o, idx) => `
-                    <div style="display:inline-flex; align-items:center; gap:6px; margin:2px;" class="tag-pill artifact-pill">
-                        <span>${escapeHtml(o)}</span>
-                        <span style="color:var(--accent-red); cursor:pointer;" onclick="window.engine.removeArtifact('${id}', ${idx})">×</span>
-                    </div>
-                `).join('');
+                if (!item || !item.subtasks[idx]) return;
+                item.subtasks.splice(idx, 1);
+                this.saveState();
+                this.renderSubtasksPane(id);
             }
 
             exportJSON() {
-                const rawData = JSON.stringify(this.items, null, 2);
-                const blob = new Blob([rawData], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `tasks-snapshot-${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
+                try {
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.items, null, 2));
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", `task_engine_backup_${new Date().toISOString().split('T')[0]}.json`);
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+                    downloadAnchor.remove();
+                    this.clearError();
+                } catch(e) {
+                    this.reportError("JSON Bulk Packaging Export", e);
+                }
             }
 
             exportMarkdown() {
-                let md = `# Task Environment Log Output - ${new Date().toISOString().split('T')[0]}\n\n`;
-                this.items.forEach(i => {
-                    md += `## [${i.status}] ${i.title} (${i.priority})\n`;
-                    if (i.project) md += `- **Project:** ${i.project}\n`;
-                    if (i.nextAction) md += `- **Next Action:** ${i.nextAction}\n`;
-                    if (i.notes) md += `\n### Runtime Manifest Notes\n\`\`\`text\n${i.notes}\n\`\`\`\n`;
-                    if (i.subtasks.length > 0) {
-                        md += `\n### Subtask Breakdown\n`;
-                        i.subtasks.forEach(s => md += `- [${s.done ? 'x' : ' '}] ${s.text}\n`);
-                    }
-                    if (i.outputs.length > 0) {
-                        md += `\n### Generated Outputs / Artifacts\n`;
-                        i.outputs.forEach(o => md += `- 📦 ${o}\n`);
-                    }
-                    md += `\n---\n\n`;
-                });
+                try {
+                    let md = `# Task Engine Flat Log - ${new Date().toISOString().split('T')[0]}\n\n`;
+                    this.items.forEach(i => {
+                        md += `## [${i.status}] ${i.title} (${i.id})\n`;
+                        md += `- **Type**: ${i.type} | **Priority**: ${i.priority} | **Domain**: ${i.project || 'None'}\n`;
+                        md += `- **Metrics**: Time: ${i.eta || 'N/A'} | Energy: ${i.energy}\n`;
+                        if(i.nextAction) md += `- **Next Immediate Step**: ${i.nextAction}\n`;
+                        if(i.tags.length) md += `- **Tags**: ${i.tags.join(', ')}\n`;
+                        if(i.outputs.length) md += `- **Produced Assets**: ${i.outputs.join(', ')}\n`;
+                        if(i.notes) md += `\n### Architectural Notes & Specs\n\`\`\`text\n${i.notes}\n\`\`\`\n`;
+                        if(i.subtasks.length) {
+                            md += `\n### Subtask Manifest Track\n`;
+                            i.subtasks.forEach(s => md += `- [${s.done ? 'x' : ' '}] ${s.title}\n`);
+                        }
+                        md += `\n---\n\n`;
+                    });
 
-                const blob = new Blob([md], { type: 'text/markdown' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `tasks-log-${new Date().toISOString().split('T')[0]}.md`;
-                a.click();
+                    const dataStr = "data:text/markdown;charset=utf-8," + encodeURIComponent(md);
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", `task_engine_flatlog_${new Date().toISOString().split('T')[0]}.md`);
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+                    downloadAnchor.remove();
+                    this.clearError();
+                } catch(e) {
+                    this.reportError("Markdown Conversion Compilation", e);
+                }
             }
 
             importJSON() {
-                const txt = document.getElementById('importArea').value.trim();
-                if(!txt) return;
                 try {
-                    const parsed = JSON.parse(txt);
-                    if(Array.isArray(parsed)) {
-                        this.items = parsed;
-                        this.saveState();
-                        alert("Engine hydration complete. State integrated cleanly.");
-                        this.switchTab('inbox');
-                    } else {
-                        alert("Invalid payload topography. Array wrapper missing.");
-                    }
+                    const txtArea = document.getElementById('importArea');
+                    const rawInput = txtArea?.value.trim();
+                    if(!rawInput) throw new Error("Empty text payload string context window.");
+
+                    const parsed = JSON.parse(rawInput);
+                    if(!Array.isArray(parsed)) throw new TypeError("Import data payload layout must be a structural array index.");
+
+                    this.items = parsed.map(item => this.normalizeItemSchema(item));
+                    this.saveState();
+                    this.render();
+                    if(txtArea) txtArea.value = '';
+                    this.switchTab('inbox');
+                    alert("State hydrated successfully. Context arrays reset.");
+                    this.clearError();
                 } catch(e) {
-                    alert("Hydration crashed. Structural layout parse error.");
+                    this.reportError("State Hydration Import Phase", e);
+                    alert(`Hydration Rejected: Check the console window at top of interface screen.`);
                 }
             }
         }
 
-        function escapeHtml(str) {
-            if(!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        // Initialize Engine Scope instance
-        window.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             window.engine = new TaskEngine();
             window.engine.render();
-
-            // Hotkey intercept: Ctrl+N triggers quick input autofocus anywhere
-            window.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                    e.preventDefault();
-                    window.engine.createNewBlankTask();
-                }
-            });
         });
     </script>
 </body>
