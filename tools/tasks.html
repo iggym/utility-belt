@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Task Engine</title>
+    <style>
+        :root {
+            --bg-main: #0d1117;
+            --bg-surface: #161b22;
+            --bg-card: #21262d;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-green: #238636;
+            --accent-red: #da3633;
+            --accent-purple: #8957e5;
+            --accent-orange: #d29922;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font);
+            line-height: 1.5;
+            padding-bottom: 60px;
+        }
+
+        header {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-zone {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+        }
+
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .search-container {
+            padding: 12px 16px;
+            background: var(--bg-main);
+        }
+
+        .search-bar {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent);
+        }
+
+        .nav-tabs {
+            display: flex;
+            overflow-x: auto;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 14px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn.active {
+            color: var(--text-main);
+            border-bottom-color: var(--accent);
+        }
+
+        .badge {
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .tab-btn.active .badge {
+            background: var(--accent);
+            color: var(--bg-main);
+        }
+
+        .content-view {
+            padding: 16px;
+            display: none;
+        }
+
+        .content-view.active {
+            display: block;
+        }
+
+        .quick-capture-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .quick-input {
+            flex: 1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .quick-input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            border-color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            border-color: rgba(240,246,252,0.1);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #2ea44f;
+        }
+
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: border-color 0.15s ease;
+        }
+
+        .task-card.pinned {
+            border-left: 3px solid var(--accent-orange);
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .task-check {
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-green);
+        }
+
+        .task-title {
+            flex: 1;
+            font-size: 15px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .task-card.done-state .task-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .meta-line {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .tag-pill {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-card);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .p-pill { font-weight: bold; }
+        .p-P0 { color: var(--accent-red); }
+        .p-P1 { color: var(--accent-orange); }
+        .p-P2 { color: var(--accent); }
+        .p-P3 { color: var(--text-main); }
+        .p-P4 { color: var(--text-muted); }
+
+        .triage-actions, .editor-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+        }
+
+        .mini-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .mini-btn:hover, .mini-btn.active {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
+
+        .expanded-pane {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field-group label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .form-select, .form-input, .form-textarea {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            width: 100%;
+        }
+
+        .form-textarea {
+            font-family: monospace;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .io-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .io-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            border-radius: 6px;
+        }
+
+        .io-box h3 {
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .subtask-text {
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .subtask-text.done {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .artifact-pill {
+            background: rgba(137, 87, 229, 0.15);
+            color: #d1b4ff;
+            border: 1px solid var(--accent-purple);
+        }
+
+        @media(max-width: 600px) {
+            .tab-btn {
+                padding: 12px 10px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-zone">
+            <a href="https://iggym.github.io/utility-belt/" class="back-link">← Utility Belt</a>
+            <h1>Task Engine</h1>
+        </div>
+        <button class="btn btn-primary" onclick="window.engine.createNewBlankTask()">+ New Task</button>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="globalSearch" class="search-bar" placeholder="Filter everything (titles, notes, tags, metrics, artifacts)..." oninput="window.engine.render()">
+    </div>
+
+    <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="window.engine.switchTab('inbox')" data-tab="inbox">Inbox <span class="badge" id="b-inbox">0</span></button>
+        <button class="tab-btn" onclick="window.engine.switchTab('tasks')" data-tab="tasks">Tasks <span class="badge" id="b-tasks">0</span></button>
+        <button class="tab-btn" onclick="window.engine.switchTab('working')" data-tab="working">Working <span class="badge" id="b-working">0</span></button>
+        <button class="tab-btn" onclick="window.engine.switchTab('discovery')" data-tab="discovery">Discovery <span class="badge" id="b-discovery">0</span></button>
+        <button class="tab-btn" onclick="window.engine.switchTab('completed')" data-tab="completed">Completed <span class="badge" id="b-completed">0</span></button>
+        <button class="tab-btn" onclick="window.engine.switchTab('io')" data-tab="io">IO System</button>
+    </nav>
+
+    <!-- INBOX VIEW -->
+    <div id="view-inbox" class="content-view active">
+        <div class="quick-capture-box">
+            <input type="text" id="inboxInput" class="quick-input" placeholder="Capture intent or exploration concept... (Ctrl+N)" onkeydown="if(event.key==='Enter') window.engine.quickCapture()">
+            <button class="btn btn-primary" onclick="window.engine.quickCapture()">Capture</button>
+        </div>
+        <div id="list-inbox" class="list-container"></div>
+    </div>
+
+    <!-- TASKS VIEW -->
+    <div id="view-tasks" class="content-view">
+        <div id="list-tasks" class="list-container"></div>
+    </div>
+
+    <!-- WORKING VIEW -->
+    <div id="view-working" class="content-view">
+        <div id="list-working" class="list-container"></div>
+    </div>
+
+    <!-- DISCOVERY VIEW -->
+    <div id="view-discovery" class="content-view">
+        <div id="list-discovery" class="list-container"></div>
+    </div>
+
+    <!-- COMPLETED VIEW -->
+    <div id="view-completed" class="content-view">
+        <div id="list-completed" class="list-container"></div>
+    </div>
+
+    <!-- IO SYSTEM VIEW -->
+    <div id="view-io" class="content-view">
+        <div class="io-zone">
+            <div class="io-box">
+                <h3>Daily Snapshot Export</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Download current runtime telemetry array as an archival JSON document or flat text log.</p>
+                <button class="btn" onclick="window.engine.exportJSON()">Export State JSON</button>
+                <button class="btn" onclick="window.engine.exportMarkdown()">Export Flat Log MD</button>
+            </div>
+            <div class="io-box">
+                <h3>State Hydration (Import)</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Overwrite engine context window with a historical JSON runtime state snapshot.</p>
+                <textarea id="importArea" class="form-textarea" style="min-height: 120px; margin-bottom: 12px;" placeholder="Paste text data payload here..."></textarea>
+                <button class="btn btn-primary" onclick="window.engine.importJSON()">Hydrate State Engine</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TaskEngine {
+            constructor() {
+                this.storageKey = 'task_engine_state';
+                this.currentTab = 'inbox';
+                this.items = [];
+                this.loadState();
+            }
+
+            loadState() {
+                try {
+                    const raw = localStorage.getItem(this.storageKey);
+                    this.items = raw ? JSON.parse(raw) : this.getDefaultData();
+                } catch(e) {
+                    console.error("Hydration fault. Rebuilding engine.", e);
+                    this.items = this.getDefaultData();
+                }
+            }
+
+            saveState() {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.items));
+                this.updateBadges();
+            }
+
+            getDefaultData() {
+                return [
+                    { id: '1', type: 'Task', title: 'investigate OpenRouter pricing structures', status: 'Inbox', priority: 'P1', project: 'AI', tags: ['#research'], created: new Date().toISOString().split('T')[0], due: '', eta: '15 min', energy: 'Medium', notes: 'Compare context window token costs vs performance metrics.', subtasks: [], outputs: [], pinned: false, nextAction: 'Pull down API price sheet' },
+                    { id: '2', type: 'Discovery', title: 'Investigate native MCP architecture models', status: 'Discovery', priority: 'P2', project: 'AI', tags: ['#architecture'], created: new Date().toISOString().split('T')[0], due: '', eta: '1 hr', energy: 'High', notes: 'Assess model capability matrices', subtasks: [], outputs: [], pinned: true, nextAction: '' }
+                ];
+            }
+
+            switchTab(tabId) {
+                this.currentTab = tabId;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+                document.querySelectorAll('.content-view').forEach(v => v.classList.toggle('active', v.id === `view-${tabId}`));
+                this.render();
+                if(tabId === 'inbox') setTimeout(() => document.getElementById('inboxInput')?.focus(), 50);
+            }
+
+            quickCapture() {
+                const input = document.getElementById('inboxInput');
+                const title = input.value.trim();
+                if(!title) return;
+
+                const newItem = {
+                    id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15),
+                    type: 'Task',
+                    title: title,
+                    status: 'Inbox',
+                    priority: 'P2',
+                    project: '',
+                    tags: [],
+                    created: new Date().toISOString().split('T')[0],
+                    due: '',
+                    eta: '15 min',
+                    energy: 'Medium',
+                    notes: '',
+                    subtasks: [],
+                    outputs: [],
+                    pinned: false,
+                    nextAction: ''
+                };
+
+                this.items.unshift(newItem);
+                this.saveState();
+                input.value = '';
+                this.render();
+            }
+
+            createNewBlankTask() {
+                this.switchTab('inbox');
+                const input = document.getElementById('inboxInput');
+                input.focus();
+            }
+
+            updateBadges() {
+                const query = document.getElementById('globalSearch')?.value.toLowerCase() || '';
+                const match = (item) => {
+                    if(!query) return true;
+                    return item.title.toLowerCase().includes(query) || 
+                           item.notes.toLowerCase().includes(query) ||
+                           item.project.toLowerCase().includes(query) ||
+                           item.nextAction.toLowerCase().includes(query) ||
+                           item.tags.some(t => t.toLowerCase().includes(query)) ||
+                           item.outputs.some(o => o.toLowerCase().includes(query));
+                };
+
+                const filtered = this.items.filter(match);
+
+                document.getElementById('b-inbox').innerText = filtered.filter(i => i.status === 'Inbox').length;
+                document.getElementById('b-tasks').innerText = filtered.filter(i => i.status === 'Ready' || i.status === 'Blocked').length;
+                document.getElementById('b-working').innerText = filtered.filter(i => i.status === 'Working').length;
+                document.getElementById('b-discovery').innerText = filtered.filter(i => i.status === 'Discovery').length;
+                document.getElementById('b-completed').innerText = filtered.filter(i => i.status === 'Done' || i.status === 'Archived').length;
+            }
+
+            render() {
+                this.updateBadges();
+                if(this.currentTab === 'io') return;
+
+                const container = document.getElementById(`list-${this.currentTab}`);
+                if(!container) return;
+                container.innerHTML = '';
+
+                const searchQuery = document.getElementById('globalSearch').value.toLowerCase();
+
+                let filtered = this.items.filter(item => {
+                    if (searchQuery) {
+                        return item.title.toLowerCase().includes(searchQuery) || 
+                               item.notes.toLowerCase().includes(searchQuery) ||
+                               item.project.toLowerCase().includes(searchQuery) ||
+                               item.nextAction.toLowerCase().includes(searchQuery) ||
+                               item.tags.some(t => t.toLowerCase().includes(searchQuery)) ||
+                               item.outputs.some(o => o.toLowerCase().includes(searchQuery));
+                    }
+                    
+                    // Route views cleanly based on structural state
+                    if (this.currentTab === 'inbox') return item.status === 'Inbox';
+                    if (this.currentTab === 'tasks') return item.status === 'Ready' || item.status === 'Blocked';
+                    if (this.currentTab === 'working') return item.status === 'Working';
+                    if (this.currentTab === 'discovery') return item.status === 'Discovery';
+                    if (this.currentTab === 'completed') return item.status === 'Done' || item.status === 'Archived';
+                    return false;
+                });
+
+                // Enforce Pinning priority sort order logic
+                filtered.sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || a.priority.localeCompare(b.priority));
+
+                if(filtered.length === 0) {
+                    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:14px;">No items inside processing partition.</div>`;
+                    return;
+                }
+
+                filtered.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = `task-card ${item.pinned ? 'pinned' : ''} ${item.status === 'Done' ? 'done-state' : ''}`;
+                    card.id = `card-${item.id}`;
+
+                    // Compile subtask tracking status
+                    const totalSubs = item.subtasks.length;
+                    const doneSubs = item.subtasks.filter(s => s.done).length;
+                    const subString = totalSubs > 0 ? `[${doneSubs}/${totalSubs}]` : '';
+
+                    card.innerHTML = `
+                        <div class="task-header">
+                            <input type="checkbox" class="task-check" ${item.status === 'Done' ? 'checked' : ''} onclick="window.engine.toggleComplete('${item.id}')">
+                            <div class="task-title" onclick="window.engine.toggleEditPane('${item.id}')" style="cursor:pointer;">
+                                ${item.project ? `<span style="color:var(--accent); font-weight:bold; font-size:13px; margin-right:4px;">[${item.project}]</span>` : ''}
+                                ${escapeHtml(item.title)} <span style="font-size:12px; color:var(--text-muted);">${subString}</span>
+                            </div>
+                            <button class="mini-btn" onclick="window.engine.togglePin('${item.id}')" style="color: ${item.pinned ? 'var(--accent-orange)' : 'var(--text-muted)'}">★</button>
+                        </div>
+                        <div class="meta-line" onclick="window.engine.toggleEditPane('${item.id}')" style="cursor:pointer;">
+                            <span class="tag-pill p-pill p-${item.priority}">${item.priority}</span>
+                            <span class="tag-pill" style="color:var(--accent-purple); border-color:rgba(137,87,229,0.3);">${item.status}</span>
+                            ${item.type === 'Discovery' ? `<span class="tag-pill" style="color:cyan; border-color:rgba(0,255,255,0.2);">🔬 Discovery</span>` : ''}
+                            ${item.eta ? `<span class="tag-pill">⏳ ${escapeHtml(item.eta)}</span>` : ''}
+                            ${item.energy ? `<span class="tag-pill">⚡ ${escapeHtml(item.energy)}</span>` : ''}
+                            ${item.tags.map(t => `<span class="tag-pill">${escapeHtml(t)}</span>`).join('')}
+                            ${item.outputs.map(o => `<span class="tag-pill artifact-pill">📦 ${escapeHtml(o)}</span>`).join('')}
+                        </div>
+                        ${item.nextAction ? `<div style="font-size:12px; color:var(--accent-orange); background:rgba(210,153,34,0.05); padding:4px 8px; border-radius:4px; border:1px dashed rgba(210,153,34,0.2);"><strong>Next Action:</strong> ${escapeHtml(item.nextAction)}</div>` : ''}
+                        
+                        <!-- Triage Actions Context Bar -->
+                        <div class="triage-actions">
+                            <span style="font-size:11px; color:var(--text-muted); align-self:center; margin-right:4px;">Triage:</span>
+                            <button class="mini-btn ${item.status==='Inbox'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Inbox')">Inbox</button>
+                            <button class="mini-btn ${item.status==='Ready'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Ready')">Ready</button>
+                            <button class="mini-btn ${item.status==='Working'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Working')">Working</button>
+                            <button class="mini-btn ${item.status==='Discovery'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Discovery')">Discovery</button>
+                            <button class="mini-btn ${item.status==='Blocked'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Blocked')">Blocked</button>
+                            <button class="mini-btn ${item.status==='Done'?'active':''}" onclick="window.engine.updateItemStatus('${item.id}', 'Done')">Done</button>
+                            <button class="mini-btn" onclick="window.engine.removeItem('${item.id}')" style="color:var(--accent-red); margin-left:auto;">Drop</button>
+                        </div>
+
+                        <div id="pane-${item.id}" class="expanded-pane" style="display:none;"></div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            toggleComplete(id) {
+                const item = this.items.find(i => i.id === id);
+                if(!item) return;
+                item.status = item.status === 'Done' ? 'Ready' : 'Done';
+                this.saveState();
+                this.render();
+            }
+
+            togglePin(id) {
+                const item = this.items.find(i => i.id === id);
+                if(!item) return;
+                item.pinned = !item.pinned;
+                this.saveState();
+                this.render();
+            }
+
+            updateItemStatus(id, targetStatus) {
+                const item = this.items.find(i => i.id === id);
+                if(!item) return;
+                item.status = targetStatus;
+                if(targetStatus === 'Discovery') item.type = 'Discovery';
+                this.saveState();
+                this.render();
+            }
+
+            removeItem(id) {
+                if(confirm("Confirm deletion of task instance context?")) {
+                    this.items = this.items.filter(i => i.id !== id);
+                    this.saveState();
+                    this.render();
+                }
+            }
+
+            toggleEditPane(id) {
+                const pane = document.getElementById(`pane-${id}`);
+                if(!pane) return;
+                if(pane.style.display === 'block') {
+                    pane.style.display = 'none';
+                    return;
+                }
+                
+                // Render detail form layout safely
+                const item = this.items.find(i => i.id === id);
+                pane.innerHTML = `
+                    <div class="form-grid">
+                        <div class="field-group">
+                            <label>Structure Classification</label>
+                            <select onchange="window.engine.patchItem('${id}', 'type', this.value)" class="form-select">
+                                <option value="Task" ${item.type==='Task'?'selected':''}>Task Container</option>
+                                <option value="Discovery" ${item.type==='Discovery'?'selected':''}>Discovery Asset</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Execution Tier</label>
+                            <select onchange="window.engine.patchItem('${id}', 'priority', this.value)" class="form-select">
+                                <option value="P0" ${item.priority==='P0'?'selected':''}>P0 - Focus Direct</option>
+                                <option value="P1" ${item.priority==='P1'?'selected':''}>P1 - Mission Crit</option>
+                                <option value="P2" ${item.priority==='P2'?'selected':''}>P2 - Balanced</option>
+                                <option value="P3" ${item.priority==='P3'?'selected':''}>P3 - Backburner</option>
+                                <option value="P4" ${item.priority==='P4'?'selected':''}>P4 - Speculative</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Project Domain</label>
+                            <input type="text" value="${escapeHtml(item.project || '')}" placeholder="e.g. Website, AI" onchange="window.engine.patchItem('${id}', 'project', this.value)" class="form-input">
+                        </div>
+                        <div class="field-group">
+                            <label>Context Footprint (ETA)</label>
+                            <input type="text" value="${escapeHtml(item.eta || '')}" placeholder="5 min, 1 hr" onchange="window.engine.patchItem('${id}', 'eta', this.value)" class="form-input">
+                        </div>
+                        <div class="field-group">
+                            <label>Energy Required</label>
+                            <select onchange="window.engine.patchItem('${id}', 'energy', this.value)" class="form-select">
+                                <option value="Low" ${item.energy==='Low'?'selected':''}>Low Energy</option>
+                                <option value="Medium" ${item.energy==='Medium'?'selected':''}>Medium Energy</option>
+                                <option value="High" ${item.energy==='High'?'selected':''}>High Energy</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Target Execution Lock</label>
+                            <input type="date" value="${item.due || ''}" onchange="window.engine.patchItem('${id}', 'due', this.value)" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Core Manifest Title</label>
+                        <input type="text" value="${escapeHtml(item.title)}" onchange="window.engine.patchItem('${id}', 'title', this.value)" class="form-input">
+                    </div>
+
+                    <div class="field-group">
+                        <label>Immediate Next Step</label>
+                        <input type="text" value="${escapeHtml(item.nextAction || '')}" placeholder="Atomic step required to unlock item..." onchange="window.engine.patchItem('${id}', 'nextAction', this.value)" class="form-input">
+                    </div>
+
+                    <div class="field-group">
+                        <label>Metadata Tags (Comma delim)</label>
+                        <input type="text" value="${escapeHtml(item.tags.join(', '))}" placeholder="#writing, #research" onchange="window.engine.patchTags('${id}', this.value)" class="form-input">
+                    </div>
+
+                    <div class="field-group">
+                        <label>Technical Manifest / Raw Notes (Markdown Safe)</label>
+                        <textarea class="form-textarea" onchange="window.engine.patchItem('${id}', 'notes', this.value)" placeholder="Enter technical design specs, criteria or payload context structures...">${escapeHtml(item.notes || '')}</textarea>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Subtask Arrays</label>
+                        <div id="subtasks-list-${id}"></div>
+                        <div style="display:flex; gap:4px; margin-top:4px;">
+                            <input type="text" id="new-sub-${id}" class="form-input" placeholder="Append structural subtask step...">
+                            <button class="mini-btn" onclick="window.engine.addSubtask('${id}')">+</button>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Produced Work Artifacts / Outputs</label>
+                        <div id="artifacts-list-${id}"></div>
+                        <div style="display:flex; gap:4px; margin-top:4px;">
+                            <input type="text" id="new-art-${id}" class="form-input" placeholder="e.g. index.html, payload.json">
+                            <button class="mini-btn" onclick="window.engine.addArtifact('${id}')">+</button>
+                        </div>
+                    </div>
+                `;
+                pane.style.display = 'block';
+                this.renderSubtasks(id);
+                this.renderArtifacts(id);
+            }
+
+            patchItem(id, field, value) {
+                const item = this.items.find(i => i.id === id);
+                if(item) {
+                    item[field] = value;
+                    this.saveState();
+                    this.updateBadges();
+                }
+            }
+
+            patchTags(id, value) {
+                const item = this.items.find(i => i.id === id);
+                if(item) {
+                    item.tags = value.split(',').map(t => t.trim()).filter(t => t.length > 0);
+                    this.saveState();
+                }
+            }
+
+            addSubtask(id) {
+                const el = document.getElementById(`new-sub-${id}`);
+                const txt = el.value.trim();
+                if(!txt) return;
+                const item = this.items.find(i => i.id === id);
+                if(item) {
+                    item.subtasks.push({ text: txt, done: false });
+                    this.saveState();
+                    this.renderSubtasks(id);
+                    el.value = '';
+                }
+            }
+
+            toggleSubtask(id, index) {
+                const item = this.items.find(i => i.id === id);
+                if(item && item.subtasks[index]) {
+                    item.subtasks[index].done = !item.subtasks[index].done;
+                    this.saveState();
+                    this.renderSubtasks(id);
+                }
+            }
+
+            renderSubtasks(id) {
+                const item = this.items.find(i => i.id === id);
+                const container = document.getElementById(`subtasks-list-${id}`);
+                if(!item || !container) return;
+                container.innerHTML = item.subtasks.map((s, idx) => `
+                    <div class="subtask-item">
+                        <input type="checkbox" ${s.done ? 'checked' : ''} onclick="window.engine.toggleSubtask('${id}', ${idx})">
+                        <span class="subtask-text ${s.done ? 'done' : ''}">${escapeHtml(s.text)}</span>
+                    </div>
+                `).join('');
+            }
+
+            addArtifact(id) {
+                const el = document.getElementById(`new-art-${id}`);
+                const txt = el.value.trim();
+                if(!txt) return;
+                const item = this.items.find(i => i.id === id);
+                if(item) {
+                    item.outputs.push(txt);
+                    this.saveState();
+                    this.renderArtifacts(id);
+                    el.value = '';
+                }
+            }
+
+            removeArtifact(id, idx) {
+                const item = this.items.find(i => i.id === id);
+                if(item) {
+                    item.outputs.splice(idx, 1);
+                    this.saveState();
+                    this.renderArtifacts(id);
+                }
+            }
+
+            renderArtifacts(id) {
+                const item = this.items.find(i => i.id === id);
+                const container = document.getElementById(`artifacts-list-${id}`);
+                if(!item || !container) return;
+                container.innerHTML = item.outputs.map((o, idx) => `
+                    <div style="display:inline-flex; align-items:center; gap:6px; margin:2px;" class="tag-pill artifact-pill">
+                        <span>${escapeHtml(o)}</span>
+                        <span style="color:var(--accent-red); cursor:pointer;" onclick="window.engine.removeArtifact('${id}', ${idx})">×</span>
+                    </div>
+                `).join('');
+            }
+
+            exportJSON() {
+                const rawData = JSON.stringify(this.items, null, 2);
+                const blob = new Blob([rawData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tasks-snapshot-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            }
+
+            exportMarkdown() {
+                let md = `# Task Environment Log Output - ${new Date().toISOString().split('T')[0]}\n\n`;
+                this.items.forEach(i => {
+                    md += `## [${i.status}] ${i.title} (${i.priority})\n`;
+                    if (i.project) md += `- **Project:** ${i.project}\n`;
+                    if (i.nextAction) md += `- **Next Action:** ${i.nextAction}\n`;
+                    if (i.notes) md += `\n### Runtime Manifest Notes\n\`\`\`text\n${i.notes}\n\`\`\`\n`;
+                    if (i.subtasks.length > 0) {
+                        md += `\n### Subtask Breakdown\n`;
+                        i.subtasks.forEach(s => md += `- [${s.done ? 'x' : ' '}] ${s.text}\n`);
+                    }
+                    if (i.outputs.length > 0) {
+                        md += `\n### Generated Outputs / Artifacts\n`;
+                        i.outputs.forEach(o => md += `- 📦 ${o}\n`);
+                    }
+                    md += `\n---\n\n`;
+                });
+
+                const blob = new Blob([md], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tasks-log-${new Date().toISOString().split('T')[0]}.md`;
+                a.click();
+            }
+
+            importJSON() {
+                const txt = document.getElementById('importArea').value.trim();
+                if(!txt) return;
+                try {
+                    const parsed = JSON.parse(txt);
+                    if(Array.isArray(parsed)) {
+                        this.items = parsed;
+                        this.saveState();
+                        alert("Engine hydration complete. State integrated cleanly.");
+                        this.switchTab('inbox');
+                    } else {
+                        alert("Invalid payload topography. Array wrapper missing.");
+                    }
+                } catch(e) {
+                    alert("Hydration crashed. Structural layout parse error.");
+                }
+            }
+        }
+
+        function escapeHtml(str) {
+            if(!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initialize Engine Scope instance
+        window.addEventListener('DOMContentLoaded', () => {
+            window.engine = new TaskEngine();
+            window.engine.render();
+
+            // Hotkey intercept: Ctrl+N triggers quick input autofocus anywhere
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    window.engine.createNewBlankTask();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
