@@ -78,6 +78,13 @@
     "description": "conversion for 20 key units",
     "category": "Productivity",
     "icon": "📋"
+  },
+  {
+    "title": "Tasks ad Todos",
+    "file": "tools/tasks.html",
+    "description": "task environment designed exactly around capture → triage → execute → archive lifecycle",
+    "category": "Productivity",
+    "icon": "📋"
   }
  
 ]
