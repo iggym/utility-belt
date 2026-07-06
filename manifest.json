@@ -92,6 +92,13 @@
     "description": "another todo app",
     "category": "Productivity",
     "icon": "📋"
+  },
+  {
+    "title": "Gemini Prompt Generator",
+    "file": "tools/gemini-prompt-gen.html",
+    "description": "Gemini 3.x Prompt Generator",
+    "category": "Productivity, AI",
+    "icon": "🔮"
   }
  
 ]
