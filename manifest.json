@@ -80,7 +80,7 @@
     "icon": "📋"
   },
   {
-    "title": "Tasks ad Todos",
+    "title": "Tasks and Todos",
     "file": "tools/tasks.html",
     "description": "task environment designed exactly around capture → triage → execute → archive lifecycle",
     "category": "Productivity",
