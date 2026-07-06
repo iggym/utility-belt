@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Copilot Prompt Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- GSAP CDN (optional animations) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root {
+      --bg: #1e1e1e;
+      --bg-alt: #252526;
+      --bg-panel: #2d2d2d;
+      --border-subtle: #3c3c3c;
+      --accent: #007acc;
+      --accent-soft: #0e639c;
+      --text: #f3f3f3;
+      --text-muted: #cccccc;
+      --danger: #f44747;
+      --amber: #ffb454;
+      --green: #4ec9b0;
+      --purple: #c586c0;
+      --blue: #569cd6;
+      --shadow-soft: 0 0 0 1px #00000040, 0 18px 40px #00000080;
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 10px;
+      --activity-width: 52px;
+      --header-height: 40px;
+      --transition-fast: 0.16s ease-out;
+      --transition-med: 0.22s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(circle at top left, #20263a 0, #1e1e1e 40%, #111 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    .top-bar {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      background: linear-gradient(to right, #1f1f1f, #252526);
+      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: 0 1px 0 #00000080;
+      gap: 12px;
+    }
+
+    .top-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .top-logo svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .top-title {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .top-spacer {
+      flex: 1;
+    }
+
+    .top-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #2d2d2d;
+      border: 1px solid #3c3c3c;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .top-pill-badge {
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #007acc33;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .top-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px #4ec9b033;
+    }
+
+    /* Layout */
+    .main-layout {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      background: radial-gradient(circle at top, #202020 0, #1e1e1e 40%, #111 100%);
+    }
+
+    /* Activity bar */
+    .activity-bar {
+      width: var(--activity-width);
+      background: #252526;
+      border-right: 1px solid #00000080;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 8px;
+    }
+
+    .activity-item {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .activity-item svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .activity-item.active {
+      background: #37373d;
+      color: var(--accent);
+      box-shadow: 0 0 0 1px #007acc55;
+      transform: translateY(-1px);
+    }
+
+    .activity-item:hover {
+      background: #333;
+      color: var(--text);
+    }
+
+    .activity-spacer {
+      flex: 1;
+    }
+
+    /* Columns */
+    .columns {
+      flex: 1;
+      display: flex;
+      min-width: 0;
+      padding: 10px;
+      gap: 10px;
+    }
+
+    .pane {
+      background: #1e1e1e;
+      border-radius: var(--radius-lg);
+      border: 1px solid #2a2a2a;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pane-header {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      border-bottom: 1px solid #2a2a2a;
+      background: linear-gradient(to right, #252526, #1e1e1e);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      gap: 8px;
+    }
+
+    .pane-header-label {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .pane-header-tag {
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      font-size: 10px;
+      text-transform: none;
+      color: var(--text-muted);
+    }
+
+    .pane-body {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: auto;
+    }
+
+    /* Builder pane width emphasis */
+    .pane-builder {
+      flex: 1.4;
+    }
+
+    .pane-preview {
+      flex: 1.2;
+    }
+
+    .pane-metrics {
+      flex: 0.9;
+    }
+
+    /* Form controls */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .field-label span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .field-label-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      color: var(--blue);
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      background: #1e1e1e;
+      border-radius: var(--radius-md);
+      border: 1px solid #3c3c3c;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: var(--text);
+      outline: none;
+      transition: border var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      resize: vertical;
+      min-height: 26px;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px #007acc55;
+      background: #1b1b1b;
+    }
+
+    textarea {
+      min-height: 60px;
+      max-height: 160px;
+    }
+
+    .inline-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .inline-row > * {
+      flex: 1;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .chip-danger .chip-dot {
+      background: var(--danger);
+    }
+
+    .chip-amber .chip-dot {
+      background: var(--amber);
+    }
+
+    .chip-purple .chip-dot {
+      background: var(--purple);
+    }
+
+    .chip-blue .chip-dot {
+      background: var(--blue);
+    }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .toggle-pill {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background var(--transition-fast), border var(--transition-fast), color var(--transition-fast);
+    }
+
+    .toggle-pill.active {
+      background: #007acc33;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .toggle-pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3c3c3c;
+    }
+
+    .toggle-pill.active .toggle-pill-dot {
+      background: var(--accent);
+    }
+
+    /* Plan list */
+    .plan-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .plan-item {
+      padding: 6px 8px;
+      border-radius: var(--radius-md);
+      border: 1px solid #3c3c3c;
+      background: #1b1b1b;
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      align-items: flex-start;
+    }
+
+    .plan-id {
+      font-size: 11px;
+      color: var(--blue);
+      min-width: 26px;
+      text-align: right;
+    }
+
+    .plan-text {
+      color: var(--text);
+    }
+
+    /* Repo files */
+    .repo-files {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+    }
+
+    .repo-file-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .repo-file-row input[type="checkbox"] {
+      accent-color: var(--accent);
+    }
+
+    .repo-file-path {
+      color: var(--text);
+    }
+
+    .repo-file-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Metrics pane */
+    .metric-block {
+      padding: 6px 8px;
+      border-radius: var(--radius-md);
+      border: 1px solid #3c3c3c;
+      background: #1b1b1b;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+
+    .metric-header-title {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .metric-header-badge {
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      font-size: 10px;
+      color: var(--blue);
+    }
+
+    .metric-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .metric-main-value {
+      font-weight: 600;
+    }
+
+    .metric-sub {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+
+    .metric-bar {
+      position: relative;
+      height: 6px;
+      border-radius: 999px;
+      background: #2a2a2a;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .metric-bar-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-soft), var(--green));
+      width: 0%;
+      transition: width var(--transition-med);
+    }
+
+    .metric-bar-fill.alert-amber {
+      background: linear-gradient(90deg, #ffb454, #ff9800);
+    }
+
+    .metric-bar-fill.alert-red {
+      background: linear-gradient(90deg, #f44747, #ff1744);
+    }
+
+    .metric-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .metric-pill {
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      font-size: 10px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3c3c3c;
+    }
+
+    .metric-pill-dot.green {
+      background: var(--green);
+    }
+
+    .metric-pill-dot.amber {
+      background: var(--amber);
+    }
+
+    .metric-pill-dot.red {
+      background: var(--danger);
+    }
+
+    /* Preview pane content */
+    .preview-card {
+      padding: 8px;
+      border-radius: var(--radius-md);
+      border: 1px solid #3c3c3c;
+      background: #1b1b1b;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .preview-title {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .preview-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .preview-section {
+      margin-top: 4px;
+      border-top: 1px dashed #333;
+      padding-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .preview-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .preview-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .preview-value {
+      font-size: 12px;
+      color: var(--text);
+      text-align: right;
+    }
+
+    .preview-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .preview-badge {
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #3c3c3c;
+      font-size: 10px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .preview-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* Auto-router badge (top bar) */
+    .router-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #1b1b1b;
+      border: 1px solid #3c3c3c;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .router-pill-model {
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #007acc33;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .router-pill-justification {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .router-pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* Mobile layout */
+    @media (max-width: 900px) {
+      .main-layout {
+        flex-direction: column;
+      }
+
+      .activity-bar {
+        width: 100%;
+        height: 40px;
+        flex-direction: row;
+        justify-content: center;
+        border-right: none;
+        border-bottom: 1px solid #00000080;
+      }
+
+      .columns {
+        flex-direction: column;
+        padding: 8px;
+      }
+
+      .pane {
+        min-height: 0;
+      }
+
+      .pane-header {
+        cursor: pointer;
+      }
+
+      .pane-body {
+        max-height: 0;
+        padding: 0 10px;
+        transition: max-height var(--transition-med), padding var(--transition-med);
+      }
+
+      .pane-body.active {
+        max-height: 420px;
+        padding: 10px;
+      }
+    }
+
+    /* Mobile tab indicator */
+    .pane-header-tab-indicator {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .pane-header-tab-indicator {
+        display: inline-flex;
+        margin-left: auto;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3c3c3c;
+      }
+
+      .pane-header-tab-indicator.active {
+        background: var(--accent);
+      }
+    }
+
+    /* Subtle scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #3c3c3c;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4c4c4c;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="top-bar">
+    <div class="top-logo">
+      <svg viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#007acc"/>
+            <stop offset="50%" stop-color="#4ec9b0"/>
+            <stop offset="100%" stop-color="#c586c0"/>
+          </linearGradient>
+        </defs>
+        <circle cx="12" cy="12" r="10" fill="url(#logoGrad)"/>
+        <path d="M8 13.5c1.2 1.4 2.3 2.1 3.5 2.1 1.2 0 2.3-.7 3.5-2.1" fill="none" stroke="#1e1e1e" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="9" cy="9" r="1.1" fill="#1e1e1e"/>
+        <circle cx="15" cy="9" r="1.1" fill="#1e1e1e"/>
+      </svg>
+      <span>Copilot</span>
+    </div>
+    <div class="top-title">Prompt Studio</div>
+    <div class="top-spacer"></div>
+    <div id="router-pill" class="router-pill">
+      <div class="router-pill-dot"></div>
+      <div class="router-pill-model">auto</div>
+      <div class="router-pill-justification">Model auto-routing based on tools, plan, output, and guardrails.</div>
+    </div>
+    <div class="top-pill">
+      <div class="top-pill-dot"></div>
+      <span>Agent score</span>
+      <span id="agent-score" class="top-pill-badge">0 / 100</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Activity bar -->
+    <div class="activity-bar">
+      <div class="activity-item active" data-pane="builder" title="Builder">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 5h14v4H5zM5 10h9v4H5zM5 15h6v4H5z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="activity-item" data-pane="preview" title="Preview">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 5h16v2H4zm0 6h10v2H4zm0 6h7v2H4z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="activity-item" data-pane="metrics" title="Metrics">
+        <svg viewBox="0 0 24 24">
+          <path d="M6 17V9h2v8zm5 0V5h2v12zm5 0v-6h2v6z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="activity-spacer"></div>
+      <div class="activity-item" title="Settings">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 8.5A3.5 3.5 0 1 1 8.5 12 3.5 3.5 0 0 1 12 8.5m0-2.5a6 6 0 1 0 6 6 6 6 0 0 0-6-6z" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Columns -->
+    <div class="columns">
+      <!-- Builder pane -->
+      <div class="pane pane-builder" data-pane-id="builder">
+        <div class="pane-header">
+          <span class="pane-header-label">Prompt Builder</span>
+          <span class="pane-header-tag">Issue · Repo · Guardrails</span>
+          <span class="pane-header-tab-indicator active"></span>
+        </div>
+        <div class="pane-body active">
+          <!-- Issue -->
+          <div class="field-group">
+            <div class="field-label">
+              <span>Issue title</span>
+              <span class="field-label-badge">Title weight 20</span>
+            </div>
+            <input id="issue-title" type="text" placeholder="e.g. Fix flaky tests in src/index.ts" />
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">
+              <span>Issue task / narrative</span>
+            </div>
+            <textarea id="issue-task" placeholder="Describe the bug, expected behavior, and any reproduction steps."></textarea>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">
+              <span>Agent mode</span>
+            </div>
+            <div class="toggle-row" id="agent-mode-toggle">
+              <div class="toggle-pill active" data-mode="agent">
+                <div class="toggle-pill-dot"></div>
+                <span>Agent</span>
+              </div>
+              <div class="toggle-pill" data-mode="chat">
+                <div class="toggle-pill-dot"></div>
+                <span>Chat</span>
+              </div>
+              <div class="toggle-pill" data-mode="workspace">
+                <div class="toggle-pill-dot"></div>
+                <span>Workspace</span>
+              </div>
+              <div class="toggle-pill" data-mode="cli">
+                <div class="toggle-pill-dot"></div>
+                <span>CLI</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Repo -->
+          <div class="field-group">
+            <div class="field-label">
+              <span>Repository URL</span>
+              <span class="field-label-badge">Repo weight 20</span>
+            </div>
+            <input id="repo-url" type="text" placeholder="https://github.com/org/project" />
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">
+              <span>Files in context</span>
+            </div>
+            <div class="repo-files" id="repo-files">
+              <!-- dynamic -->
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="chip-row">
+              <div class="chip chip-blue">
+                <div class="chip-dot"></div>
+                <span>Include README</span>
+                <span id="chip-readme-state">On</span>
+              </div>
+              <div class="chip chip-blue">
+                <div class="chip-dot"></div>
+                <span>Include Copilot instructions</span>
+                <span id="chip-copilot-state">On</span>
+              </div>
+              <div class="chip chip-amber">
+                <div class="chip-dot"></div>
+                <span>Include diff</span>
+                <span id="chip-diff-state">Off</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan -->
+          <div class="field-group">
+            <div class="field-label">
+              <span>Execution plan</span>
+              <span class="field-label-badge">3 steps</span>
+            </div>
+            <div class="plan-list" id="plan-list">
+              <!-- dynamic -->
+            </div>
+          </div>
+
+          <!-- Guardrails -->
+          <div class="field-group">
+            <div class="field-label">
+              <span>Guardrails</span>
+            </div>
+            <div class="chip-row">
+              <div class="chip chip-purple">
+                <div class="chip-dot"></div>
+                <span>No breaking changes</span>
+                <span id="chip-noBreaking">Required</span>
+              </div>
+              <div class="chip chip-purple">
+                <div class="chip-dot"></div>
+                <span>Tests must be green</span>
+                <span id="chip-testsGreen">Required</span>
+              </div>
+              <div class="chip chip-purple">
+                <div class="chip-dot"></div>
+                <span>Type-safe</span>
+                <span id="chip-typeSafe">Required</span>
+              </div>
+              <div class="chip chip-danger">
+                <div class="chip-dot"></div>
+                <span>Add tests</span>
+                <span id="chip-addTests">Avoid</span>
+              </div>
+              <div class="chip chip-danger">
+                <div class="chip-dot"></div>
+                <span>SWE-bench mode</span>
+                <span id="chip-sweBench">Off</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output / constraints -->
+          <div class="field-group">
+            <div class="inline-row">
+              <div>
+                <div class="field-label">
+                  <span>Output format</span>
+                </div>
+                <select id="output-format">
+                  <option value="pr_description">PR description</option>
+                  <option value="json">JSON</option>
+                  <option value="markdown">Markdown</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-label">
+                  <span>Verbosity</span>
+                </div>
+                <select id="verbosity">
+                  <option value="1">1 · Minimal</option>
+                  <option value="2">2 · Focused</option>
+                  <option value="3">3 · Detailed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">
+              <span>Constraints / notes</span>
+            </div>
+            <textarea id="constraints" placeholder="Optional: performance, security, compatibility, or review preferences."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview pane -->
+      <div class="pane pane-preview" data-pane-id="preview">
+        <div class="pane-header">
+          <span class="pane-header-label">Prompt Preview</span>
+          <span class="pane-header-tag">Live summary</span>
+          <span class="pane-header-tab-indicator"></span>
+        </div>
+        <div class="pane-body">
+          <div class="preview-card">
+            <div class="preview-title" id="preview-title">Untitled agent prompt</div>
+            <div class="preview-subtitle" id="preview-subtitle">Fill in issue title and repo URL to strengthen the agent score.</div>
+
+            <div class="preview-section">
+              <div class="preview-row">
+                <div class="preview-label">Mode</div>
+                <div class="preview-value" id="preview-mode">agent</div>
+              </div>
+              <div class="preview-row">
+                <div class="preview-label">Model (auto-router)</div>
+                <div class="preview-value" id="preview-model">claude-sonnet-4.6</div>
+              </div>
+              <div class="preview-row">
+                <div class="preview-label">Output</div>
+                <div class="preview-value" id="preview-output">pr_description</div>
+              </div>
+            </div>
+
+            <div class="preview-section">
+              <div class="preview-row">
+                <div class="preview-label">Repo context</div>
+                <div class="preview-value" id="preview-repo">No repo URL</div>
+              </div>
+              <div class="preview-row">
+                <div class="preview-label">Files</div>
+                <div class="preview-value" id="preview-files">2 selected</div>
+              </div>
+              <div class="preview-row">
+                <div class="preview-label">Plan</div>
+                <div class="preview-value" id="preview-plan">3 steps</div>
+              </div>
+            </div>
+
+            <div class="preview-section">
+              <div class="preview-badge-row" id="preview-badges">
+                <!-- dynamic badges -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics pane -->
+      <div class="pane pane-metrics" data-pane-id="metrics">
+        <div class="pane-header">
+          <span class="pane-header-label">Tokens & Credits</span>
+          <span class="pane-header-tag">Estimator</span>
+          <span class="pane-header-tab-indicator"></span>
+        </div>
+        <div class="pane-body">
+          <!-- Token meter -->
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-header-title">Token meter</span>
+              <span class="metric-header-badge" id="meter-max-label">Max 128K</span>
+            </div>
+            <div class="metric-main">
+              <span>Estimated tokens</span>
+              <span class="metric-main-value" id="token-count">0</span>
+            </div>
+            <div class="metric-sub">
+              <span id="token-alert-label">Safe</span>
+              <span id="token-details">chars: 0 · files: 2 · plan: 3</span>
+            </div>
+            <div class="metric-bar">
+              <div id="token-bar-fill" class="metric-bar-fill"></div>
+            </div>
+            <div class="metric-badge-row">
+              <div class="metric-pill" id="meter-toggle">
+                <div class="metric-pill-dot green"></div>
+                <span>Toggle max: 128K / 1M</span>
+              </div>
+              <div class="metric-pill">
+                <div class="metric-pill-dot amber"></div>
+                <span>Amber ≥ 70% of max</span>
+              </div>
+              <div class="metric-pill">
+                <div class="metric-pill-dot red"></div>
+                <span>Red ≥ 90% of max</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Credits -->
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-header-title">Credit cost</span>
+              <span class="metric-header-badge">Per prompt</span>
+            </div>
+            <div class="metric-main">
+              <span>Model credits</span>
+              <span class="metric-main-value" id="credit-main">Sonnet 4.6 ≈ 1.0</span>
+            </div>
+            <div class="metric-sub">
+              <span>Other models</span>
+              <span id="credit-details">GPT-5.5=1.2 · Grok Fast=0.3 · Kimi K2.7=0.4</span>
+            </div>
+            <div class="metric-badge-row">
+              <div class="metric-pill">
+                <div class="metric-pill-dot green"></div>
+                <span>Auto-router picks best fit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent score -->
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-header-title">Agent score</span>
+              <span class="metric-header-badge">0–100</span>
+            </div>
+            <div class="metric-main">
+              <span>Score</span>
+              <span class="metric-main-value" id="agent-score-metrics">0</span>
+            </div>
+            <div class="metric-sub">
+              <span>Weights</span>
+              <span>Title 20 · Repo 20 · other factors 60</span>
+            </div>
+            <div class="metric-bar">
+              <div id="agent-bar-fill" class="metric-bar-fill"></div>
+            </div>
+            <div class="metric-badge-row">
+              <div class="metric-pill">
+                <div class="metric-pill-dot green"></div>
+                <span>Strong title & repo URL</span>
+              </div>
+              <div class="metric-pill">
+                <div class="metric-pill-dot amber"></div>
+                <span>Missing context lowers score</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Persistence -->
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-header-title">Autosave</span>
+              <span class="metric-header-badge">Local</span>
+            </div>
+            <div class="metric-main">
+              <span>Storage key</span>
+              <span class="metric-main-value">copilot-prompt-studio-v1</span>
+            </div>
+            <div class="metric-sub">
+              <span>Debounce</span>
+              <span>Render 65ms · Save 1100ms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- App state ---
+  const appState = {
+    meta: { model: 'auto' },
+    issue: { title: '', task: '', agentMode: 'agent' }, // chat|agent|workspace|cli
+    repo: {
+      url: '',
+      files: [
+        { path: 'src/index.ts', checked: true },
+        { path: 'tests/index.test.ts', checked: true }
+      ],
+      includeDiff: false,
+      includeReadme: true,
+      includeCopilotInstructions: true
+    },
+    plan: [
+      { id: 'p1', text: 'Reproduce issue / read failing tests and relevant source files.' },
+      { id: 'p2', text: 'Implement minimal fix, keep public API stable, update types.' },
+      { id: 'p3', text: 'Run test suite, iterate until green, then open PR with summary.' }
+    ],
+    skills: { readFiles: true, editFiles: true, runTests: true, terminal: false, prCreate: false, webSearch: false },
+    terminalAllowlist: '',
+    output: { format: 'pr_description', acceptance: '' },
+    guardrails: { noBreaking: true, testsGreen: true, typeSafe: true, addTests: false, sweBench: false },
+    constraints: '',
+    verbosity: 1,
+    examples: [],
+    copilot: { temperature: 0.2, max_tokens: 8192, stream: true, tools_auto: true },
+    preset: 'pr-review-agent',
+    library: []
+  };
+
+  const STORAGE_KEY = 'copilot-prompt-studio-v1';
+
+  // --- Debounce utilities ---
+  function debounce(fn, delay) {
+    let timer = null;
+    return function (...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  const debouncedRender = debounce(renderAll, 65);
+  const debouncedSave = debounce(saveStateToStorage, 1100);
+
+  // --- Init ---
+  function init() {
+    loadStateFromStorage();
+    initRepoFilesUI();
+    initPlanUI();
+    initEventBindings();
+    renderAll();
+    if (window.gsap) {
+      gsap.from('.pane', { opacity: 0, y: 12, duration: 0.35, stagger: 0.06, ease: 'power2.out' });
+    }
+  }
+
+  // --- Storage ---
+  function saveStateToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function loadStateFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      Object.assign(appState, parsed);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // --- UI init ---
+  function initRepoFilesUI() {
+    const container = document.getElementById('repo-files');
+    container.innerHTML = '';
+    appState.repo.files.forEach((file, index) => {
+      const row = document.createElement('div');
+      row.className = 'repo-file-row';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = !!file.checked;
+      checkbox.addEventListener('change', () => {
+        appState.repo.files[index].checked = checkbox.checked;
+        scheduleUpdate();
+      });
+
+      const pathSpan = document.createElement('span');
+      pathSpan.className = 'repo-file-path';
+      pathSpan.textContent = file.path;
+
+      const metaSpan = document.createElement('span');
+      metaSpan.className = 'repo-file-meta';
+      metaSpan.textContent = index === 0 ? 'Source' : 'Tests';
+
+      row.appendChild(checkbox);
+      row.appendChild(pathSpan);
+      row.appendChild(metaSpan);
+      container.appendChild(row);
+    });
+  }
+
+  function initPlanUI() {
+    const container = document.getElementById('plan-list');
+    container.innerHTML = '';
+    appState.plan.forEach(step => {
+      const item = document.createElement('div');
+      item.className = 'plan-item';
+
+      const idSpan = document.createElement('span');
+      idSpan.className = 'plan-id';
+      idSpan.textContent = step.id;
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'plan-text';
+      textSpan.textContent = step.text;
+
+      item.appendChild(idSpan);
+      item.appendChild(textSpan);
+      container.appendChild(item);
+    });
+  }
+
+  function initEventBindings() {
+    // Issue fields
+    const issueTitleInput = document.getElementById('issue-title');
+    const issueTaskInput = document.getElementById('issue-task');
+    issueTitleInput.value = appState.issue.title || '';
+    issueTaskInput.value = appState.issue.task || '';
+
+    issueTitleInput.addEventListener('input', () => {
+      appState.issue.title = issueTitleInput.value;
+      scheduleUpdate();
+    });
+
+    issueTaskInput.addEventListener('input', () => {
+      appState.issue.task = issueTaskInput.value;
+      scheduleUpdate();
+    });
+
+    // Agent mode toggle
+    const modeContainer = document.getElementById('agent-mode-toggle');
+    Array.from(modeContainer.querySelectorAll('.toggle-pill')).forEach(pill => {
+      const mode = pill.getAttribute('data-mode');
+      if (mode === appState.issue.agentMode) {
+        pill.classList.add('active');
+      }
+      pill.addEventListener('click', () => {
+        appState.issue.agentMode = mode;
+        Array.from(modeContainer.querySelectorAll('.toggle-pill')).forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        scheduleUpdate();
+      });
+    });
+
+    // Repo URL
+    const repoUrlInput = document.getElementById('repo-url');
+    repoUrlInput.value = appState.repo.url || '';
+    repoUrlInput.addEventListener('input', () => {
+      appState.repo.url = repoUrlInput.value;
+      scheduleUpdate();
+    });
+
+    // Output format & verbosity
+    const outputFormatSelect = document.getElementById('output-format');
+    const verbositySelect = document.getElementById('verbosity');
+    outputFormatSelect.value = appState.output.format || 'pr_description';
+    verbositySelect.value = String(appState.verbosity || 1);
+
+    outputFormatSelect.addEventListener('change', () => {
+      appState.output.format = outputFormatSelect.value;
+      scheduleUpdate();
+    });
+
+    verbositySelect.addEventListener('change', () => {
+      appState.verbosity = parseInt(verbositySelect.value, 10) || 1;
+      scheduleUpdate();
+    });
+
+    // Constraints
+    const constraintsInput = document.getElementById('constraints');
+    constraintsInput.value = appState.constraints || '';
+    constraintsInput.addEventListener('input', () => {
+      appState.constraints = constraintsInput.value;
+      scheduleUpdate();
+    });
+
+    // Meter toggle
+    const meterToggle = document.getElementById('meter-toggle');
+    meterToggle.addEventListener('click', () => {
+      const current = appState.copilot.max_tokens || 8192;
+      appState.copilot.max_tokens = current >= 128000 ? 8192 : 128000;
+      scheduleUpdate();
+    });
+
+    // Activity bar (mobile tabbed/swipe-like)
+    const activityItems = document.querySelectorAll('.activity-item[data-pane]');
+    activityItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const paneId = item.getAttribute('data-pane');
+        activityItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        activatePane(paneId);
+      });
+    });
+
+    // Mobile pane header toggles
+    const paneHeaders = document.querySelectorAll('.pane-header');
+    paneHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        if (window.innerWidth > 900) return;
+        const pane = header.parentElement;
+        const paneId = pane.getAttribute('data-pane-id');
+        activatePane(paneId);
+        document.querySelectorAll('.activity-item[data-pane]').forEach(item => {
+          if (item.getAttribute('data-pane') === paneId) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      });
+    });
+  }
+
+  function activatePane(paneId) {
+    const panes = document.querySelectorAll('.pane');
+    panes.forEach(pane => {
+      const id = pane.getAttribute('data-pane-id');
+      const body = pane.querySelector('.pane-body');
+      const indicator = pane.querySelector('.pane-header-tab-indicator');
+      if (id === paneId) {
+        if (window.innerWidth <= 900) {
+          body.classList.add('active');
+        }
+        if (indicator) indicator.classList.add('active');
+      } else {
+        if (window.innerWidth <= 900) {
+          body.classList.remove('active');
+        }
+        if (indicator) indicator.classList.remove('active');
+      }
+    });
+  }
+
+  // --- Rendering ---
+  function scheduleUpdate() {
+    debouncedRender();
+    debouncedSave();
+  }
+
+  function renderAll() {
+    renderPreview();
+    renderTokenEstimator();
+    renderAutoRouter();
+    renderAgentScore();
+    renderChips();
+  }
+
+  function renderPreview() {
+    const titleEl = document.getElementById('preview-title');
+    const subtitleEl = document.getElementById('preview-subtitle');
+    const modeEl = document.getElementById('preview-mode');
+    const modelEl = document.getElementById('preview-model');
+    const outputEl = document.getElementById('preview-output');
+    const repoEl = document.getElementById('preview-repo');
+    const filesEl = document.getElementById('preview-files');
+    const planEl = document.getElementById('preview-plan');
+    const badgesContainer = document.getElementById('preview-badges');
+
+    const title = appState.issue.title.trim();
+    titleEl.textContent = title || 'Untitled agent prompt';
+    subtitleEl.textContent = title
+      ? 'Prompt is ready to refine. Review tokens, auto-router, and guardrails before sending.'
+      : 'Fill in issue title and repo URL to strengthen the agent score.';
+
+    modeEl.textContent = appState.issue.agentMode || 'agent';
+    const routedModel = computeAutoRouterModel();
+    modelEl.textContent = routedModel;
+
+    outputEl.textContent = appState.output.format || 'pr_description';
+
+    const repoUrl = appState.repo.url.trim();
+    repoEl.textContent = repoUrl || 'No repo URL';
+
+    const selectedFiles = appState.repo.files.filter(f => f.checked).length;
+    filesEl.textContent = `${selectedFiles} selected`;
+
+    planEl.textContent = `${appState.plan.length} steps`;
+
+    badgesContainer.innerHTML = '';
+
+    const badgeData = [
+      { label: 'Read files', active: appState.skills.readFiles },
+      { label: 'Edit files', active: appState.skills.editFiles },
+      { label: 'Run tests', active: appState.skills.runTests },
+      { label: 'Terminal', active: appState.skills.terminal },
+      { label: 'PR create', active: appState.skills.prCreate },
+      { label: 'Web search', active: appState.skills.webSearch }
+    ];
+
+    badgeData.forEach(b => {
+      const badge = document.createElement('div');
+      badge.className = 'preview-badge';
+      const dot = document.createElement('div');
+      dot.className = 'preview-badge-dot';
+      dot.style.background = b.active ? 'var(--green)' : '#3c3c3c';
+      const label = document.createElement('span');
+      label.textContent = b.label;
+      badge.appendChild(dot);
+      badge.appendChild(label);
+      badgesContainer.appendChild(badge);
+    });
+  }
+
+  function renderTokenEstimator() {
+    const tokenCountEl = document.getElementById('token-count');
+    const tokenAlertLabelEl = document.getElementById('token-alert-label');
+    const tokenDetailsEl = document.getElementById('token-details');
+    const tokenBarFillEl = document.getElementById('token-bar-fill');
+    const meterMaxLabelEl = document.getElementById('meter-max-label');
+
+    const issueText = (appState.issue.title || '') + ' ' + (appState.issue.task || '') + ' ' + (appState.constraints || '');
+    const chars = issueText.length;
+    const filesCount = appState.repo.files.filter(f => f.checked).length;
+    const planCount = appState.plan.length;
+
+    const tokensBase = Math.ceil(chars / 4);
+    const tokensFiles = filesCount * 220;
+    const tokensPlan = planCount * 35;
+    const tokens = tokensBase + tokensFiles + tokensPlan;
+
+    const maxTokens = appState.copilot.max_tokens >= 128000 ? 1000000 : 128000;
+    meterMaxLabelEl.textContent = `Max ${maxTokens.toLocaleString()}`;
+
+    const ratio = maxTokens > 0 ? tokens / maxTokens : 0;
+    const percent = Math.min(1, ratio) * 100;
+
+    tokenCountEl.textContent = tokens.toLocaleString();
+    tokenDetailsEl.textContent = `chars: ${chars} · files: ${filesCount} · plan: ${planCount}`;
+
+    let alertLabel = 'Safe';
+    tokenBarFillEl.classList.remove('alert-amber', 'alert-red');
+
+    if (ratio >= 0.9) {
+      alertLabel = 'Red · consider trimming context';
+      tokenBarFillEl.classList.add('alert-red');
+    } else if (ratio >= 0.7) {
+      alertLabel = 'Amber · close to limit';
+      tokenBarFillEl.classList.add('alert-amber');
+    } else {
+      alertLabel = 'Safe · plenty of headroom';
+    }
+
+    tokenAlertLabelEl.textContent = alertLabel;
+    tokenBarFillEl.style.width = `${percent}%`;
+  }
+
+  function computeAutoRouterModel() {
+    // Auto-Router heuristic:
+    // if (terminal||runTests) && plan.length>=3 -> 'claude-sonnet-4.6' (bug diagnosis);
+    // else if output==='json' -> 'gpt-5.5';
+    // else if guardrails.sweBench -> 'claude-sonnet-4.6';
+    // else -> 'claude-sonnet-4.6'.
+    const { skills, plan, output, guardrails } = appState;
+    const hasTerminalOrTests = (skills.terminal || skills.runTests);
+    const hasPlanDepth = plan.length >= 3;
+
+    if (hasTerminalOrTests && hasPlanDepth) {
+      return 'claude-sonnet-4.6';
+    }
+    if (output.format === 'json') {
+      return 'gpt-5.5';
+    }
+    if (guardrails.sweBench) {
+      return 'claude-sonnet-4.6';
+    }
+    return 'claude-sonnet-4.6';
+  }
+
+  function renderAutoRouter() {
+    const routerPill = document.getElementById('router-pill');
+    const modelEl = routerPill.querySelector('.router-pill-model');
+    const justificationEl = routerPill.querySelector('.router-pill-justification');
+
+    const model = computeAutoRouterModel();
+    modelEl.textContent = model;
+
+    let justification = '';
+    const { skills, plan, output, guardrails } = appState;
+    const hasTerminalOrTests = (skills.terminal || skills.runTests);
+    const hasPlanDepth = plan.length >= 3;
+
+    if (hasTerminalOrTests && hasPlanDepth) {
+      justification = 'Bug diagnosis: terminal/tests + ≥3-step plan → Sonnet 4.6.';
+    } else if (output.format === 'json') {
+      justification = 'Structured output requested → GPT-5.5 for JSON formatting.';
+    } else if (guardrails.sweBench) {
+      justification = 'SWE-bench guardrail enabled → Sonnet 4.6 for robustness.';
+    } else {
+      justification = 'Default: Sonnet 4.6 for PR review and bugfix workflows.';
+    }
+
+    justificationEl.textContent = justification;
+  }
+
+  function renderAgentScore() {
+    const scoreTopEl = document.getElementById('agent-score');
+    const scoreMetricsEl = document.getElementById('agent-score-metrics');
+    const agentBarFillEl = document.getElementById('agent-bar-fill');
+
+    const title = appState.issue.title.trim();
+    const repoUrl = appState.repo.url.trim();
+
+    // Title weight 20
+    let titleScore = 0;
+    if (title.length >= 12) {
+      titleScore = 20;
+    } else if (title.length >= 4) {
+      titleScore = 10;
+    }
+
+    // Repo weight 20
+    let repoScore = 0;
+    if (repoUrl.startsWith('http')) {
+      repoScore = 20;
+    } else if (repoUrl.length > 0) {
+      repoScore = 10;
+    }
+
+    // Other factors (simple heuristic)
+    let otherScore = 0;
+    const selectedFiles = appState.repo.files.filter(f => f.checked).length;
+    if (selectedFiles >= 2) otherScore += 10;
+    if (appState.plan.length >= 3) otherScore += 10;
+    if (appState.guardrails.noBreaking && appState.guardrails.testsGreen && appState.guardrails.typeSafe) {
+      otherScore += 20;
+    }
+    if (appState.issue.task.trim().length >= 40) {
+      otherScore += 10;
+    }
+    if (appState.constraints.trim().length >= 20) {
+      otherScore += 10;
+    }
+    if (otherScore > 60) otherScore = 60;
+
+    const totalScore = titleScore + repoScore + otherScore;
+    const percent = Math.min(100, totalScore);
+
+    scoreTopEl.textContent = `${totalScore} / 100`;
+    scoreMetricsEl.textContent = totalScore.toString();
+    agentBarFillEl.style.width = `${percent}%`;
+
+    agentBarFillEl.classList.remove('alert-amber', 'alert-red');
+    if (totalScore >= 80) {
+      agentBarFillEl.classList.add('alert-amber');
+    }
+    if (totalScore >= 95) {
+      agentBarFillEl.classList.add('alert-red');
+    }
+  }
+
+  function renderChips() {
+    document.getElementById('chip-readme-state').textContent = appState.repo.includeReadme ? 'On' : 'Off';
+    document.getElementById('chip-copilot-state').textContent = appState.repo.includeCopilotInstructions ? 'On' : 'Off';
+    document.getElementById('chip-diff-state').textContent = appState.repo.includeDiff ? 'On' : 'Off';
+
+    document.getElementById('chip-noBreaking').textContent = appState.guardrails.noBreaking ? 'Required' : 'Optional';
+    document.getElementById('chip-testsGreen').textContent = appState.guardrails.testsGreen ? 'Required' : 'Optional';
+    document.getElementById('chip-typeSafe').textContent = appState.guardrails.typeSafe ? 'Required' : 'Optional';
+    document.getElementById('chip-addTests').textContent = appState.guardrails.addTests ? 'Encouraged' : 'Avoid';
+    document.getElementById('chip-sweBench').textContent = appState.guardrails.sweBench ? 'On' : 'Off';
+  }
+
+  // --- Chip toggles (clickable) ---
+  function initChipToggles() {
+    const chipReadme = document.getElementById('chip-readme-state').parentElement;
+    const chipCopilot = document.getElementById('chip-copilot-state').parentElement;
+    const chipDiff = document.getElementById('chip-diff-state').parentElement;
+    const chipAddTests = document.getElementById('chip-addTests').parentElement;
+    const chipSweBench = document.getElementById('chip-sweBench').parentElement;
+
+    chipReadme.addEventListener('click', () => {
+      appState.repo.includeReadme = !appState.repo.includeReadme;
+      scheduleUpdate();
+    });
+    chipCopilot.addEventListener('click', () => {
+      appState.repo.includeCopilotInstructions = !appState.repo.includeCopilotInstructions;
+      scheduleUpdate();
+    });
+    chipDiff.addEventListener('click', () => {
+      appState.repo.includeDiff = !appState.repo.includeDiff;
+      scheduleUpdate();
+    });
+    chipAddTests.addEventListener('click', () => {
+      appState.guardrails.addTests = !appState.guardrails.addTests;
+      scheduleUpdate();
+    });
+    chipSweBench.addEventListener('click', () => {
+      appState.guardrails.sweBench = !appState.guardrails.sweBench;
+      scheduleUpdate();
+    });
+  }
+
+  // --- Boot ---
+  window.addEventListener('DOMContentLoaded', () => {
+    init();
+    initChipToggles();
+  });
+</script>
+</body>
+</html>
