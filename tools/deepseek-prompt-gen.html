@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>DeepSeek Forge — R1 Prompt Smith</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0b1118; color:#e6f6f4; font-family:"IBM Plex Sans","Inter",system-ui,sans-serif; font-size:14.5px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+    ::selection { background:#0d3d38; }
+    ::-webkit-scrollbar { width:6px; height:6px; }
+    ::-webkit-scrollbar-track { background:#111a23; }
+    ::-webkit-scrollbar-thumb { background:#2a4250; border-radius:12px; }
+    .app { display:flex; flex-direction:row; min-height:100vh; padding:12px; gap:12px; position:relative; }
+    .scanline { position:fixed; inset:0; pointer-events:none; z-index:3; background:repeating-linear-gradient(0deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 2px, transparent 2px, transparent 8px); opacity:0.4; }
+    .orb { position:fixed; border-radius:50%; filter:blur(80px); opacity:0.24; pointer-events:none; z-index:1; }
+    .orb1 { width:500px; height:500px; top:-10%; left:-8%; background:#0d4a44; animation:orbDrift 70s ease-in-out infinite alternate; }
+    .orb2 { width:450px; height:450px; bottom:-10%; right:-5%; background:#0b3a4a; animation:orbDrift 70s ease-in-out infinite alternate-reverse; }
+    @keyframes orbDrift { 0%{transform:translate(0,0)} 100%{transform:translate(20px,-20px)} }
+    @media (prefers-reduced-motion:reduce){ .orb{animation:none;opacity:0.12} }
+    a { color:#2dd4bf; text-decoration:none; }
+    .builder-pane { flex:0 0 700px; max-width:700px; display:flex; flex-direction:column; gap:10px; position:relative; z-index:4; }
+    .preview-pane { flex:1; background:#071018; border-radius:12px; border:1px solid #20313c; display:flex; flex-direction:column; overflow:hidden; position:relative; z-index:4; min-width:0; }
+    .topbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:rgba(17,26,35,0.7); backdrop-filter:blur(4px); padding:8px 14px; border-radius:12px; border:1px solid #20313c; }
+    .topbar .brand { display:flex; align-items:center; gap:6px; flex:1; }
+    .ub-home { display:inline-flex; align-items:center; gap:6px; font:500 13px/1 "IBM Plex Mono",monospace; color:#2dd4bf; background:#0f2a2a; border:1px solid #1e5252; padding:5px 12px; border-radius:999px; text-decoration:none; margin-right:6px; transition:140ms; }
+    .ub-home:hover { background:#123838; color:#5eead4; transform:translateY(-1px); }
+    .ub-home:focus-visible { box-shadow:0 0 0 3px rgba(45,212,191,.25); outline:none; }
+    @media (max-width:480px){ .ub-home span{display:none} .ub-home{padding:5px 10px} }
+    .brand h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
+    .brand .pill { font:500 11px/1 "IBM Plex Mono",monospace; color:#2dd4bf; background:#0f2a2a; padding:3px 10px; border-radius:999px; border:1px solid #1e5252; margin-left:6px; }
+    .score-ring { width:42px; height:42px; flex-shrink:0; position:relative; }
+    .score-ring svg { transform:rotate(-90deg); width:42px; height:42px; }
+    .score-ring .bg { fill:none; stroke:#20313c; stroke-width:3.5; }
+    .score-ring .fg { fill:none; stroke:#2dd4bf; stroke-width:3.5; stroke-linecap:round; transition:stroke-dashoffset 460ms ease; }
+    .score-ring .label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font:600 11px/1 "IBM Plex Mono",monospace; color:#e6f6f4; }
+    .preset-chips { display:flex; gap:6px; overflow-x:auto; padding:4px 0; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .preset-chips::-webkit-scrollbar{display:none}
+    .preset-chips button { flex-shrink:0; font:500 12px/1 "IBM Plex Mono",monospace; background:#111a23; border:1px solid #20313c; color:#93b8b4; padding:6px 14px; border-radius:999px; cursor:pointer; transition:140ms; }
+    .preset-chips button:hover { border-color:#2dd4bf; color:#e6f6f4; background:#162330; }
+    .cards { display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex:1; padding-right:4px; }
+    .card { background:#111a23; border:1px solid #20313c; border-radius:12px; padding:14px 16px; box-shadow:inset 0 0 0 1px rgba(45,212,191,0.04),0 8px 28px rgba(0,0,0,0.45); transition:border-color 150ms; }
+    .card:focus-within { border-color:#2dd4bf; }
+    .card-label { font:500 11px/1 "IBM Plex Sans",sans-serif; text-transform:uppercase; letter-spacing:.08em; color:#6a8f8b; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+    .card-label .toggle-group { display:flex; gap:4px; margin-left:auto; }
+    .card-label .toggle { font:500 10px/1 "IBM Plex Mono",monospace; background:#0f1a22; border:1px solid #20313c; color:#6a8f8b; padding:4px 10px; border-radius:999px; cursor:pointer; transition:140ms; }
+    .card-label .toggle.on { background:#0f2a2a; border-color:#2dd4bf; color:#2dd4bf; }
+    input, textarea, select { font:inherit; background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:8px 12px; color:#e6f6f4; width:100%; transition:border 150ms, box-shadow 150ms; outline:none; }
+    input:focus, textarea:focus, select:focus { border-color:#2dd4bf; box-shadow:0 0 0 3px rgba(45,212,191,.25); }
+    textarea { resize:vertical; min-height:60px; font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.5; }
+    .btn-primary { font:600 13px/1 "IBM Plex Sans",sans-serif; background:linear-gradient(180deg,#2dd4bf,#14b8a6); border:none; color:#052e2b; padding:8px 18px; border-radius:9px; cursor:pointer; transition:140ms; display:inline-flex; align-items:center; gap:6px; }
+    .btn-primary:hover { filter:brightness(1.05); }
+    .btn-primary:active { transform:scale(.97); }
+    .btn-secondary { background:transparent; border:1px solid #20313c; color:#93b8b4; padding:6px 14px; border-radius:9px; cursor:pointer; transition:140ms; font:500 12px/1 "IBM Plex Sans",sans-serif; }
+    .btn-secondary:hover { border-color:#2dd4bf; color:#e6f6f4; }
+    .step-item { display:flex; align-items:center; gap:8px; padding:4px 0; }
+    .step-item .drag { cursor:grab; color:#6a8f8b; font-size:18px; user-select:none; }
+    .step-item input { flex:1; }
+    .step-item .del { color:#f87171; cursor:pointer; background:none; border:none; font-size:16px; padding:0 4px; }
+    .tool-card { background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:10px 12px; margin-top:6px; }
+    .tool-card .row { display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+    .tool-card .row input { flex:1; min-width:100px; }
+    .preview-header { display:flex; align-items:center; gap:10px; padding:8px 16px; border-bottom:1px solid #20313c; flex-wrap:wrap; background:#071018; }
+    .preview-header .filename { font:500 13px/1 "IBM Plex Mono",monospace; color:#5a7a76; }
+    .preview-header .dot { width:8px; height:8px; background:#2dd4bf; border-radius:50%; display:inline-block; animation:pulse-dot 1.8s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .preview-header .meta { font:400 12px/1 "IBM Plex Mono",monospace; color:#6a8f8b; margin-left:auto; display:flex; gap:12px; align-items:center; }
+    .preview-body { flex:1; overflow:auto; padding:16px; }
+    .preview-body pre { font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:#d1f5f0; }
+    .preview-body .tag { color:#5eead4; }
+    .preview-body .attr { color:#fcd34d; }
+    .preview-body .str { color:#7dd3fc; }
+    .preview-body .cmt { color:#5a7a76; }
+    .preview-footer { display:flex; align-items:center; gap:12px; padding:6px 16px; border-top:1px solid #20313c; font:400 12px/1 "IBM Plex Mono",monospace; color:#6a8f8b; flex-wrap:wrap; background:#071018; }
+    .toast-container { position:fixed; top:16px; right:16px; z-index:999; display:flex; flex-direction:column; gap:8px; max-width:360px; pointer-events:none; }
+    .toast { pointer-events:auto; background:#111a23; border:1px solid #20313c; border-radius:9px; padding:10px 16px; box-shadow:0 8px 28px rgba(0,0,0,0.6); animation:toastIn 210ms ease-out; color:#e6f6f4; font-size:13px; }
+    .toast.success { border-left:4px solid #2dd4bf; }
+    .toast.warning { border-left:4px solid #fbbf24; }
+    @keyframes toastIn { 0%{opacity:0;transform:translateY(-12px) scale(.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+    @keyframes lineFlash { 0%{background:#0f2a2a} 100%{background:transparent} }
+    .flash-line { animation:lineFlash 360ms ease-out; }
+    .command-palette { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); }
+    .command-palette.open { display:flex; }
+    .cmd-box { background:#111a23; border:1px solid #20313c; border-radius:12px; max-width:540px; width:90%; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,0.7); animation:cmdIn 160ms ease-out; }
+    @keyframes cmdIn { 0%{opacity:0;transform:scale(.96)} 100%{opacity:1;transform:scale(1)} }
+    .cmd-box input { background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:10px 14px; width:100%; font-size:15px; color:#e6f6f4; }
+    .cmd-box .items { margin-top:14px; max-height:280px; overflow-y:auto; }
+    .cmd-box .item { padding:8px 12px; border-radius:6px; cursor:pointer; display:flex; gap:10px; align-items:center; transition:80ms; }
+    .cmd-box .item:hover, .cmd-box .item.active { background:#162330; }
+    .cmd-box .kbd { font:400 11px/1 "IBM Plex Mono",monospace; color:#6a8f8b; margin-left:auto; background:#0f1a22; padding:2px 8px; border-radius:4px; border:1px solid #20313c; }
+    .modal-overlay { position:fixed; inset:0; z-index:1100; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#111a23; border:1px solid #20313c; border-radius:12px; max-width:840px; width:92%; max-height:86vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.7); padding:20px; }
+    .modal-header { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .modal-header h2 { font-size:18px; font-weight:600; }
+    .modal-header input { flex:1; min-width:140px; background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:6px 12px; color:#e6f6f4; }
+    .modal-close { background:none; border:none; color:#6a8f8b; font-size:24px; cursor:pointer; padding:0 6px; }
+    .modal-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:12px; overflow-y:auto; flex:1; padding:4px 0; }
+    .template-card { background:#162330; border:1px solid #20313c; border-radius:10px; padding:14px; transition:140ms; cursor:pointer; }
+    .template-card:hover { border-color:#2dd4bf; transform:translateY(-2px); }
+    .template-card .title { font-weight:500; font-size:15px; color:#e6f6f4; }
+    .template-card .best { font:500 10px/1 "IBM Plex Sans",sans-serif; text-transform:uppercase; letter-spacing:.06em; color:#6a8f8b; margin:4px 0; }
+    .template-card .desc { font-size:13px; color:#93b8b4; margin:4px 0 8px; }
+    .template-card .tags { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0; }
+    .template-card .tags span { font:500 9px/1 "IBM Plex Mono",monospace; color:#2dd4bf; border:1px solid #1e5252; background:#0f2a2a; padding:2px 8px; border-radius:999px; }
+    .template-card .use { font:600 12px/1 "IBM Plex Sans",sans-serif; color:#052e2b; background:linear-gradient(180deg,#2dd4bf,#14b8a6); border:none; padding:4px 14px; border-radius:999px; cursor:pointer; margin-top:6px; }
+    .drawer { position:fixed; top:0; right:-360px; width:350px; height:100%; background:#111a23; border-left:1px solid #20313c; z-index:500; transition:right 240ms ease-in-out; padding:20px; overflow-y:auto; box-shadow:-4px 0 30px rgba(0,0,0,0.5); }
+    .drawer.open { right:0; }
+    .drawer h3 { font-size:16px; margin-bottom:12px; }
+    .drawer .check { display:flex; gap:8px; padding:4px 0; font-size:13px; color:#93b8b4; }
+    .drawer .check.done { color:#34d399; }
+    .drawer .check.fail { color:#f87171; }
+    .action-bar { display:flex; gap:8px; flex-wrap:wrap; padding:8px 0; border-top:1px solid #20313c; margin-top:4px; position:sticky; bottom:0; background:#0b1118; z-index:2; }
+    @media (max-width:860px){ .app{flex-direction:column} .builder-pane{max-width:100%;flex:1} .preview-pane{min-height:400px} .modal{max-width:96%} .drawer{width:100%;right:-100%} }
+    @media (max-width:480px){ .topbar .brand h1{font-size:17px} .topbar .pill{font-size:9px} .card{padding:10px 12px} }
+    .mobile-tabs { display:none; gap:4px; background:#111a23; border-radius:12px; padding:4px; border:1px solid #20313c; margin-bottom:8px; }
+    .mobile-tabs button { flex:1; background:transparent; border:none; color:#6a8f8b; padding:8px 0; border-radius:8px; font:500 13px/1 "IBM Plex Sans",sans-serif; cursor:pointer; transition:140ms; }
+    .mobile-tabs button.active { background:#162330; color:#e6f6f4; }
+    @media (max-width:860px){ .mobile-tabs{display:flex} .builder-pane .cards{display:block} .preview-pane{display:none} .preview-pane.active{display:flex} .builder-pane.hidden{display:none} }
+    .slider-row { display:flex; gap:12px; align-items:center; }
+    .slider-row input[type="range"] { flex:1; accent-color:#2dd4bf; background:#0f1a22; height:4px; border-radius:4px; }
+    .token-meter { height:4px; background:#20313c; border-radius:4px; overflow:hidden; margin:4px 0; }
+    .token-meter .fill { height:100%; background:linear-gradient(90deg,#2dd4bf,#14b8a6); transition:width 300ms; border-radius:4px; }
+    .token-meter .fill.warn { background:#fbbf24; }
+    .token-meter .fill.danger { background:#f87171; }
+    .inline-flex { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .gap-2 { gap:8px; }
+    .mt-1 { margin-top:6px; }
+    .w-full { width:100%; }
+    .text-amber { color:#fbbf24; }
+    .text-teal { color:#2dd4bf; }
+    .text-muted { color:#6a8f8b; }
+    .text-sm { font-size:12px; }
+    .font-mono { font-family:"IBM Plex Mono",monospace; }
+    .flex-1 { flex:1; }
+    .hidden { display:none !important; }
+    .relative { position:relative; }
+  </style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="app" id="app">
+  <!-- Builder Pane -->
+  <div class="builder-pane" id="builderPane">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="brand">
+        <a id="ub-home" class="ub-home" href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener noreferrer" aria-label="Utility Belt Home"><span>⌂</span><span>Home</span></a>
+        <h1>DeepSeek Forge</h1>
+        <span class="pill">V4-Pro • V4-Flash • R1-0528</span>
+        <button class="btn-secondary" style="margin-left:auto;font-size:12px;" id="templateGalleryBtn">★ Templates</button>
+      </div>
+      <div class="score-ring" id="scoreRing" title="Reasoning Score">
+        <svg viewBox="0 0 42 42"><circle class="bg" cx="21" cy="21" r="17"/><circle class="fg" id="scoreArc" cx="21" cy="21" r="17" stroke-dasharray="106.8" stroke-dashoffset="106.8"/></svg>
+        <div class="label" id="scoreLabel">0</div>
+      </div>
+    </div>
+    <!-- Preset chips -->
+    <div class="preset-chips" id="presetChips"></div>
+    <!-- Mobile tabs -->
+    <div class="mobile-tabs" id="mobileTabs">
+      <button class="active" data-tab="builder">Builder</button>
+      <button data-tab="preview">Preview</button>
+    </div>
+    <!-- Cards -->
+    <div class="cards" id="cardsContainer"></div>
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="btn-secondary" id="resetBtn">Reset</button>
+      <button class="btn-secondary" id="saveLocalBtn">Save Local</button>
+      <button class="btn-primary" id="copyBtn">📋 Copy Prompt</button>
+    </div>
+  </div>
+
+  <!-- Preview Pane -->
+  <div class="preview-pane" id="previewPane">
+    <div class="preview-header">
+      <span class="filename">deepseek_prompt.txt</span>
+      <span class="dot"></span>
+      <span class="meta">
+        <span id="tokenDisplay">~0 tok</span>
+        <span class="text-amber" id="costDisplay">~$0.0000</span>
+        <button class="btn-secondary" style="padding:2px 10px;font-size:11px;" id="copyPreviewBtn">Copy</button>
+        <button class="btn-secondary" style="padding:2px 10px;font-size:11px;" id="exportBtn">Export</button>
+      </span>
+    </div>
+    <div class="preview-body" id="previewBody">
+      <pre id="dsPreview"><span class="cmt">// Wire up R1 reasoning on the left...</span></pre>
+    </div>
+    <div class="preview-footer">
+      <span id="statusLine">Reasoning: R1 ON • Tools: 0 • Best practices 0/7</span>
+      <span style="margin-left:auto;display:flex;gap:8px;">
+        <span>Open Weights</span>
+        <a href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener" style="color:#5eead4;">Home</a>
+        <button class="btn-secondary" style="padding:0 6px;font-size:11px;" id="toggleDrawer">📋</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer -->
+<div class="drawer" id="drawer">
+  <h3>R1 Best Practices</h3>
+  <div id="checklistContainer"></div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Command Palette -->
+<div class="command-palette" id="commandPalette">
+  <div class="cmd-box">
+    <input type="text" id="cmdInput" placeholder="Type a command…" autofocus>
+    <div class="items" id="cmdItems"></div>
+  </div>
+</div>
+
+<!-- Template Gallery Modal -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h2>DeepSeek Template Gallery — R1 / V4-Pro strengths</h2>
+      <input type="text" id="templateSearch" placeholder="Filter templates…">
+      <button class="modal-close" id="templateModalClose">×</button>
+    </div>
+    <div style="font-size:12px;color:#6a8f8b;margin-bottom:8px;">18 cost-efficient, open-weights, reasoning-first starters</div>
+    <div class="modal-grid" id="templateGrid"></div>
+  </div>
+</div>
+
+<script>
+  // --- State ---
+  const DEEPSEEK_TEMPLATES = {
+    'r1-math': { goal:'Solve math proof with R1 transparent reasoning.', role:'You are DeepSeek R1, a transparent math assistant.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Parse problem and define variables.'},{id:'r2',text:'Derive lemmas inside <think>.'},{id:'r3',text:'Construct proof steps.'},{id:'r4',text:'Verify and output JSON.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return JSON {steps:[],answer}',schema:'{"type":"object","properties":{"steps":{"type":"array"},"answer":{"type":"string"}}}'}, constraints:'Use <think> for derivations. No "step by step" literal.', reasoning_depth:2, examples:[{in:'2+2',out:'4'}], ds:{temperature:0.1,top_p:0.9,max_tokens:4096,stream_thinking:true}, meta:{model:'deepseek-r1-0528'} },
+    'agentic-coder': { goal:'Write production code with reasoning, tests, and review.', role:'You are DeepSeek V4-Pro, an agentic coding assistant.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Understand requirements.'},{id:'r2',text:'Plan architecture.'},{id:'r3',text:'Write code.'},{id:'r4',text:'Test and refine.'}], tools:[{name:'read_file',description:'Read file content',parameters:{}},{name:'run_tests',description:'Execute test suite',parameters:{}},{name:'edit_file',description:'Edit file',parameters:{}}], tool_parallel:false, output:{format:'markdown',instructions:'Output PR description with code blocks.',schema:''}, constraints:'Cite file:line for changes.', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'cheap-flash': { goal:'Summarize long text cheaply.', role:'You are DeepSeek V4-Flash, a fast summarizer.', thinking:false, think_visible:false, context:'', contextFlags:{long1M:true,cache:true}, reasoningSteps:[{id:'r1',text:'Extract key points.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Bullet summary max 5 points.',schema:''}, constraints:'Minimize tokens, max 150 words.', reasoning_depth:0, examples:[], ds:{temperature:0.7,top_p:0.8,max_tokens:1024,stream_thinking:false}, meta:{model:'deepseek-v4-flash'} },
+    'long-rag': { goal:'Answer questions over 1M context with citations.', role:'You are DeepSeek V4-Pro, a RAG assistant.', thinking:true, think_visible:true, context:'[Mock: 120k token corpus]', contextFlags:{long1M:true,cache:true}, reasoningSteps:[{id:'r1',text:'Retrieve relevant passages.'},{id:'r2',text:'Synthesize answer.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return JSON {answer,citations:[]}',schema:''}, constraints:'Cite sources.', reasoning_depth:1, examples:[], ds:{temperature:0.2,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'tool-use': { goal:'Orchestrate multiple tool calls for a complex task.', role:'You are DeepSeek V4-Pro, a tool orchestrator.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Plan tool sequence.'},{id:'r2',text:'Execute tools.'},{id:'r3',text:'Synthesize results.'}], tools:[{name:'search',description:'Web search',parameters:{}},{name:'calculator',description:'Math calc',parameters:{}},{name:'database',description:'Query DB',parameters:{}}], tool_parallel:true, output:{format:'jsonl',instructions:'Output tool trace in JSONL.',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'distill-teacher': { goal:'Generate teacher traces for distillation.', role:'You are a teacher trace generator for DeepSeek R1.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Think step-by-step inside <think>.'},{id:'r2',text:'Produce final answer.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Output <think> trace and <answer>.',schema:''}, constraints:'', reasoning_depth:2, examples:[{in:'Explain gravity',out:'<think>Gravity is attractive...</think><answer>Gravity pulls mass together.</answer>'}], ds:{temperature:0.5,top_p:0.9,max_tokens:4096,stream_thinking:true}, meta:{model:'deepseek-r1-distill-qwen-32b'} },
+    'code-review': { goal:'Review code with <think> trace.', role:'You are DeepSeek R1, a code reviewer.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Understand code.'},{id:'r2',text:'Identify issues.'},{id:'r3',text:'Suggest improvements.'}], tools:[], tool_parallel:false, output:{format:'markdown',instructions:'PR review comments.',schema:''}, constraints:'Cite file:line.', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-r1-0528'} },
+    'swe-bench': { goal:'Fix SWE-bench style bugs.', role:'You are DeepSeek V4-Pro, a bug fix agent.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Reproduce bug.'},{id:'r2',text:'Analyze root cause.'},{id:'r3',text:'Propose fix.'},{id:'r4',text:'Test fix.'},{id:'r5',text:'Submit patch.'}], tools:[{name:'run_tests',description:'Run tests',parameters:{}}], tool_parallel:false, output:{format:'text',instructions:'Describe fix and tests.',schema:''}, constraints:'', reasoning_depth:2, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'sql-optimizer': { goal:'Optimize SQL queries.', role:'You are DeepSeek V4-Pro, a SQL expert.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Parse SQL.'},{id:'r2',text:'Identify bottlenecks.'},{id:'r3',text:'Rewrite.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return {optimized_sql, rationale}',schema:''}, constraints:'No schema change.', reasoning_depth:1, examples:[], ds:{temperature:0.2,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'eval-harness': { goal:'Run open-weights evaluation harness.', role:'You are DeepSeek V4-Pro, an evaluator.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Define metrics.'},{id:'r2',text:'Run eval.'},{id:'r3',text:'Report scores.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return JSON scores[]',schema:''}, constraints:'', reasoning_depth:0, examples:[], ds:{temperature:0,top_p:0.9,max_tokens:2048,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'chain-draft': { goal:'Compress reasoning to <80 tokens.', role:'You are DeepSeek R1, a draft compressor.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Draft concise think.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Concise output.',schema:''}, constraints:'<80 tokens think.', reasoning_depth:0, examples:[], ds:{temperature:0.5,top_p:0.9,max_tokens:1024,stream_thinking:false}, meta:{model:'deepseek-r1-0528'} },
+    'multilingual': { goal:'Reason in multiple languages.', role:'You are DeepSeek R1, a multilingual assistant.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Understand query.'},{id:'r2',text:'Reason in target language.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Bilingual JSON.',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-r1-distill-qwen-32b'} },
+    'function-stress': { goal:'Stress test function calling.', role:'You are DeepSeek V4-Pro, a function caller.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Plan calls.'},{id:'r2',text:'Execute.'},{id:'r3',text:'Trace.'}], tools:[{name:'tool1',description:'',parameters:{}},{name:'tool2',description:'',parameters:{}},{name:'tool3',description:'',parameters:{}},{name:'tool4',description:'',parameters:{}},{name:'tool5',description:'',parameters:{}}], tool_parallel:true, output:{format:'jsonl',instructions:'tool_trace JSON',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'refactor-planner': { goal:'Plan repo-wide refactor.', role:'You are DeepSeek V4-Pro, a refactor planner.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:true,cache:true}, reasoningSteps:[{id:'r1',text:'Scan repo.'},{id:'r2',text:'Plan changes.'},{id:'r3',text:'Output patch plan.'}], tools:[], tool_parallel:false, output:{format:'markdown',instructions:'Patch plan markdown.',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'cost-aware': { goal:'Route to V4-Flash for cost.', role:'You are DeepSeek V4-Flash, a cost-aware router.', thinking:false, think_visible:false, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Minimize tokens.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Concise answer.',schema:''}, constraints:'Minimize tokens, max 150 words.', reasoning_depth:0, examples:[], ds:{temperature:0.7,top_p:0.9,max_tokens:512,stream_thinking:false}, meta:{model:'deepseek-v4-flash'} },
+    'formal-verification': { goal:'Sketch formal verification.', role:'You are DeepSeek R1, a formal verifier.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Define lemmas.'},{id:'r2',text:'Sketch proof.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return {lemmas[], proof_sketch}',schema:''}, constraints:'', reasoning_depth:2, examples:[], ds:{temperature:0.1,top_p:0.9,max_tokens:4096,stream_thinking:true}, meta:{model:'deepseek-r1-0528'} },
+    'gguf-export': { goal:'Export self-host GGUF.', role:'You are DeepSeek V4-Pro, an export helper.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Generate openweights.yaml'},{id:'r2',text:'Generate Ollama Modelfile.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'openweights.yaml + Modelfile.',schema:''}, constraints:'', reasoning_depth:0, examples:[], ds:{temperature:0.5,top_p:0.9,max_tokens:2048,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
+    'zero-shot': { goal:'Zero-shot classification.', role:'You are DeepSeek R1, a classifier.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Think summary.'},{id:'r2',text:'Classify.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return {label, confidence, think_summary}',schema:''}, constraints:'', reasoning_depth:0, examples:[], ds:{temperature:0,top_p:0.9,max_tokens:1024,stream_thinking:false}, meta:{model:'deepseek-r1-0528'} }
+  };
+
+  const PRESET_NAMES = ['agentic-coder','r1-math','tool-use','long-rag','distill-teacher','cheap-flash','blank'];
+  const PRESET_DISPLAY = ['Agentic Coder','R1 Math','Tool Use JSON','Long-Context RAG','Distill Trainer','Cheap Flash','Blank'];
+  const MODEL_COST = { 'deepseek-v4-pro':[0.435,0.87], 'deepseek-v4-flash':[0.14,0.28], 'deepseek-r1-0528':[0.55,2.19], 'deepseek-r1-distill-qwen-32b':[0,0] };
+
+  const initialPreset = 'agentic-coder';
+  let appState = JSON.parse(JSON.stringify(DEEPSEEK_TEMPLATES[initialPreset] || DEEPSEEK_TEMPLATES['agentic-coder']));
+  appState.meta = appState.meta || { model:'deepseek-v4-pro' };
+  let lastTemplate = 'agentic-coder';
+
+  // --- Helpers ---
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+  function escapeHtml(s){ if(!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function estimateTokens(state){ let s = buildDeepSeekPrompt(state); let t = Math.ceil(s.length/3.6); t += (state.tools||[]).length*120; t += (state.reasoningSteps||[]).length*40; return Math.max(1,t); }
+  function costEstimate(state){ let tok=estimateTokens(state); let m=state.meta.model||'deepseek-v4-pro'; let c=MODEL_COST[m]||[0.435,0.87]; return { in:tok/1e6*c[0], out:tok/1e6*c[1], tok }; }
+
+  // --- Prompt Builder ---
+  function buildDeepSeekPrompt(s){
+    let parts = [];
+    parts.push('<system>');
+    parts.push(`<role>${escapeHtml(s.role||'')}</role>`);
+    if(s.goal) parts.push(`<objective>${escapeHtml(s.goal)}</objective>`);
+    if(s.context) parts.push(`<context ${s.contextFlags?.long1M?'long="1M"':''}>${escapeHtml(s.context)}</context>`);
+    if(s.think_visible!==false && s.thinking!==false){
+      parts.push('<think>');
+      (s.reasoningSteps||[]).forEach(st=>{ parts.push(`<step>${escapeHtml(st.text)}</step>`); });
+      parts.push('</think>');
+    } else {
+      (s.reasoningSteps||[]).forEach(st=>{ parts.push(`<step>${escapeHtml(st.text)}</step>`); });
+    }
+    if(s.tools && s.tools.length){
+      parts.push('<tools>');
+      s.tools.forEach(t=>{ parts.push(`<tool name="${escapeHtml(t.name)}" description="${escapeHtml(t.description||'')}" params="${escapeHtml(JSON.stringify(t.parameters||{}))}"/>`); });
+      parts.push('</tools>');
+    }
+    if(s.output){
+      parts.push(`<output_format format="${escapeHtml(s.output.format||'text')}">${escapeHtml(s.output.instructions||'')}</output_format>`);
+      if(s.output.schema) parts.push(`<schema>${escapeHtml(s.output.schema)}</schema>`);
+    }
+    if(s.constraints) parts.push(`<constraints>${escapeHtml(s.constraints)}</constraints>`);
+    if(s.examples && s.examples.length){
+      parts.push('<examples>');
+      s.examples.forEach(e=>{ parts.push(`<example><in>${escapeHtml(e.in)}</in><out>${escapeHtml(e.out)}</out></example>`); });
+      parts.push('</examples>');
+    }
+    parts.push('</system>');
+    parts.push('<instruction>Provide final answer matching output format. Use <think> for internal reasoning, but do NOT say "think step by step" literally.</instruction>');
+    return parts.join('\n');
+  }
+
+  function highlightDS(text){
+    let h = escapeHtml(text);
+    h = h.replace(/(&lt;\/?)(\w+)/g,'$1<span class="tag">$2</span>');
+    h = h.replace(/(&quot;|&amp;)/g,'<span class="str">$1</span>');
+    h = h.replace(/(\b\d+\b)/g,'<span class="attr">$1</span>');
+    h = h.replace(/(&lt;!--.*?--&gt;)/g,'<span class="cmt">$1</span>');
+    return h;
+  }
+
+  // --- Render ---
+  function renderPreview(){
+    let state = appState;
+    let prompt = buildDeepSeekPrompt(state);
+    let tok = estimateTokens(state);
+    let cost = costEstimate(state);
+    document.getElementById('dsPreview').innerHTML = highlightDS(prompt);
+    document.getElementById('tokenDisplay').textContent = `~${tok.toLocaleString()} tok`;
+    document.getElementById('costDisplay').textContent = `~$${cost.in.toFixed(4)} in / $${cost.out.toFixed(4)} out`;
+    // Score
+    let score = calcReasoningScore(state);
+    let arc = document.getElementById('scoreArc');
+    let circum = 106.8;
+    arc.style.strokeDashoffset = circum - (score/100)*circum;
+    document.getElementById('scoreLabel').textContent = score;
+    // Checklist
+    updateChecklist(state);
+    // Status
+    let toolsCount = (state.tools||[]).length;
+    let thinking = state.thinking !== false ? 'ON' : 'OFF';
+    document.getElementById('statusLine').textContent = `Reasoning: R1 ${thinking} • Tools: ${toolsCount} • Best practices ${document.querySelectorAll('#checklistContainer .done').length}/7`;
+  }
+
+  function calcReasoningScore(s){
+    let score=0;
+    if(s.goal && s.goal.length>10) score+=20;
+    if(s.think_visible!==false && s.thinking!==false) score+=20;
+    if((s.tools||[]).length>0) score+=20;
+    if(s.constraints && s.constraints.length>10) score+=20;
+    if(s.role && s.role.length>10) score+=20;
+    return Math.min(100,score);
+  }
+
+  function updateChecklist(s){
+    let checks = [
+      { label:'<think> present', pass:s.thinking!==false && s.think_visible!==false },
+      { label:'Goal first 120 chars', pass:s.goal && s.goal.length>=10 },
+      { label:'Output schema explicit', pass:s.output?.format && s.output.format!=='text' },
+      { label:'Tools JSON valid', pass:true },
+      { label:'No banned "step by step"', pass:!(buildDeepSeekPrompt(s).toLowerCase().includes('step by step')) },
+      { label:'≥1 measurable constraint', pass:s.constraints && s.constraints.length>8 },
+      { label:'Role specific (>10 chars)', pass:s.role && s.role.length>10 }
+    ];
+    let container = document.getElementById('checklistContainer');
+    container.innerHTML = checks.map((c,i)=>`<div class="check ${c.pass?'done':'fail'}">${c.pass?'✓':'✗'} ${c.label}</div>`).join('');
+  }
+
+  function buildCardHTML(s){
+    // simplified card builder for UI – we'll inject via DOM in init
+    return '';
+  }
+
+  // --- Template Gallery ---
+  function renderTemplateGallery(filter=''){
+    let grid = document.getElementById('templateGrid');
+    let entries = Object.entries(DEEPSEEK_TEMPLATES);
+    if(filter) entries = entries.filter(([k,v])=>k.includes(filter)||v.goal.includes(filter)||v.role.includes(filter));
+    grid.innerHTML = entries.map(([k,v])=>{
+      let tags = [k.startsWith('r1')?'r1':'v4-pro', v.meta?.model||'deepseek', '$'+costEstimate(v).in.toFixed(2), v.contextFlags?.long1M?'1M':'', (v.tools||[]).length?'tools':''];
+      return `<div class="template-card" data-key="${k}">
+        <div class="title">${k.replace(/-/g,' ')}</div>
+        <div class="best">Best for</div>
+        <div class="desc">${v.goal.slice(0,60)}</div>
+        <div class="tags">${tags.map(t=>`<span>${t}</span>`).join('')}</div>
+        <button class="use" data-key="${k}">Use →</button>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('.use').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        let key = btn.dataset.key;
+        loadTemplate(key);
+        document.getElementById('templateModal').classList.remove('open');
+        toast(`Template loaded: ${key} — DeepSeek R1 optimized • est $${costEstimate(appState).in.toFixed(4)}`,'success');
+      });
+    });
+  }
+
+  function loadTemplate(key){
+    if(!DEEPSEEK_TEMPLATES[key]) return;
+    appState = JSON.parse(JSON.stringify(DEEPSEEK_TEMPLATES[key]));
+    lastTemplate = key;
+    localStorage.setItem('deepseek-forge-last', key);
+    renderAll();
+    toast(`Template loaded: ${key}`,'success');
+  }
+
+  // --- Render all UI ---
+  function renderAll(){
+    renderPreview();
+    // presets
+    let chips = document.getElementById('presetChips');
+    chips.innerHTML = PRESET_NAMES.map((n,i)=>`<button data-preset="${n}" class="${n===lastTemplate?'active':''}" style="${n===lastTemplate?'border-color:#2dd4bf;color:#e6f6f4;':''}">${PRESET_DISPLAY[i]}</button>`).join('');
+    chips.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        let key = b.dataset.preset;
+        if(key==='blank'){
+          appState = JSON.parse(JSON.stringify(DEEPSEEK_TEMPLATES['agentic-coder']));
+          appState.goal=''; appState.role=''; appState.reasoningSteps=[]; appState.tools=[]; appState.constraints=''; appState.output={format:'text',instructions:'',schema:''}; appState.examples=[];
+          appState.meta.model='deepseek-v4-pro';
+          lastTemplate='blank';
+        } else {
+          loadTemplate(key);
+        }
+        renderAll();
+      });
+    });
+    // quick start top 6
+    // We'll add a small strip above preset chips
+    let quickStart = document.querySelector('.quick-start');
+    if(!quickStart){
+      let qs = document.createElement('div');
+      qs.className = 'preset-chips quick-start';
+      qs.style.marginBottom='4px';
+      document.getElementById('presetChips').parentNode.insertBefore(qs, document.getElementById('presetChips'));
+      quickStart = qs;
+    }
+    let top6 = Object.keys(DEEPSEEK_TEMPLATES).slice(0,6);
+    quickStart.innerHTML = top6.map(k=>`<button data-key="${k}" style="font-size:10px;padding:3px 10px;border-color:#1e5252;color:#2dd4bf;">${k.replace(/-/g,' ')}</button>`).join('');
+    quickStart.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click',()=>{ loadTemplate(b.dataset.key); renderAll(); });
+    });
+    // Drawer auto-open after load
+    setTimeout(()=>{
+      document.getElementById('drawer').classList.add('open');
+      setTimeout(()=>{ document.getElementById('drawer').classList.remove('open'); }, 2200);
+    }, 400);
+  }
+
+  // --- Toast ---
+  function toast(msg,type='success'){
+    let c = document.getElementById('toastContainer');
+    let el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(()=>{ if(el.parentNode) el.remove(); }, 2000);
+  }
+
+  // --- Copy ---
+  function copyPrompt(){
+    let text = buildDeepSeekPrompt(appState);
+    navigator.clipboard.writeText(text).then(()=>{
+      toast('Prompt copied — est $'+costEstimate(appState).in.toFixed(4),'success');
+    }).catch(()=>{});
+  }
+
+  // --- Init ---
+  function init(){
+    // Load last
+    let last = localStorage.getItem('deepseek-forge-last');
+    if(last && DEEPSEEK_TEMPLATES[last]) loadTemplate(last);
+    else loadTemplate('agentic-coder');
+
+    // Events
+    document.getElementById('copyBtn').addEventListener('click',copyPrompt);
+    document.getElementById('copyPreviewBtn').addEventListener('click',copyPrompt);
+    document.getElementById('resetBtn').addEventListener('click',()=>{ loadTemplate('agentic-coder'); renderAll(); });
+    document.getElementById('saveLocalBtn').addEventListener('click',()=>{
+      localStorage.setItem('deepseek-forge-v1', JSON.stringify(appState));
+      toast('Saved local','success');
+    });
+    document.getElementById('toggleDrawer').addEventListener('click',()=>{
+      document.getElementById('drawer').classList.toggle('open');
+    });
+    // Template gallery
+    document.getElementById('templateGalleryBtn').addEventListener('click',()=>{
+      document.getElementById('templateModal').classList.add('open');
+      renderTemplateGallery('');
+    });
+    document.getElementById('templateModalClose').addEventListener('click',()=>{
+      document.getElementById('templateModal').classList.remove('open');
+    });
+    document.getElementById('templateModal').addEventListener('click',(e)=>{
+      if(e.target === e.currentTarget) document.getElementById('templateModal').classList.remove('open');
+    });
+    document.getElementById('templateSearch').addEventListener('input',(e)=>{
+      renderTemplateGallery(e.target.value);
+    });
+    // Command palette
+    document.addEventListener('keydown',(e)=>{
+      if(e.ctrlKey && e.key==='k'){ e.preventDefault(); toggleCommandPalette(); }
+      if(e.ctrlKey && e.key==='Enter'){ e.preventDefault(); copyPrompt(); }
+      if(e.ctrlKey && e.key==='s'){ e.preventDefault(); localStorage.setItem('deepseek-forge-v1', JSON.stringify(appState)); toast('Saved','success'); }
+      if(e.ctrlKey && e.key==='r'){ e.preventDefault(); renderPreview(); toast('Cost sim updated','success'); }
+    });
+    // Mobile tabs
+    document.querySelectorAll('#mobileTabs button').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('#mobileTabs button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        let tab = btn.dataset.tab;
+        document.getElementById('builderPane').classList.toggle('hidden', tab==='preview');
+        document.getElementById('previewPane').classList.toggle('active', tab==='preview');
+        if(tab==='preview') document.getElementById('previewPane').style.display='flex';
+        else document.getElementById('previewPane').style.display='';
+      });
+    });
+    // Touch swipe for mobile
+    let startX=0;
+    document.addEventListener('touchstart',e=>{ startX=e.changedTouches[0].screenX; });
+    document.addEventListener('touchend',e=>{
+      let dx = e.changedTouches[0].screenX - startX;
+      if(Math.abs(dx)>50 && window.innerWidth<860){
+        let active = document.querySelector('#mobileTabs .active');
+        let btns = document.querySelectorAll('#mobileTabs button');
+        let idx = [...btns].indexOf(active);
+        if(dx<0 && idx<btns.length-1) btns[idx+1].click();
+        else if(dx>0 && idx>0) btns[idx-1].click();
+      }
+    });
+
+    renderAll();
+  }
+
+  function toggleCommandPalette(){
+    let pal = document.getElementById('commandPalette');
+    pal.classList.toggle('open');
+    if(pal.classList.contains('open')){
+      document.getElementById('cmdInput').focus();
+      let items = document.getElementById('cmdItems');
+      items.innerHTML = `
+        <div class="item" data-action="copy">📋 Copy Prompt</div>
+        <div class="item" data-action="save">💾 Save Local</div>
+        <div class="item" data-action="reset">⟳ Reset</div>
+        <div class="item" data-action="gallery">★ Open Template Gallery</div>
+      `;
+      items.querySelectorAll('.item').forEach(el=>{
+        el.addEventListener('click',()=>{
+          let action = el.dataset.action;
+          if(action==='copy') copyPrompt();
+          else if(action==='save'){ localStorage.setItem('deepseek-forge-v1', JSON.stringify(appState)); toast('Saved','success'); }
+          else if(action==='reset'){ loadTemplate('agentic-coder'); renderAll(); }
+          else if(action==='gallery'){ document.getElementById('templateModal').classList.add('open'); renderTemplateGallery(''); }
+          document.getElementById('commandPalette').classList.remove('open');
+        });
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
