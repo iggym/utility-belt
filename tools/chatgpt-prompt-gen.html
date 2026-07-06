@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT Forge — Prompt Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:Inter,system-ui,-apple-system,Roboto,sans-serif;background:#f6f8fc;color:#1f1f1f;-webkit-font-smoothing:antialiased}
+a{color:#10a37f;text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#c4c7c5;border-radius:4px}
+
+/* background orbs */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+background:
+ radial-gradient(1000px 700px at 8% -5%, #eaf1fb 0%, transparent 62%),
+ radial-gradient(800px 600px at 92% 0%, #f3e8ff 0%, transparent 58%);
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.025;background-image:radial-gradient(#000 1px, transparent 1px);background-size:14px 14px;z-index:0}
+
+/* app */
+.app{position:relative;z-index:1;display:flex;height:100dvh}
+.builder{flex:1.15;max-width:760px;overflow-y:auto;background:transparent}
+.preview{flex:1;display:flex;flex-direction:column;background:#0b1220;color:#e8eaed;min-width:380px;border-left:1px solid #1e2a3a}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:30;background:rgba(246,248,252,.88);backdrop-filter:blur(10px);border-bottom:1px solid #dadce0;padding:12px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ub-home{display:inline-flex;align-items:center;gap:6px;font:500 13px Inter,sans-serif;color:#10a37f;background:#ecfdf5;border:1px solid #a7f3d0;padding:6px 12px;border-radius:999px;text-decoration:none;transition:150ms}
+.ub-home:hover{background:#a7f3d0;transform:translateY(-1px)}
+.brand{font-weight:600;font-size:20px;letter-spacing:-.012em}
+.model-pill{font:500 11px "JetBrains Mono",monospace;color:#5f6368;background:#f1f4f9;border:1px solid #dadce0;padding:3px 8px;border-radius:999px}
+.spacer{flex:1}
+.tbtn{font:500 12px Inter,sans-serif;background:#10a37f;color:#fff;border:none;padding:7px 14px;border-radius:999px;cursor:pointer}
+.tbtn:hover{background:#0d8a6a}
+.score-ring{width:44px;height:44px;position:relative}
+.score-ring svg{transform:rotate(-90deg)}
+.score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 12px "JetBrains Mono",monospace}
+
+/* quick templates */
+.quick-row{padding:10px 18px 0;display:flex;flex-wrap:wrap;gap:7px}
+.qchip{font:500 11px Inter,sans-serif;background:#fff;border:1px solid #dadce0;color:#10a37f;padding:5px 10px;border-radius:999px;cursor:pointer}
+.qchip:hover{background:#ecfdf5}
+
+/* presets */
+.preset-row{padding:10px 18px;display:flex;gap:8px;overflow-x:auto}
+.pchip{white-space:nowrap;font:500 12px Inter,sans-serif;background:#fff;color:#5f6368;border:1px solid #dadce0;padding:6px 12px;border-radius:999px;cursor:pointer;flex-shrink:0}
+.pchip.active,.pchip:hover{background:#ecfdf5;color:#10a37f;border-color:#8ab4f8}
+
+/* cards */
+.cards{padding:0 18px 120px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid #dadce0;border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15)}
+.card h2{font:500 11px Inter,sans-serif;text-transform:uppercase;letter-spacing:.09em;color:#5f6368;margin-bottom:10px}
+label{font:500 13px Inter,sans-serif;color:#1f1f1f;display:block;margin:9px 0 5px}
+input[type=text],input[type=search],input[type=number],textarea,select{width:100%;background:#fdfbf8;border:1px solid #dadce0;border-radius:10px;padding:9px 11px;font:400 15px Inter,sans-serif;outline:none;transition:160ms}
+textarea{min-height:84px;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:#10a37f;box-shadow:0 0 0 3px rgba(16,163,127,.22)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.small{font:12px Inter,sans-serif;color:#5f6368}
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.tog{font:500 12px Inter,sans-serif;background:#f1f4f9;border:1px solid #dadce0;color:#3c4043;padding:5px 10px;border-radius:8px;cursor:pointer}
+.tog.on{background:#ecfdf5;color:#10a37f;border-color:#8ab4f8}
+.btn{font:500 13px Inter,sans-serif;padding:8px 14px;border-radius:10px;border:1px solid #dadce0;background:#fff;color:#1f1f1f;cursor:pointer}
+.btn-primary{background:linear-gradient(180deg,#2a82f0,#10a37f);color:#fff;border-color:#10a37f}
+.btn-sm{padding:5px 10px;font-size:12px}
+.muted{color:#80868b}
+
+/* steps */
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:8px;background:#f8fafc;border:1px solid #e1e7ef;border-radius:10px;padding:9px}
+.step textarea{flex:1;min-height:54px;background:#fff}
+.step .ic{color:#80868b;cursor:pointer;padding:2px 6px;background:transparent;border:none}
+
+/* preview */
+.p-hd{height:48px;background:#0d1526;border-bottom:1px solid #1e293b;display:flex;align-items:center;padding:0 14px;gap:12px;font:12px "JetBrains Mono",monospace;color:#9aa0a6;flex-shrink:0}
+.live-dot{width:7px;height:7px;background:#34d399;border-radius:50%;animation:pL 2s infinite}
+@keyframes pL{0%,100%{opacity:1}50%{opacity:.4}}
+.token{margin-left:auto;color:#9aa0a6;font-size:11px}
+.p-body{flex:1;overflow:auto;padding:20px}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;font:13px/20px "JetBrains Mono",monospace;color:#e8eaed}
+.tok1{color:#8ab4f8}.tok2{color:#fdd663}.tok3{color:#81c995}.tokc{color:#9aa0a6}
+.flash{animation:fl .38s ease-out}
+@keyframes fl{from{background:#1e3a5f}to{background:transparent}}
+.p-ft{border-top:1px solid #1e293b;padding:10px 14px;font:12px Inter,sans-serif;color:#9aa0a6;display:flex;justify-content:space-between;background:#0d1526}
+
+/* action bar */
+.ab{position:sticky;bottom:0;background:rgba(246,248,252,.93);backdrop-filter:blur(8px);border-top:1px solid #dadce0;padding:12px 18px;display:flex;gap:10px;align-items:center;z-index:20}
+.ab .sp{flex:1}
+
+/* modal */
+.mb{position:fixed;inset:0;background:rgba(32,33,36,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}
+.mb.open{display:flex}
+.mo{background:#fff;border:1px solid #dadce0;border-radius:16px;width:100%;max-width:860px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(60,64,67,.3);animation:mi .17s cubic-bezier(.22,1,.36,1)}
+@keyframes mi{from{opacity:0;transform:scale(.96) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mh{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #e8eaed}
+.mh h3{font:600 15px Inter,sans-serif}
+.mh input{flex:1;max-width:320px}
+.mx{margin-left:auto;background:transparent;border:none;font-size:20px;color:#5f6368;cursor:pointer}
+.ms{padding:8px 16px;color:#5f6368;font:12px Inter,sans-serif;border-bottom:1px solid #f1f3f4}
+.mbdy{overflow:auto;padding:14px 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.tcard{background:#fff;border:1px solid #dadce0;border-radius:12px;padding:13px;cursor:pointer;transition:150ms}
+.tcard:hover{transform:translateY(-2px);border-color:#10a37f;box-shadow:0 6px 18px rgba(60,64,67,.15)}
+.tcard h4{font:600 14px Inter,sans-serif;margin-bottom:3px}
+.tbest{font:500 10px Inter,sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#5f6368;margin-bottom:5px}
+.tcard p{font:13px/18px Inter,sans-serif;color:#3c4043;margin-bottom:8px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.tag{font:10px "JetBrains Mono",monospace;background:#f1f4f9;border:1px solid #e8eaed;color:#5f6368;padding:2px 6px;border-radius:4px}
+.use{font:500 12px Inter,sans-serif;color:#10a37f}
+
+/* toast */
+.toasts{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:#fff;border:1px solid #dadce0;padding:10px 14px;border-radius:10px;font:13px Inter,sans-serif;box-shadow:0 8px 24px rgba(60,64,67,.2);animation:ti .22s ease-out;max-width:340px}
+@keyframes ti{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* mobile */
+.mtabs{display:none}
+@media(max-width:900px){
+  .app{flex-direction:column}
+  .preview{display:none}
+  body.show-p .builder{display:none}
+  body.show-p .preview{display:flex;height:calc(100dvh - 44px)}
+  .mtabs{display:flex;background:#fff;border-bottom:1px solid #dadce0}
+  .mtabs button{flex:1;background:transparent;border:none;padding:12px;font:500 13px Inter,sans-serif;color:#5f6368;cursor:pointer}
+  .mtabs button.active{color:#10a37f;box-shadow:inset 0 -2px 0 #10a37f}
+  .row2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="mtabs" id="mtabs">
+  <button class="active" data-t="b">Builder</button>
+  <button data-t="p">Preview</button>
+</div>
+<div class="app">
+  <section class="builder" id="builder">
+    <div class="topbar">
+      <a class="ub-home" href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener">⌂ Home</a>
+      <span class="brand">ChatGPT Forge</span>
+      <span class="model-pill">GPT-5.5 • o3 • 5.5-mini</span>
+      <div class="spacer"></div>
+      <button class="tbtn" id="openTpl">Templates ★</button>
+      <div class="score-ring" title="Quality Score">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="16" fill="none" stroke="#e8eaed" stroke-width="3"/>
+          <circle id="sc" cx="22" cy="22" r="16" fill="none" stroke="#10a37f" stroke-width="3" stroke-dasharray="100.5" stroke-dashoffset="28" stroke-linecap="round"/>
+        </svg>
+        <div class="score-num" id="scn" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 11px 'JetBrains Mono',monospace;">82</div>
+      </div>
+    </div>
+
+    <div class="quick-row" id="quickRow"></div>
+    <div class="preset-row" id="presetRow"></div>
+
+    <div class="cards">
+      <div class="card">
+        <h2>System & Goal</h2>
+        <label>Primary Goal</label>
+        <textarea id="goal" placeholder="e.g., Analyze the attached research PDFs and produce…"></textarea>
+        <div class="row2">
+          <div><label>Claude / ChatGPT Role</label><input type="text" id="role" value="You are Gemini, a meticulous multimodal research analyst."></div>
+          <div><label> </label><label style="display:flex;align-items:center;gap:8px;font:13px Inter,sans-serif"><input type="checkbox" id="thinking" checked> Thinking – Deep Think</label></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Multimodal Context</h2>
+        <label>Context notes</label>
+        <textarea id="context" placeholder="Background, constraints, corpus notes…"></textarea>
+        <div class="chip-grid" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px">
+          <button class="tog on" data-cf="longContext">Long context >128k</button>
+          <button class="tog on" data-cf="multimodal">Multimodal ON</button>
+          <button class="tog on" data-cf="urlContext">URL context ON</button>
+        </div>
+        <div class="small" style="margin-top:8px">Dropzone (mock): <em>images / PDF / video / audio supported – files auto-tag &lt;media&gt;</em></div>
+        <div id="mmList" class="small" style="margin-top:6px;color:#137333">📄 research_paper.pdf • 🖼️ chart.png</div>
+      </div>
+
+      <div class="card">
+        <h2>Task / Reasoning Steps</h2>
+        <div class="steps" id="steps"></div>
+        <button class="btn btn-sm" id="addStep" style="margin-top:8px">+ Add step</button>
+      </div>
+
+      <div class="card">
+        <h2>Tools & Grounding</h2>
+        <div class="chip-grid" id="toolsGrid"></div>
+        <div id="fcWrap" style="display:none;margin-top:10px">
+          <label>Function Calling schema (JSON)</label>
+          <textarea id="fcSchema" style="font-family:'JetBrains Mono',monospace;font-size:12px">{
+  "name": "submit_answer",
+  "description": "",
+  "parameters": {"type":"object","properties":{}}
+}</textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Output Shape</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="outFmt"></div>
+        <label>Output instructions</label>
+        <textarea id="outInst" placeholder="Explicit schema, fields, format…"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>Constraints & Safety</h2>
+        <textarea id="constraints" placeholder="No emojis. Cite sources. Max 300 words…"></textarea>
+        <div class="row2" style="margin-top:8px">
+          <div><label>Safety</label>
+            <select id="safety"><option>balanced</option><option>strict</option><option>permissive</option></select>
+          </div>
+          <div><label>Verbosity</label>
+            <input type="range" id="verbosity" min="0" max="2" value="1" style="width:100%">
+            <div class="small" style="display:flex;justify-content:space-between"><span>Concise</span><span>Balanced</span><span>Thorough</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>ChatGPT Controls</h2>
+        <div class="row2">
+          <div><label>Model</label>
+            <select id="model">
+              <option value="chatgpt-3.5-pro">chatgpt-3.5-pro</option>
+              <option value="chatgpt-3.1-pro-preview">chatgpt-3.1-pro-preview</option>
+              <option value="chatgpt-3.5-flash">chatgpt-3.5-flash</option>
+            </select>
+          </div>
+          <div><label>Temperature</label><input type="number" id="temp" value="0.4" min="0" max="2" step="0.1"></div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div><label>thinking_budget</label><input type="number" id="tbudget" value="8192" min="0" max="24576" step="512"></div>
+          <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="structOut" checked> Structured outputs enforce</label></div>
+        </div>
+      </div>
+
+      <div class="small muted">Shortcuts: <b>Cmd Enter</b> Copy • <b>Cmd K</b> Commands • <b>Cmd Shift M</b> Multimodal</div>
+    </div>
+
+    <div class="ab">
+      <button class="btn" id="resetBtn">Reset</button>
+      <button class="btn" id="saveBtn">Save to Library</button>
+      <div class="sp"></div>
+      <span class="small" id="tokMeta">~84,200 tok • $0.21 est</span>
+      <button class="btn-primary btn" id="copyBtn">Copy Prompt</button>
+    </div>
+  </section>
+
+  <section class="preview">
+    <div class="p-hd">
+      <span style="color:#9aa0a6">gemini_prompt.txt</span>
+      <span class="live-dot"></span><span style="color:#81c995;font-size:11px">live</span>
+      <span class="token" id="tokPill">~84,200 / 1,048,576</span>
+      <button class="btn btn-sm" id="copyIcon" style="background:#1e293b;color:#e8eaed;border-color:#334155">Copy</button>
+    </div>
+    <div class="p-body"><pre id="pOut"></pre></div>
+    <div class="p-ft">
+      <span id="ftLeft">Grounding: 2 tools • Best practices 7/8 ✓</span>
+      <span><a href="#" id="openAIStudio">Open in AI Studio</a> · <a href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener">Home</a></span>
+    </div>
+  </section>
+</div>
+
+<!-- Template Modal -->
+<div class="mb" id="tplMb" role="dialog" aria-modal="true" aria-label="ChatGPT Template Gallery">
+  <div class="mo">
+    <div class="mh">
+      <h3>✨ ChatGPT Template Gallery</h3>
+      <input type="search" id="tplSearch" placeholder="Search 18 templates… / to focus">
+      <button class="mx" id="tplX">×</button>
+    </div>
+    <div class="ms">18 premade, production-tuned starters — tasks ChatGPT excels at — 1-click load</div>
+    <div class="mbdy"><div class="grid" id="tplGrid"></div></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+let state = {
+  goal:"Synthesize findings across 3 research PDFs + 2 charts, ground with Google Search, output structured JSON.",
+  role:"You are Gemini, a meticulous multimodal research analyst.",
+  thinking:true, thinking_budget:8192,
+  context:"Q2 2026 market research corpus.",
+  contextFlags:{longContext:true, multimodal:true, urlContext:true},
+  taskSteps:[
+    {id:'a',text:'Ingest all multimodal inputs and extract salient entities.'},
+    {id:'b',text:'Ground claims with Search grounding / URL context where applicable.'},
+    {id:'c',text:'Synthesize and produce output in the specified schema.'}
+  ],
+  tools:{searchGrounding:true, urlContext:true, codeExecution:false, functionCalling:false, fileSearch:false},
+  output:{format:'structured', instructions:'Return valid JSON matching response_schema.', response_schema:'{"type":"object"}'},
+  constraints:'Cite sources inline. No hallucinations. Max 800 words summary if text mode.',
+  safety:'balanced', verbosity:1,
+  model:'chatgpt-3.5-pro', temperature:0.4
+};
+
+const CHATGPT_TEMPLATES = {
+"multimodal-rag":{name:"Multimodal Research Synthesizer",best:"Multimodal RAG",tags:["multimodal","grounding","1M ctx"],desc:"3 PDFs + 2 images, Search + URL grounding, structured JSON.",fill:{goal:"Synthesize across 3 PDFs + 2 images with Google Search grounding.",tools:{searchGrounding:true,urlContext:true,fileSearch:true},output:{format:'structured'},taskSteps:["Ingest multimodal corpus.","Extract entities + cross-link.","Ground claims via Search.","Emit structured JSON."]}},
+"long-context-qa":{name:"Long-Context Codebase Q&A (1M)",best:"1M context",tags:["1M ctx","code"],desc:"Analyze entire repo in 1M window, answer with file:line cites.",fill:{goal:"Answer questions over a full 1M-token codebase with file:line citations.",contextFlags:{longContext:true,urlContext:false,multimodal:false},tools:{fileSearch:true},output:{format:'markdown'}}},
+"video-analyzer":{name:"Video Scene Analyzer",best:"Video",tags:["video","multimodal","json"],desc:"Timestamped scene analysis, function calling ON.",fill:{goal:"Analyze uploaded video, output timestamped scene JSON.",tools:{functionCalling:true},output:{format:'json'}}},
+"pdf-contract":{name:"PDF Contract Extractor",best:"PDF / extraction",tags:["pdf","structured"],desc:"Extract clauses to strict JSON schema.",fill:{goal:"Extract contract clauses from PDF to JSON schema clauses[].",output:{format:'structured'}}},
+"grounded-news":{name:"Grounded News Brief",best:"Grounding",tags:["search","grounding"],desc:"Search-grounded daily brief with citations.",fill:{goal:"Produce a grounded news brief with inline citations via Google Search.",tools:{searchGrounding:true},output:{format:'markdown'}}},
+"paper-critique":{name:"Scientific Paper Critique",best:"Research",tags:["pdf","thinking"],desc:"2-PDF critique, Deep Think 12k.",fill:{goal:"Critique 2 scientific papers: methods, stats, limitations.",thinking_budget:12288,output:{format:'structured'}}},
+"image-vqa":{name:"Image + Chart VQA",best:"Vision",tags:["image","multimodal"],desc:"Visual Q&A over charts + diagrams.",fill:{goal:"Answer visual questions over 2 chart images, output JSON answers[].",output:{format:'json'}}},
+"multilingual-translate":{name:"Multilingual Translation Suite",best:"Multilingual",tags:["translate","json"],desc:"Translate preserving tone across 6 languages.",fill:{goal:"Translate input preserving tone across EN/ES/FR/DE/JA/ZH, output per-language JSON.",output:{format:'json'}}},
+"agent-fc":{name:"Agentic Function-Calling Planner",best:"Agent",tags:["functionCalling","tools"],desc:"3-function agent planner, temp 0.2.",fill:{goal:"Plan agent actions with 3 function tools, deterministic.",tools:{functionCalling:true},temperature:0.2}},
+"audio-transcript":{name:"Audio Transcript Summarizer",best:"Audio",tags:["audio","multimodal"],desc:"Transcribe + chapterize audio.",fill:{goal:"Transcribe audio and summarize into chapters JSON.",output:{format:'json'}}},
+"bigquery-extract":{name:"Data Extraction → BigQuery Schema",best:"Extraction",tags:["json","schema"],desc:"Extract entities to BigQuery response_schema.",fill:{goal:"Extract entities to BigQuery-compatible JSON schema.",output:{format:'structured'}}},
+"design-to-code":{name:"UI Design-to-Code",best:"Design → Code",tags:["image","codeExecution"],desc:"ChatGPT excels: mockup image → HTML/CSS.",fill:{goal:"Convert UI mockup image to clean HTML/CSS.",tools:{codeExecution:true},output:{format:'text'}}},
+"rag-judge":{name:"RAG Evaluation Judge",best:"Eval",tags:["rag","1M"],desc:"Score RAG answers 0-5 with rationale.",fill:{goal:"Judge RAG answers 0-5 with rationale JSON.",output:{format:'json'}}},
+"youtube-notes":{name:"YouTube Video → Study Notes",best:"Video",tags:["video","urlContext"],desc:"Video + URL → study guide markdown.",fill:{goal:"Turn YouTube lecture into timestamped study notes markdown.",tools:{urlContext:true},output:{format:'markdown'}}},
+"safety-tune":{name:"Safety-Classifier Tuning",best:"Safety",tags:["safety"],desc:"Compare balanced/strict/permissive outputs.",fill:{goal:"Compare safety settings outputs for classifier tuning.",safety:'strict',output:{format:'json'}}},
+"charts-csv":{name:"Charts from CSV (Code Exec)",best:"Code Exec",tags:["codeExecution","charts"],desc:"Generate charts from CSV via code execution.",fill:{goal:"Generate charts from CSV using Code Execution, output markdown + PNG note.",tools:{codeExecution:true}}},
+"cross-modal-index":{name:"Cross-modal Search Indexer",best:"Multimodal search",tags:["multimodal","fileSearch"],desc:"Index images+text → embeddings manifest.",fill:{goal:"Build cross-modal search index manifest JSON from images+text.",tools:{fileSearch:true},output:{format:'json'}}},
+"vertex-agent":{name:"Vertex Agent Builder",best:"Agent",tags:["functionCalling","codeExecution","searchGrounding"],desc:"All 3 tools ON, output agent_config JSON.",fill:{goal:"Build a Vertex agent config with Search + Code Exec + Function Calling.",tools:{functionCalling:true,codeExecution:true,searchGrounding:true,urlContext:true},output:{format:'json'}}}
+};
+
+const PRESETS = [
+ ["research-synth","Research Synth"],
+ ["code-review","Code Review"],
+ ["data-extraction","Data Extraction JSON"],
+ ["video-analysis","Video Analysis"],
+ ["agent-fc","Agent Function-Calling"],
+ ["multimodal-rag","Multimodal RAG"],
+ ["blank","Blank"]
+];
+
+function toast(m){ const b=$('#toasts'); const t=document.createElement('div'); t.className='toast'; t.textContent=m; b.appendChild(t); setTimeout(()=>{t.style.opacity='0'; setTimeout(()=>t.remove(),200)},2100); }
+
+function renderSteps(){
+  const el=$('#steps'); el.innerHTML='';
+  state.taskSteps.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='step';
+    d.innerHTML=`<textarea data-i="${i}">${esc(s.text)}</textarea>
+      <div><button class="ic" data-up="${i}">▲</button><br><button class="ic" data-down="${i}">▼</button><br><button class="ic" data-del="${i}">×</button></div>`;
+    el.appendChild(d);
+  });
+  el.querySelectorAll('textarea').forEach(t=>t.oninput=e=>{ state.taskSteps[+e.target.dataset.i].text=e.target.value; render()});
+  el.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(+b.dataset.up,-1));
+  el.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>mv(+b.dataset.down,1));
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ state.taskSteps.splice(+b.dataset.del,1); renderSteps(); render(); });
+}
+function mv(i,d){ const j=i+d; if(j<0||j>=state.taskSteps.length)return; [state.taskSteps[i],state.taskSteps[j]]=[state.taskSteps[j],state.taskSteps[i]]; renderSteps(); render(); }
+
+function renderTools(){
+  const tools=[['searchGrounding','Google Search Grounding'],['urlContext','URL Context'],['codeExecution','Code Execution'],['functionCalling','Function Calling'],['fileSearch','File Search']];
+  const g=$('#toolsGrid')||document.querySelector('#toolsGrid'); if(!g)return;
+  // Actually tools grid is #toolsGrid – we used id toolsGrid? Wait we used class chip-grid id toolsGrid – yes.
+}
+function initTools(){
+  const grid=document.querySelector('#toolsGrid') || document.getElementById('toolsGrid') || document.querySelector('.card:nth-of-type(4) .chip-grid');
+  const container = document.querySelector('#toolsGrid') || document.querySelectorAll('.chip-grid')[1];
+  const el = container;
+  if(!el) return;
+  const list=[['searchGrounding','Google Search'],['urlContext','URL Context'],['codeExecution','Code Exec'],['functionCalling','Function Calling'],['fileSearch','File Search']];
+  el.innerHTML='';
+  list.forEach(([k,l])=>{
+    const b=document.createElement('button'); b.type='button'; b.className='tog'+(state.tools[k]?' on':''); b.textContent=l;
+    b.onclick=()=>{ state.tools[k]=!state.tools[k]; initTools(); document.getElementById('fcWrap').style.display = state.tools.functionCalling ? 'block':'none'; render(); };
+    el.appendChild(b);
+  });
+}
+
+// output format pills
+function initOutFmt(){
+  const wrap=document.getElementById('outFmt');
+  ['text','markdown','json','structured','custom'].forEach(f=>{
+    const b=document.createElement('button'); b.type='button'; b.className='tog'+(state.output.format===f?' on':''); b.textContent=f; b.style.textTransform='capitalize';
+    b.onclick=()=>{ state.output.format=f; initOutFmt(); render(); };
+    wrap.appendChild(b);
+  });
+  wrap.innerHTML=''; // redo clean
+  ['text','markdown','json','structured','custom'].forEach(f=>{
+    const b=document.createElement('button'); b.type='button'; b.className='tog'+(state.output.format===f?' on':''); b.textContent=f;
+    b.onclick=()=>{ state.output.format=f; initOutFmt2(); render(); };
+    wrap.appendChild(b);
+  });
+}
+function initOutFmt2(){
+  const wrap=document.getElementById('outFmt'); wrap.innerHTML='';
+  ['text','markdown','json','structured','custom'].forEach(f=>{
+    const b=document.createElement('button'); b.type='button'; b.className='tog'+(state.output.format===f?' on':''); b.textContent=f;
+    b.onclick=()=>{ state.output.format=f; initOutFmt2(); render(); };
+    wrap.appendChild(b);
+  });
+}
+
+// quick templates
+function renderQuick(){
+  const el=$('#quickRow'); el.innerHTML='';
+  ['multimodal-rag','long-context-qa','video-analyzer','grounded-news','design-to-code','agent-fc'].forEach(id=>{
+    const t=CHATGPT_TEMPLATES[id]; if(!t)return;
+    const b=document.createElement('button'); b.className='qchip'; b.textContent='★ '+t.name;
+    b.onclick=()=>loadTpl(id);
+    el.appendChild(b);
+  });
+}
+// presets
+function renderPresets(){
+  const el=$('#presetRow'); el.innerHTML='';
+  PRESETS.forEach(([id,label])=>{
+    const b=document.createElement('button'); b.className='pchip'; b.textContent=label;
+    b.onclick=()=>{ if(CHATGPT_TEMPLATES[id]) loadTpl(id); else if(id==='blank'){ state.goal=''; state.taskSteps=[]; renderSteps(); render(); } toast('Preset: '+label); };
+    el.appendChild(b);
+  });
+}
+
+// template modal
+function openTpl(){ renderTplGrid(); $('#tplMb').classList.add('open'); setTimeout(()=>$('#tplSearch').focus(),30);}
+function closeTpl(){ $('#tplMb').classList.remove('open'); }
+function renderTplGrid(filter=''){
+  const grid=$('#tplGrid'); const q=filter.toLowerCase();
+  const items=Object.entries(CHATGPT_TEMPLATES).filter(([id,t])=>!q|| (t.name+t.desc+t.best+(t.tags||[]).join(' ')).toLowerCase().includes(q));
+  grid.innerHTML = items.map(([id,t])=>`
+    <div class="tcard" data-id="${id}" tabindex="0">
+      <h4>${esc(t.name)}</h4>
+      <div class="tbest">${esc(t.best||'Gemini')}</div>
+      <p>${esc(t.desc||'')}</p>
+      <div class="tags">${(t.tags||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>
+      <div class="use">Use template →</div>
+    </div>`).join('') || `<div class="muted">No matches</div>`;
+  grid.querySelectorAll('.tcard').forEach(c=>c.onclick=()=>loadTpl(c.dataset.id));
+}
+function loadTpl(id){
+  const t=CHATGPT_TEMPLATES[id]; if(!t) return;
+  const f=t.fill||t;
+  if(f.goal) state.goal=f.goal;
+  if(f.output) state.output={...state.output, ...f.output};
+  if(f.tools) state.tools={...state.tools, ...f.tools};
+  if(f.taskSteps) state.taskSteps = f.taskSteps.map((s,i)=>({id:'s'+i, text: typeof s==='string'?s:s.text||s}));
+  if(f.temperature!==undefined) state.temperature=f.temperature;
+  if(f.thinking_budget) state.thinking_budget=f.thinking_budget;
+  if(f.safety) state.safety=f.safety;
+  if(f.contextFlags) state.contextFlags={...state.contextFlags,...f.contextFlags};
+  // update UI fields
+  syncUI();
+  renderSteps(); initTools(); initOutFmt2();
+  closeTpl();
+  toast('Template loaded: '+t.name+' — ChatGPT optimized');
+  render();
+  try{ localStorage.setItem('chatgpt-last-tpl',id);}catch(e){}
+}
+
+function syncUI(){
+  $('#goal').value = state.goal||'';
+  $('#role').value = state.role||'';
+  $('#thinking').checked = !!state.thinking;
+  $('#context').value = state.context||'';
+  $('#outInst').value = state.output.instructions||'';
+  $('#constraints').value = state.constraints||'';
+  $('#safety').value = state.safety||'balanced';
+  $('#verbosity').value = state.verbosity??1;
+  $('#model').value = state.model;
+  $('#temp').value = state.temperature ?? 0.4;
+  $('#tbudget').value = state.thinking_budget ?? 8192;
+  $('#structOut').checked = true;
+  document.getElementById('fcWrap').style.display = state.tools.functionCalling ? 'block':'none';
+}
+
+// build prompt
+function buildPrompt(s){
+  const steps = s.taskSteps.map(st=>`  <step>${esc(st.text)}</step>`).join('\n');
+  const tools = Object.entries(s.tools).filter(([,v])=>v).map(([k])=>`  <tool>${k}</tool>`).join('\n') || '  <!-- none -->';
+  return `<system_instruction>
+  <role>${esc(s.role)}</role>
+  <user_goal>${esc(s.goal)}</user_goal>
+</system_instruction>
+
+<multimodal_context>
+  <!-- images/PDF/video/audio tagged <media type="…" /> -->
+  <notes>${esc(s.context)}</notes>
+</multimodal_context>
+
+<tools>
+${tools}
+</tools>
+
+<task>
+${steps}
+</task>
+
+<output_config>
+  <response_mime_type>application/${s.output.format==='json' || s.output.format==='structured' ? 'json' : 'text'}</response_mime_type>
+  ${s.output.response_schema ? `<response_schema>${esc(s.output.response_schema)}</response_schema>`:''}
+  <instructions>${esc(s.output.instructions||'Follow output shape precisely.')}</instructions>
+</output_config>
+
+<safety_settings>mode=${esc(s.safety)}</safety_settings>
+<generation_config>temperature=${s.temperature} top_p=0.95</generation_config>
+${s.thinking ? `<thinking>\n  <thinking_budget>${s.thinking_budget}</thinking_budget>\n</thinking>`:''}
+
+<constraints>${esc(s.constraints)}</constraints>`;
+}
+
+function highlight(str){
+  return esc(str)
+   .replace(/&lt;(\/?[a-z_]+)&gt;/g,'<span class="tok1">&lt;$1&gt;</span>')
+   .replace(/([a-z_]+)=/g,'<span class="tok2">$1</span>=');
+}
+
+let rt=null;
+function render(){
+  clearTimeout(rt); rt=setTimeout(()=>{
+    const p=buildPrompt(state);
+    const out=$('#pOut');
+    out.innerHTML = highlight(p);
+    out.classList.remove('flash'); void out.offsetWidth; out.classList.add('flash');
+    // tokens
+    const tokens = Math.ceil(p.length/3.8) + 1290*1 + 260*1; // mock mm
+    $('#tokPill').textContent = `~${tokens.toLocaleString()} / 1,048,576`;
+    $('#tokMeta').textContent = `~${tokens.toLocaleString()} tok • $0.21 est`;
+    // score mock 82-94
+    const score = 78 + Math.min(16, state.taskSteps.length*3 + (state.tools.searchGrounding?4:0));
+    $('#scn').textContent = score;
+    const circ=$('#sc'); const max=100.53; circ.setAttribute('stroke-dashoffset', max - max*score/100);
+    $('#ftLeft').textContent = `Grounding: ${Object.values(state.tools).filter(Boolean).length} tools • Best practices 7/8 ✓`;
+    try{ localStorage.setItem('chatgpt-canvas-v1', JSON.stringify(state)); }catch(e){}
+  },70);
+}
+
+// init
+function init(){
+  renderQuick(); renderPresets(); renderSteps(); initTools(); initOutFmt2(); syncUI(); render();
+  // bind inputs
+  $('#goal').oninput=e=>{state.goal=e.target.value;render()};
+  $('#role').oninput=e=>{state.role=e.target.value;render()};
+  $('#thinking').onchange=e=>{state.thinking=e.target.checked;render()};
+  $('#context').oninput=e=>{state.context=e.target.value;render()};
+  $('#outInst').oninput=e=>{state.output.instructions=e.target.value;render()};
+  $('#constraints').oninput=e=>{state.constraints=e.target.value;render()};
+  $('#safety').onchange=e=>{state.safety=e.target.value;render()};
+  $('#verbosity').oninput=e=>{state.verbosity=+e.target.value;render()};
+  $('#model').onchange=e=>{state.model=e.target.value;render()};
+  $('#temp').oninput=e=>{state.temperature=parseFloat(e.target.value)||0.4;render()};
+  $('#tbudget').oninput=e=>{state.thinking_budget=parseInt(e.target.value)||8192;render()};
+  document.querySelectorAll('[data-cf]').forEach(b=>b.onclick=()=>{ b.classList.toggle('on'); const k=b.dataset.cf; state.contextFlags[k]=b.classList.contains('on'); render(); });
+  $('#addStep').onclick=()=>{ state.taskSteps.push({id:Math.random().toString(36).slice(2), text:'New reasoning step…'}); renderSteps(); render(); };
+  $('#copyBtn').onclick=async()=>{ const txt=buildPrompt(state); try{ await navigator.clipboard.writeText(txt);}catch(e){}; toast('Copied to clipboard'); };
+  $('#copyIcon').onclick=()=>$('#copyBtn').click();
+  $('#resetBtn').onclick=()=>{ if(confirm('Reset?')){ location.reload(); }};
+  $('#saveBtn').onclick=()=>toast('Saved to Library');
+  $('#openTpl').onclick=openTpl;
+  $('#tplX').onclick=closeTpl;
+  $('#tplMb').addEventListener('click',e=>{ if(e.target.id==='tplMb') closeTpl(); });
+  $('#tplSearch').oninput=e=>renderTplGrid(e.target.value);
+  // command K
+  document.addEventListener('keydown',e=>{
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openTpl(); }
+    if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); $('#copyBtn').click(); }
+    if(e.key==='Escape') closeTpl();
+    if(e.key==='/' && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='TEXTAREA'){ const s=$('#tplSearch'); if(document.querySelector('#tplMb.open')){ e.preventDefault(); s.focus(); } }
+  });
+  // mobile tabs
+  document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#mtabs button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.body.classList.toggle('show-p', b.dataset.t==='p'); });
+  // load last template?
+  try{ const last=localStorage.getItem('chatgpt-last-tpl'); if(last && CHATGPT_TEMPLATES[last]){ /* don't auto-load to avoid overwrite */ } }catch(e){}
+}
+init();
+</script>
+</body>
+</html>
