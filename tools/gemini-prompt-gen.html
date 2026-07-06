@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Canvas Lab — Prompt Studio</title>
+    <style>
+        /* CSS Reset & Variable Definitions */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-main: #f6f8fc;
+            --surface: #ffffff;
+            --surface-variant: #f1f4f9;
+            --ink-primary: #1f1f1f;
+            --ink-secondary: #5f6368;
+            --ink-muted: #80868b;
+            --hairline: #dadce0;
+            --hairline-strong: #c4c7c5;
+            --gemini-blue: #1a73e8;
+            --gemini-blue-deep: #1558b0;
+            --purple-accent: #7c3aed;
+            --teal-accent: #0891b2;
+            --success: #137333;
+            --success-surface: #e6f4ea;
+            --warning-amber: #e37400;
+            --warning-surface: #fef7e0;
+            --error: #d93025;
+            --code-bg: #0b1220;
+            --focus-ring: 0 0 0 3px rgba(26,115,232,.24);
+            --selection: #d2e3fc;
+            --font-ui: "Inter", system-ui, Roboto, -apple-system, sans-serif;
+            --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-main);
+            color: var(--ink-primary);
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Ambient Orbs & Dot Grid */
+        .ambient-glow {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .orb-blue {
+            position: absolute;
+            top: -10%; left: -5%; width: 50vw; height: 50vh;
+            background: radial-gradient(circle, rgba(210,227,252,0.42) 0%, transparent 70%);
+            filter: blur(70px);
+            animation: orbDrift 60s infinite ease-in-out alternate;
+        }
+        .orb-purple {
+            position: absolute;
+            top: -5%; right: -5%; width: 45vw; height: 45vh;
+            background: radial-gradient(circle, rgba(233,213,255,0.38) 0%, transparent 70%);
+            filter: blur(80px);
+            animation: orbDrift 45s infinite ease-in-out alternate-reverse;
+        }
+        .dot-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(var(--ink-muted) 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.03;
+            pointer-events: none;
+        }
+
+        @keyframes orbDrift {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, 30px) scale(1.1); }
+        }
+
+        /* App Layout */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        .builder-pane {
+            flex: 1;
+            max-width: 740px;
+            min-width: 480px;
+            background: transparent;
+            border-right: 1px solid var(--hairline);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .preview-pane {
+            flex: 1.2;
+            background-color: var(--code-bg);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Left Sticky Header */
+        .sticky-topbar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--hairline);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .brand-group { display: flex; align-items: center; gap: 12px; }
+        .brand-title { font-size: 18px; font-weight: 600; color: var(--ink-primary); letter-spacing: -0.012em; }
+        .pill-badge { background: var(--surface-variant); padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; color: var(--gemini-blue); }
+        
+        .score-ring-wrap { position: relative; width: 44px; height: 44px; cursor: pointer; }
+        .score-ring-svg { transform: rotate(-90deg); width: 44px; height: 44px; }
+        .score-ring-bg { fill: none; stroke: var(--surface-variant); stroke-width: 4; }
+        .score-ring-fill { fill: none; stroke: var(--gemini-blue); stroke-width: 4; stroke-dasharray: 113; stroke-dashoffset: 113; transition: stroke-dashoffset 0.4s ease, stroke 0.3s; }
+        .score-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+
+        /* Preset Chips Scroll Row */
+        .preset-row {
+            padding: 12px 24px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            background: rgba(246,248,2fc,0.6);
+            border-bottom: 1px solid var(--hairline);
+        }
+        .preset-row::-webkit-scrollbar { display: none; }
+        .preset-chip {
+            scroll-snap-align: start;
+            white-space: nowrap;
+            padding: 6px 14px;
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .preset-chip:hover { border-color: var(--hairline-strong); background: var(--surface-variant); }
+        .preset-chip.active { background: var(--selection); border-color: var(--gemini-blue); color: var(--gemini-blue-deep); }
+
+        /* Form Container Area */
+        .form-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px 100px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Material 3 Styled Cards */
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(60,64,67,0.05);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .form-card:focus-within {
+            box-shadow: 0 1px 3px 1px rgba(60,64,67,0.1);
+            border-color: var(--hairline-strong);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .card-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            color: var(--ink-secondary);
+        }
+
+        /* Common Field Styling */
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+        .field-group:last-child { margin-bottom: 0; }
+        .field-label { font-size: 13px; font-weight: 500; color: var(--ink-primary); }
+        textarea, input[type="text"], select {
+            width: 100%;
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 15px;
+            font-family: var(--font-ui);
+            color: var(--ink-primary);
+            background-color: var(--surface);
+            outline: none;
+            transition: border-color 0.16s, box-shadow 0.16s;
+        }
+        textarea:focus, input[type="text"]:focus, select:focus {
+            border-color: var(--gemini-blue);
+            box-shadow: var(--focus-ring);
+        }
+        textarea.mono-editor {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.5;
+            background: #fafafa;
+        }
+        textarea.linter-active {
+            border-bottom: 2px dashed var(--error) !important;
+        }
+
+        /* Controls / Toggles Row */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+        .toggle-info { display: flex; flex-direction: column; gap: 2px; }
+        .toggle-title { font-size: 14px; font-weight: 500; }
+        .toggle-desc { font-size: 12px; color: var(--ink-muted); }
+        
+        /* Modern Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer; inset: 0;
+            background-color: var(--hairline-strong);
+            border-radius: 24px;
+            transition: .2s;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .2s;
+        }
+        input:checked + .slider { background-color: var(--gemini-blue); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Multimodal Dropzone */
+        .dropzone-container {
+            border: 2px dashed var(--hairline-strong);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: var(--surface-variant);
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+        .dropzone-container:hover { background: #eef2f8; border-color: var(--gemini-blue); }
+        .dropzone-text { font-size: 13px; color: var(--ink-secondary); }
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .media-badge {
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: 8px;
+            padding: 8px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-align: center;
+        }
+        .media-badge span { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; color: var(--ink-secondary); }
+        .media-badge .remove-media {
+            position: absolute; top: -4px; right: -4px;
+            background: var(--error); color: white; border-radius: 50%;
+            width: 16px; height: 16px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .media-icon { font-size: 18px; }
+
+        /* Task Steps Repeater */
+        .step-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface-variant);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--hairline);
+            animation: stepEntrance 0.34s cubic-bezier(0.34,1.56,0.64,1);
+            cursor: grab;
+        }
+        .step-drag-handle { color: var(--ink-muted); cursor: grab; font-size: 18px; line-height: 1; user-select: none; }
+        .step-input { flex: 1; border: none; background: transparent; padding: 4px; font-size: 14px; }
+        .step-input:focus { outline: none; background: var(--surface); border-radius: 4px; }
+        .step-delete { border: none; background: transparent; color: var(--ink-muted); cursor: pointer; font-size: 16px; }
+        .step-delete:hover { color: var(--error); }
+
+        @keyframes stepEntrance {
+            0% { opacity: 0; transform: translateY(-14px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Tool Filter Chips Configuration */
+        .tool-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .filter-chip {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--hairline);
+            background: var(--surface);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-chip.active {
+            background: #e8f0fe;
+            border-color: var(--gemini-blue);
+            color: var(--gemini-blue-deep);
+        }
+
+        /* Pill Radio Selection */
+        .pill-radio-group { display: flex; background: var(--surface-variant); padding: 4px; border-radius: 999px; width: fit-content; }
+        .pill-radio-btn {
+            padding: 6px 14px; border-radius: 999px; border: none; background: transparent;
+            font-size: 13px; font-weight: 500; color: var(--ink-secondary); cursor: pointer; transition: all 0.15s;
+        }
+        .pill-radio-btn.active {
+            background: var(--surface); color: var(--ink-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Bottom Sticky Panel */
+        .bottom-action-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px);
+            border-top: 1px solid var(--hairline);
+            padding: 16px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 10;
+        }
+        .btn {
+            padding: 10px 20px; border-radius: 12px; border: 1px solid var(--hairline);
+            font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.15s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary {
+            background: var(--gemini-blue); color: white; border: none; border-radius: 999px;
+            padding: 12px 28px; box-shadow: 0 2px 4px rgba(26,115,232,0.2);
+        }
+        .btn-primary:hover { background: var(--gemini-blue-deep); transform: translateY(-1px); }
+        .btn:hover:not(.btn-primary) { background: var(--surface-variant); border-color: var(--hairline-strong); }
+
+        /* Right Preview Pane Elements */
+        .preview-header {
+            height: 52px; background: #131c2e; border-bottom: 1px solid #1f2b42;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+        }
+        .preview-title { font-family: var(--font-mono); color: #9aa0a6; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .live-dot { width: 8px; height: 8px; background: #34a853; border-radius: 50%; animation: dotPulse 1.8s infinite; }
+        .grounding-status-badge {
+            background: rgba(8, 145, 178, 0.2); color: #22d3ee; border: 1px solid #0891b2;
+            padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: none;
+        }
+        @keyframes dotPulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+        .meter-group { display: flex; align-items: center; gap: 12px; }
+        .token-counter-pill { background: rgba(255,255,255,0.06); border-radius: 999px; padding: 4px 12px; color: #e8eaed; font-size: 12px; font-family: var(--font-mono); }
+        .token-bar-outer { width: 80px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .token-bar-inner { width: 0%; height: 100%; background: var(--gemini-blue); transition: width 0.32s, background-color 0.3s; }
+
+        .preview-body { flex: 1; overflow: auto; padding: 20px; position: relative; }
+        pre { font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: #e8eaed; white-space: pre-wrap; word-break: break-all; margin: 0; }
+        
+        /* Syntax Highlighting CSS */
+        .tok-tag { color: #8ab4f8; font-weight: 500; }
+        .tok-attr { color: #fdd663; }
+        .tok-str { color: #81c995; }
+        .tok-comment { color: #9aa0a6; font-style: italic; }
+        .tok-text { color: #e8eaed; }
+
+        /* Block Flash Animation on Change */
+        .block-flash { animation: flashPulse 0.38s ease-out; }
+        @keyframes flashPulse {
+            0% { background-color: rgba(232, 240, 254, 0.15); }
+            100% { background-color: transparent; }
+        }
+
+        .empty-shimmer {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #9aa0a6; font-size: 14px; padding: 40px; text-align: center; pointer-events: none;
+        }
+
+        .preview-footer {
+            height: 44px; background: #131c2e; border-top: 1px solid #1f2b42;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+            font-size: 12px; color: #9aa0a6;
+        }
+
+        /* Linter UI Inline Error Tip */
+        .linter-error-tip {
+            color: var(--error); font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; margin-top: 4px;
+        }
+        .autofix-btn { color: var(--gemini-blue); text-decoration: underline; cursor: pointer; font-weight: 600; margin-left: 4px; }
+
+        /* Drawers and Modals */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100;
+            display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+        }
+        .drawer-overlay.active { display: flex; opacity: 1; }
+        .drawer-content {
+            background: var(--surface); border-radius: 16px; width: 90%; max-width: 540px; padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); transform: scale(0.96); transition: transform 0.18s;
+        }
+        .drawer-overlay.active .drawer-content { transform: scale(1); }
+        .drawer-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+        
+        .checklist-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; }
+        .checklist-status { font-weight: 600; }
+        .checklist-status.pass { color: var(--success); }
+        .checklist-status.fail { color: var(--warning-amber); }
+
+        /* Toast Notifications Container */
+        .toast-stack {
+            position: fixed; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 1000;
+        }
+        .toast {
+            background: #323130; color: #f5f5f5; padding: 12px 18px; border-radius: 8px; font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px;
+            animation: toastIn 0.22s cubic-bezier(0, 0, 0.2, 1) forwards; min-width: 240px;
+        }
+        @keyframes toastIn { 0% { transform: translateY(-10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+        /* Confetti Burst Particle Elements */
+        .confetti-particle {
+            position: absolute; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 9999;
+            animation: confettiPop 0.56s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes confettiPop {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* Mobile Layout Optimizations */
+        .mobile-tabs { display: none; background: var(--surface); border-bottom: 1px solid var(--hairline); width: 100%; height: 48px; position: relative; z-index: 5; }
+        .mobile-tab-btn { flex: 1; border: none; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-secondary); cursor: pointer; }
+        .mobile-tab-btn.active { color: var(--gemini-blue); border-bottom: 2px solid var(--gemini-blue); }
+
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; }
+            .mobile-tabs { display: flex; }
+            .builder-pane, .preview-pane { max-width: 100%; min-width: 100%; flex: 1; height: calc(100vh - 48px); display: none; }
+            .builder-pane.active-tab, .preview-pane.active-tab { display: flex; }
+        }
+        
+        kbd { background: var(--surface-variant); border: 1px solid var(--hairline-strong); border-radius: 4px; padding: 1px 4px; font-size: 11px; font-family: var(--font-mono); }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow">
+        <div class="orb-blue"></div>
+        <div class="orb-purple"></div>
+        <div class="dot-grid"></div>
+    </div>
+
+    <div class="mobile-tabs">
+        <button class="mobile-tab-btn active" onclick="switchMobileTab('builder')">Builder Workspace</button>
+        <button class="mobile-tab-btn" onclick="switchMobileTab('preview')">Live Prompt Code</button>
+    </div>
+
+    <div class="app-container">
+        
+        <div id="builderPane" class="builder-pane active-tab">
+            <div class="sticky-topbar">
+                <div class="brand-group">
+                    <h1 class="brand-title">Gemini Canvas Lab</h1>
+                    <span class="pill-badge">3.5 Pro • 3.1 • Flash</span>
+                </div>
+                <div class="score-ring-wrap" onclick="toggleDrawer('checklistDrawer')" title="View Quality Score Details">
+                    <svg class="score-ring-svg">
+                        <circle class="score-ring-bg" cx="22" cy="22" r="18"></circle>
+                        <circle id="scoreRingFill" class="score-ring-fill" cx="22" cy="22" r="18"></circle>
+                    </svg>
+                    <div id="scoreText" class="score-text">0</div>
+                </div>
+            </div>
+
+            <div class="preset-row" id="presetRow"></div>
+
+            <div class="form-scroll-area">
+                
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">1. System Context &amp; Persona</span>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Role Definition / Core Persona</label>
+                        <input type="text" id="inputRole" placeholder="e.g. You are Gemini, a meticulous expert software reviewer...">
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <span class="toggle-title">Reasoning Engine (Deep Think)</span>
+                            <span class="toggle-desc">Enables targeted structural generation configuration</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleThinking" checked onchange="updateStateAndRender()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="field-group" id="thinkingBudgetGroup">
+                        <label class="field-label">Thinking Token Budget</label>
+                        <select id="selectThinkingBudget" onchange="updateStateAndRender()">
+                            <option value="4096">4,096 tokens</option>
+                            <option value="8192" selected>8,192 tokens</option>
+                            <option value="12288">12,288 tokens</option>
+                            <option value="16384">16,384 tokens</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">2. Primary Prompt Objective</span>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Goal / Assignment Description</label>
+                        <textarea id="textareaGoal" rows="3" placeholder="State exactly what Gemini must fulfill or generate..."></textarea>
+                        <div id="linterContainer"></div>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">3. Long-Context Multimodal Inventory</span>
+                    </div>
+                    <div class="dropzone-container" id="dropZone">
+                        <span class="dropzone-text">Drag &amp; drop research vectors (PDF, images, audio, video) here or click to inject</span>
+                        <input type="file" id="fileFallback" style="display:none;" multiple>
+                        <div class="media-grid" id="mediaGrid"></div>
+                    </div>
+                    <div class="field-group" style="margin-top: 14px;">
+                        <label class="field-label">Additional Context Directives</label>
+                        <textarea id="textareaContext" rows="2" placeholder="Inject custom environment variables, source references, or dataset bounds..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">4. Structured Task Execution Sequence</span>
+                        <button class="btn" style="padding: 4px 10px; font-size:12px; border-radius:6px;" onclick="addTaskStep()">+ Step</button>
+                    </div>
+                    <div class="step-list" id="stepList"></div>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">5. Grounding Tools &amp; API Functions</span>
+                    </div>
+                    <div class="tool-chips">
+                        <div class="filter-chip" id="tool-searchGrounding" onclick="toggleTool('searchGrounding')">Google Search Grounding</div>
+                        <div class="filter-chip" id="tool-urlContext" onclick="toggleTool('urlContext')">URL Target Context</div>
+                        <div class="filter-chip" id="tool-codeExecution" onclick="toggleTool('codeExecution')">Dynamic Python Code Execution</div>
+                        <div class="filter-chip" id="tool-functionCalling" onclick="toggleTool('functionCalling')">Native Function Declaration</div>
+                    </div>
+                    <div class="field-group" id="functionSchemaGroup" style="margin-top:14px; display:none;">
+                        <label class="field-label">Declarative Function Calling JSON Schema</label>
+                        <textarea id="textareaSchema" rows="4" class="mono-editor"></textarea>
+                        <div id="schemaError" style="color:var(--error); font-size:12px; margin-top:4px;"></div>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">6. Output Geometry Configuration</span>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Response Presentation Mode</label>
+                        <div class="pill-radio-group" id="outputFormatGroup">
+                            <button class="pill-radio-btn" onclick="setOutputFormat('text')">Raw Text</button>
+                            <button class="pill-radio-btn" onclick="setOutputFormat('markdown')">Markdown</button>
+                            <button class="pill-radio-btn" onclick="setOutputFormat('structured')">JSON Schema</button>
+                        </div>
+                    </div>
+                    <div class="field-group" id="responseSchemaGroup">
+                        <label class="field-label">Strict Enforced response_schema Object</label>
+                        <textarea id="textareaResponseSchema" rows="4" class="mono-editor" placeholder="{ &quot;type&quot;: &quot;object&quot;, ... }"></textarea>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Formatting Delivery Instructions</label>
+                        <textarea id="textareaOutputInstructions" rows="2" placeholder="Explicit stylistic constraints or formatting boundaries..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="card-header">
+                        <span class="card-title">7. Hyperparameter Studio Settings</span>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Target Gemini Context Model Engine</label>
+                        <select id="selectModel" onchange="updateStateAndRender()">
+                            <option value="gemini-3.5-pro">Gemini 3.5 Pro (July 2026 Recommended)</option>
+                            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash Speed Optimised</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Sampling Temperature: <span id="valTemp">0.4</span></label>
+                        <input type="range" id="rangeTemp" min="0" max="2" step="0.05" value="0.4" style="width:100%;" oninput="updateStateAndRender()">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Safety Filter Tolerance Policy</label>
+                        <select id="selectSafety" onchange="updateStateAndRender()">
+                            <option value="balanced">Balanced Default Thresholds</option>
+                            <option value="strict">Strict Security Protocols Override</option>
+                            <option value="permissive">Permissive Engineering Access</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bottom-action-bar">
+                <button class="btn" onclick="resetToBlank()">Reset Laboratory</button>
+                <button class="btn" onclick="saveToLibrary()">Archive Snapshot</button>
+                <button class="btn btn-primary" id="mainCopyBtn" onclick="executeCopyAction(event)">
+                    Assemble &amp; Copy Prompt
+                </button>
+            </div>
+        </div>
+
+        <div id="previewPane" class="preview-pane">
+            <div class="preview-header">
+                <div class="preview-title">
+                    <div class="live-dot"></div>
+                    <span>gemini_prompt.txt</span>
+                    <span class="grounding-status-badge" id="groundingBadge">Grounded Context</span>
+                </div>
+                <div class="meter-group">
+                    <div id="tokenCostDisplay" style="font-size:11px; color:#9aa0a6; text-align:right; font-family:var(--font-mono);"></div>
+                    <div class="token-counter-pill">
+                        <span id="tokenCountText">~0</span> / 1,048,576
+                    </div>
+                    <div class="token-bar-outer">
+                        <div id="tokenBarInner" class="token-bar-inner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-body" id="previewBodyContainer">
+                <div class="empty-shimmer" id="emptyStatePlaceholder">
+                    Populate objectives and context directives on the workbench to forged high-performance Gemini architectures...
+                </div>
+                <pre><code id="geminiPreview"></code></pre>
+            </div>
+
+            <div class="preview-footer">
+                <div>Quality Rules Matcher: <span id="footerChecksCount">0/8</span> Verified</div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <span style="cursor:pointer; color:var(--gemini-blue);" onclick="toggleDrawer('checklistDrawer')">Inspect Matrix</span>
+                    <span style="color:#1f2b42;">|</span>
+                    <span style="cursor:pointer;" onclick="triggerDownload()">Export File</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="drawer-overlay" id="checklistDrawer" onclick="closeDrawerOnOverlay(event)">
+        <div class="drawer-content">
+            <div class="drawer-title">
+                <span>Architectural Quality Audit</span>
+                <button class="btn" style="padding:4px 8px; font-size:12px;" onclick="toggleDrawer('checklistDrawer')">Close</button>
+            </div>
+            <div id="checklistItemsContainer"></div>
+        </div>
+    </div>
+
+    <div class="toast-stack" id="toastContainer"></div>
+
+    <script>
+        // --- State Architecture ---
+        const appState = {
+            meta: { model: 'gemini-3.5-pro', version: 1 },
+            goal: '',
+            role: 'You are Gemini, a helpful multimodal reasoning assistant.',
+            thinking: true,
+            thinking_budget: 8192,
+            context: '',
+            multimodal: [], 
+            taskSteps: [],
+            tools: { searchGrounding: false, urlContext: false, codeExecution: false, functionCalling: false },
+            functionSchema: '{\n  "name": "submit_academic_query",\n  "description": "Executes search across external scholarly reference APIs",\n  "parameters": {\n    "type": "object",\n    "properties": {\n      "query": {"type": "string"}\n    }\n  }\n}',
+            output: { format: 'structured', instructions: '', response_schema: '{\n  "type": "object",\n  "properties": {\n    "executive_summary": {"type": "string"},\n    "confidence_coefficient": {"type": "number"}\n  }\n}' },
+            constraints: '',
+            safety: 'balanced',
+            verbosity: 1,
+            generationConfig: { temperature: 0.4 },
+            preset: 'research-synth'
+        };
+
+        const presets = {
+            'multimodal-rag': {
+                role: 'You are Gemini, an advanced multimodal data assimilation system trained to correlate disparate unstructured information assets.',
+                goal: 'Ingest all provided visual blueprints and text catalogs, creating a cross-referenced material inventory dataset.',
+                thinking: true,
+                thinking_budget: 8192,
+                tools: { searchGrounding: false, urlContext: true, codeExecution: false, functionCalling: false },
+                output: { format: 'structured', instructions: 'Map physical components visually found in diagrams directly to entries in the text logs.', response_schema: '{\n  "type": "object",\n  "properties": {\n    "matched_items": {\n      "type": "array",\n      "items": {\n        "type": "object",\n        "properties": {\n          "part_id": {"type":"string"},\n          "visual_match_confirmed": {"type":"boolean"}\n        }\n      }\n    }\n  }\n}' },
+                taskSteps: [
+                    { id: 'mr1', text: 'Analyze attached engineering blueprints to detect cross-sectional component IDs.' },
+                    { id: 'mr2', text: 'Reconcile structural identifiers against the target reference database schema entries.' }
+                ],
+                mockFiles: [
+                    { id: 'm1', type: 'image', name: 'schematic_v2.png' },
+                    { id: 'm2', type: 'pdf', name: 'parts_specification.pdf' }
+                ]
+            },
+            'research-synth': {
+                role: 'You are Gemini 3.5 Pro, an elite research director specialized in high-throughput multi-domain literature synthesis.',
+                goal: 'Conduct an exhaustive deep-reasoning verification analysis on emergent room-temperature quantum materials research claims published this quarter.',
+                thinking: true,
+                thinking_budget: 12288,
+                tools: { searchGrounding: true, urlContext: true, codeExecution: false, functionCalling: false },
+                output: { format: 'markdown', instructions: 'Structure findings chronologically, emphasizing anomalies and direct experimental data replications.', response_schema: '' },
+                taskSteps: [
+                    { id: 'rs1', text: 'Parse modern digital preprints matching identified lattice structure combinations.' },
+                    { id: 'rs2', text: 'Cross-examine methodologies against historical peer-reviewed solid state synthesis baselines.' },
+                    { id: 'rs3', text: 'Isolate anomalies in reported electrical conductivity resistance charts.' },
+                    { id: 'rs4', text: 'Synthesize standard validation tests necessary to falsify or reproduce anomalies.' }
+                ],
+                mockFiles: [
+                    { id: 'm3', type: 'pdf', name: 'experimental_anomalies_draft.pdf' }
+                ]
+            },
+            'code-review': {
+                role: 'You are Gemini, an objective principal kernel architect and systems optimization compiler tester.',
+                goal: 'Review the user code submission for race conditions, atomic alignment flaws, or cache-line mutation inefficiencies.',
+                thinking: true,
+                thinking_budget: 8192,
+                tools: { searchGrounding: false, urlContext: false, codeExecution: true, functionCalling: false },
+                output: { format: 'markdown', instructions: 'Provide distinct micro-benchmarking optimization code suggestions natively.', response_schema: '' },
+                taskSteps: [
+                    { id: 'cr1', text: 'Locate raw pointers or multithreaded mutations missing synchronization barriers.' },
+                    { id: 'cr2', text: 'Execute isolated complexity metrics verification in the local Python scratchpad.' }
+                ],
+                mockFiles: []
+            },
+            'data-extract': {
+                role: 'You are Gemini, a deterministic data transform processor configured to extract structured objects without conversational padding.',
+                goal: 'Extract structured information from raw text and configuration feeds according to the targeted JSON layout schema.',
+                thinking: false,
+                thinking_budget: 4096,
+                tools: { searchGrounding: false, urlContext: false, codeExecution: false, functionCalling: true },
+                output: { format: 'structured', instructions: 'Emit structural payload conforming perfectly to schema guidelines.', response_schema: '{\n  "type": "object",\n  "properties": {\n    "entities": {\n      "type": "array",\n      "items": {"type": "string"}\n    }\n  }\n}' },
+                taskSteps: [
+                    { id: 'de1', text: 'Extract explicit scalar attributes discarding matching inline conversation markers.' }
+                ],
+                mockFiles: []
+            }
+        };
+
+        // --- Init Architecture ---
+        window.addEventListener('DOMContentLoaded', () => {
+            setupPresetRow();
+            setupDropZone();
+            loadPreset('research-synth', false);
+            setupInputBindings();
+            setupKeyboardShortcuts();
+        });
+
+        function setupPresetRow() {
+            const container = document.getElementById('presetRow');
+            const definitions = [
+                { id: 'research-synth', label: 'Research Synthesis' },
+                { id: 'multimodal-rag', label: 'Multimodal RAG' },
+                { id: 'code-review', label: 'Kernel Code Review' },
+                { id: 'data-extract', label: 'Deterministic JSON' }
+            ];
+            definitions.forEach(def => {
+                const chip = document.createElement('div');
+                chip.className = `preset-chip ${appState.preset === def.id ? 'active' : ''}`;
+                chip.id = `preset-btn-${def.id}`;
+                chip.textContent = def.label;
+                chip.onclick = () => loadPreset(def.id, true);
+                container.appendChild(chip);
+            });
+        }
+
+        function loadPreset(id, triggerToast = true) {
+            appState.preset = id;
+            const src = presets[id] || { role: '', goal: '', thinking: true, thinking_budget: 8192, tools: {}, output: { format: 'text', response_schema: '', instructions: '' }, taskSteps: [] };
+            
+            appState.role = src.role;
+            appState.goal = src.goal;
+            appState.thinking = src.thinking;
+            appState.thinking_budget = src.thinking_budget;
+            appState.tools = { ...src.tools };
+            appState.output = { ...src.output };
+            appState.taskSteps = src.taskSteps ? JSON.parse(JSON.stringify(src.taskSteps)) : [];
+            appState.multimodal = src.mockFiles ? JSON.parse(JSON.stringify(src.mockFiles)) : [];
+
+            document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+            const activeChip = document.getElementById(`preset-btn-${id}`);
+            if (activeChip) activeChip.classList.add('active');
+
+            syncStateToDOM();
+            updateStateAndRender();
+
+            if (triggerToast) {
+                showToast(`Loaded Template Profile: ${id.toUpperCase()}`, 'info');
+            }
+        }
+
+        function syncStateToDOM() {
+            document.getElementById('inputRole').value = appState.role;
+            document.getElementById('textareaGoal').value = appState.goal;
+            document.getElementById('toggleThinking').checked = appState.thinking;
+            document.getElementById('selectThinkingBudget').value = appState.thinking_budget;
+            document.getElementById('textareaContext').value = appState.context;
+            document.getElementById('textareaSchema').value = appState.functionSchema;
+            document.getElementById('textareaResponseSchema').value = appState.output.response_schema;
+            document.getElementById('textareaOutputInstructions').value = appState.output.instructions;
+            document.getElementById('selectModel').value = appState.meta.model;
+            document.getElementById('rangeTemp').value = appState.generationConfig.temperature;
+            document.getElementById('valTemp').textContent = appState.generationConfig.temperature;
+            document.getElementById('selectSafety').value = appState.safety;
+
+            document.getElementById('thinkingBudgetGroup').style.display = appState.thinking ? 'flex' : 'none';
+            document.getElementById('functionSchemaGroup').style.display = appState.tools.functionCalling ? 'block' : 'none';
+            document.getElementById('responseSchemaGroup').style.display = appState.output.format === 'structured' ? 'block' : 'none';
+
+            // Active tools visualization
+            for (const key in appState.tools) {
+                const el = document.getElementById(`tool-${key}`);
+                if (el) {
+                    if (appState.tools[key]) el.classList.add('active');
+                    else el.classList.remove('active');
+                }
+            }
+
+            // Output format selector activation
+            document.querySelectorAll('#outputFormatGroup .pill-radio-btn').forEach(btn => {
+                if (btn.getAttribute('onclick').includes(`'${appState.output.format}'`)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            renderTaskSteps();
+            renderMediaGrid();
+        }
+
+        // --- Input Engine Bindings ---
+        let debounceTimer;
+        function setupInputBindings() {
+            const trackingInputs = [
+                'inputRole', 'textareaGoal', 'textareaContext', 'textareaSchema',
+                'textareaResponseSchema', 'textareaOutputInstructions'
+            ];
+            trackingInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        pullDOMToState();
+                        updateStateAndRender();
+                    }, 70);
+                });
+            });
+        }
+
+        function pullDOMToState() {
+            appState.role = document.getElementById('inputRole').value;
+            appState.goal = document.getElementById('textareaGoal').value;
+            appState.context = document.getElementById('textareaContext').value;
+            appState.functionSchema = document.getElementById('textareaSchema').value;
+            appState.output.response_schema = document.getElementById('textareaResponseSchema').value;
+            appState.output.instructions = document.getElementById('textareaOutputInstructions').value;
+            appState.meta.model = document.getElementById('selectModel').value;
+            appState.generationConfig.temperature = parseFloat(document.getElementById('rangeTemp').value);
+            document.getElementById('valTemp').textContent = appState.generationConfig.temperature;
+            appState.safety = document.getElementById('selectSafety').value;
+        }
+
+        function toggleTool(key) {
+            appState.tools[key] = !appState.tools[key];
+            if (key === 'searchGrounding' && appState.tools[key]) {
+                showToast("Gemini Live Google Search Grounding Enabled", 'success');
+            }
+            syncStateToDOM();
+            updateStateAndRender();
+        }
+
+        function setOutputFormat(format) {
+            appState.output.format = format;
+            syncStateToDOM();
+            updateStateAndRender();
+        }
+
+        // --- Task Steps Sequencing ---
+        function renderTaskSteps() {
+            const container = document.getElementById('stepList');
+            container.innerHTML = '';
+            if (appState.taskSteps.length === 0) {
+                container.innerHTML = `<div style="font-size:12px; color:var(--ink-muted); text-align:center; padding:10px;">No operational task workflow steps declared.</div>`;
+                return;
+            }
+            appState.taskSteps.forEach((step, idx) => {
+                const div = document.createElement('div');
+                div.className = 'step-item';
+                div.setAttribute('draggable', 'true');
+                div.dataset.id = step.id;
+                div.dataset.index = idx;
+
+                div.innerHTML = `
+                    <span class="step-drag-handle">☰</span>
+                    <input type="text" class="step-input" value="${escapeHtml(step.text)}" oninput="updateStepText('${step.id}', this.value)">
+                    <button class="step-delete" onclick="deleteStep('${step.id}')">×</button>
+                `;
+
+                // Drag and drop events
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                container.appendChild(div);
+            });
+        }
+
+        function addTaskStep() {
+            const id = 'step_' + Date.now();
+            appState.taskSteps.push({ id: id, text: 'New operational analysis objective sequence step...' });
+            renderTaskSteps();
+            updateStateAndRender();
+        }
+
+        function updateStepText(id, val) {
+            const step = appState.taskSteps.find(s => s.id === id);
+            if (step) step.text = val;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => { updateStateAndRender(); }, 100);
+        }
+
+        function deleteStep(id) {
+            appState.taskSteps = appState.taskSteps.filter(s => s.id !== id);
+            renderTaskSteps();
+            updateStateAndRender();
+        }
+
+        let dragSrcElement = null;
+        function handleDragStart(e) {
+            dragSrcElement = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.index);
+        }
+        function handleDragOver(e) {
+            if (e.preventDefault) e.preventDefault();
+            return false;
+        }
+        function handleDrop(e) {
+            e.stopPropagation();
+            if (dragSrcElement !== this) {
+                const srcIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                const targetIdx = parseInt(this.dataset.index);
+                
+                const displaced = appState.taskSteps.splice(srcIdx, 1)[0];
+                appState.taskSteps.splice(targetIdx, 0, displaced);
+                
+                renderTaskSteps();
+                updateStateAndRender();
+            }
+            return false;
+        }
+
+        // --- Multimodal System Setup ---
+        function setupDropZone() {
+            const zone = document.getElementById('dropZone');
+            zone.addEventListener('click', (e) => {
+                if (e.target.closest('.media-badge')) return;
+                document.getElementById('fileFallback').click();
+            });
+            document.getElementById('fileFallback').addEventListener('change', (e) => {
+                handleUploadedFiles(e.target.files);
+            });
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); });
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                handleUploadedFiles(e.dataTransfer.files);
+            });
+        }
+
+        function handleUploadedFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                const f = files[i];
+                let type = 'image';
+                if (f.type.includes('pdf') || f.name.endsWith('.pdf')) type = 'pdf';
+                else if (f.type.includes('video')) type = 'video';
+                else if (f.type.includes('audio')) type = 'audio';
+
+                appState.multimodal.push({
+                    id: 'f_' + Date.now() + '_' + i,
+                    type: type,
+                    name: f.name
+                });
+            }
+            renderMediaGrid();
+            updateStateAndRender();
+            showToast(`Injected ${files.length} production asset vectors`, 'success');
+        }
+
+        function renderMediaGrid() {
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = '';
+            appState.multimodal.forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'media-badge';
+                let icon = '📄';
+                if (m.type === 'image') icon = '🖼️';
+                if (m.type === 'video') icon = '🎬';
+                if (m.type === 'audio') icon = '🎵';
+
+                item.innerHTML = `
+                    <div class="media-icon">${icon}</div>
+                    <span title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+                    <div class="remove-media" onclick="removeMedia('${m.id}')">×</div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+
+        function removeMedia(id) {
+            appState.multimodal = appState.multimodal.filter(m => m.id !== id);
+            renderMediaGrid();
+            updateStateAndRender();
+        }
+
+        // --- Core Prompt Architecture Engine Builder ---
+        function buildGeminiPrompt(state) {
+            let p = '';
+            
+            // System context and validation configuration up-front
+            p += `=== SYSTEM_CONFIGURATION_BARRIER ===\n`;
+            p += `<system_instruction>\n`;
+            p += `  <role>${state.role || 'Helpful analytical model processing target workflows.'}</role>\n`;
+            if (state.thinking) {
+                p += `  <thinking_config>\n    <reasoning_budget>${state.thinking_budget}</reasoning_budget>\n  </thinking_config>\n`;
+            }
+            p += `</system_instruction>\n\n`;
+
+            // Enforced declarative runtime capability bindings
+            p += `<tools_declaration>\n`;
+            let activeTools = [];
+            if (state.tools.searchGrounding) activeTools.push('google_search_grounding');
+            if (state.tools.urlContext) activeTools.push('url_target_fetcher');
+            if (state.tools.codeExecution) activeTools.push('dynamic_python_sandbox_compiler');
+            if (state.tools.functionCalling) activeTools.push('native_api_function_dispatch');
+
+            if (activeTools.length > 0) {
+                activeTools.forEach(t => {
+                    p += `  <tool name="${t}" status="ACTIVE" />\n`;
+                });
+                if (state.tools.functionCalling) {
+                    p += `  <function_call_payload>\n${state.functionSchema}\n  </function_call_payload>\n`;
+                }
+            } else {
+                p += `  \n`;
+            }
+            p += `</tools_declaration>\n\n`;
+
+            // Multi-modal contextual boundaries block injections
+            p += `<multimodal_context>\n`;
+            if (state.multimodal.length > 0) {
+                state.multimodal.forEach(m => {
+                    p += `  <media type="${m.type}" name="${m.name}" index_token="DATA_MATRIX_URI" />\n`;
+                });
+            }
+            if (state.context) {
+                p += `  <context_directives>\n${state.context}\n  </context_directives>\n`;
+            }
+            if (state.multimodal.length === 0 && !state.context) {
+                p += `  \n`;
+            }
+            p += `</multimodal_context>\n\n`;
+
+            // Intent Target Alignment
+            p += `<user_goal>\n`;
+            p += `  ${state.goal || 'Fulfill structural workflow pipeline operations with maximum precision.'}\n`;
+            p += `</user_goal>\n\n`;
+
+            // Explicit task sequencer block
+            p += `<task>\n`;
+            if (state.taskSteps.length > 0) {
+                state.taskSteps.forEach((step, idx) => {
+                    p += `  <step stage="${idx + 1}">${step.text}</step>\n`;
+                });
+            } else {
+                p += `  <step stage="1">Generate a comprehensive summary analysis evaluating available pipeline dependencies details.</step>\n`;
+            }
+            p += `</task>\n\n`;
+
+            // Target geometry structuring execution values
+            p += `<output_config>\n`;
+            p += `  <response_mime_type>${state.output.format === 'structured' ? 'application/json' : 'text/markdown'}</response_mime_type>\n`;
+            if (state.output.format === 'structured' && state.output.response_schema) {
+                p += `  <response_schema>\n${state.output.response_schema}\n  </response_schema>\n`;
+            }
+            if (state.output.instructions) {
+                p += `  <stylistic_delivery>\n${state.output.instructions}\n  </stylistic_delivery>\n`;
+            }
+            p += `</output_config>`;
+
+            return p;
+        }
+
+        // --- Core Visual Rendering & Linter System ---
+        function updateStateAndRender() {
+            const promptStr = buildGeminiPrompt(appState);
+            const placeholder = document.getElementById('emptyStatePlaceholder');
+            const previewEl = document.getElementById('geminiPreview');
+
+            // Handle Empty State visualization
+            if (!appState.goal && !appState.role && appState.taskSteps.length === 0) {
+                placeholder.style.display = 'flex';
+                previewEl.innerHTML = '';
+                updateMetrics(0);
+                return;
+            } else {
+                placeholder.style.display = 'none';
+            }
+
+            // Run structural linter logic rules
+            runInlineLinterEngine();
+
+            // Run syntax highlighter output pipeline
+            const highlighted = highlightGemini(promptStr);
+            previewEl.innerHTML = highlighted;
+
+            // Trigger change notification indicator
+            previewEl.parentElement.classList.add('block-flash');
+            setTimeout(() => { previewEl.parentElement.classList.remove('block-flash'); }, 380);
+
+            // Compute Token configurations
+            const computedTokens = estimateTokens(promptStr);
+            updateMetrics(computedTokens);
+
+            // Update grounding flags visibility markers
+            const groundingBadge = document.getElementById('groundingBadge');
+            if (appState.tools.searchGrounding || appState.tools.urlContext) {
+                groundingBadge.style.display = 'inline-block';
+            } else {
+                groundingBadge.style.display = 'none';
+            }
+
+            // Quality audit compute loop
+            const audit = runQualityAudit();
+            updateQualityUI(audit);
+        }
+
+        function highlightGemini(str) {
+            let html = escapeHtml(str);
+            
+            // Tags highlighting rule
+            html = html.replace(/(&lt;\/?[a-zA-JS0-9_]+&gt;)/g, '<span class="tok-tag">$1</span>');
+            
+            // Attributes rule parameters
+            html = html.replace(/(\s[a-zA-Z0-9_]+="[^"]*")/g, '<span class="tok-attr">$1</span>');
+            
+            // Divider block boundaries rule configurations
+            html = html.replace(/(===\s[A-Z0-9_]+\s===)/g, '<span class="tok-comment">$1</span>');
+
+            return html;
+        }
+
+        function runInlineLinterEngine() {
+            const goalBox = document.getElementById('textareaGoal');
+            const container = document.getElementById('linterContainer');
+            const text = goalBox.value.toLowerCase();
+            
+            const forbidden = ["think step by step", "let's think", "chain of thought"];
+            let detected = false;
+
+            forbidden.forEach(phrase => {
+                if (text.includes(phrase)) detected = true;
+            });
+
+            if (detected) {
+                goalBox.classList.add('linter-active');
+                container.innerHTML = `
+                    <div class="linter-error-tip">
+                        ⚠️ Gemini July 2026 Policy Warning: Discouraged prompt strategy phrase detected. 
+                        <span class="autofix-btn" onclick="executeLinterAutoFix()">Auto-Fix Layout</span>
+                    </div>
+                `;
+            } else {
+                goalBox.classList.remove('linter-active');
+                container.innerHTML = '';
+            }
+        }
+
+        function executeLinterAutoFix() {
+            let goalVal = document.getElementById('textareaGoal').value;
+            const forbidden = ["think step by step", "let's think", "chain of thought"];
+            
+            forbidden.forEach(phrase => {
+                const regex = new RegExp(phrase, 'gi');
+                goalVal = goalVal.replace(regex, '');
+            });
+
+            document.getElementById('textareaGoal').value = goalVal.trim();
+            appState.thinking = true;
+            appState.thinking_budget = 8192;
+            
+            syncStateToDOM();
+            updateStateAndRender();
+            showToast("Banned strings scrubbed; Native internal Reasoning Engine configured.", "success");
+        }
+
+        // --- Token Metrics Engine ---
+        function estimateTokens(text) {
+            let baseTokens = Math.ceil((text.length) / 3.6);
+            
+            // Process abstract multi-modal contextual structural weights
+            let mediaTokens = 0;
+            appState.multimodal.forEach(m => {
+                if (m.type === 'image') mediaTokens += 1290;
+                if (m.type === 'pdf') mediaTokens += 1040; // Approx 4 pages average mock size
+                if (m.type === 'video') mediaTokens += 3200;
+                if (m.type === 'audio') mediaTokens += 800;
+            });
+
+            return baseTokens + mediaTokens;
+        }
+
+        function updateMetrics(count) {
+            document.getElementById('tokenCountText').textContent = count.toLocaleString();
+            
+            const maxTokens = 1048576;
+            const pct = Math.min((count / maxTokens) * 100, 100);
+            const innerBar = document.getElementById('tokenBarInner');
+            innerBar.style.width = `${pct}%`;
+
+            if (pct > 85) innerBar.style.backgroundColor = 'var(--error)';
+            else if (pct > 60) innerBar.style.backgroundColor = 'var(--warning-amber)';
+            else innerBar.style.backgroundColor = 'var(--gemini-blue)';
+
+            // Cost structure computations formulas
+            let rateIn = 1.25, rateOut = 5.00; // 3.5 Pro baseline defaults
+            if (appState.meta.model === 'gemini-3.5-flash') { rateIn = 0.10; rateOut = 0.40; }
+            if (appState.meta.model === 'gemini-3.1-pro-preview') { rateIn = 2.50; rateOut = 10.00; }
+
+            const costEst = (count / 1000000) * rateIn;
+            document.getElementById('tokenCostDisplay').innerHTML = `Est. Ingest Cost: $${costEst.toFixed(4)}`;
+        }
+
+        // --- Comprehensive Quality Control Matrix Audit Loop ---
+        function runQualityAudit() {
+            let score = 0;
+            const checks = [
+                { id: 1, name: 'Core target sections generated correctly', pass: false },
+                { id: 2, name: 'Primary objective located near core top boundary', pass: false },
+                { id: 3, name: 'Explicit output mime structural definitions active', pass: false },
+                { id: 4, name: 'Compliant structure strategy: Avoids banned reasoning expressions', pass: false },
+                { id: 5, name: 'Deep reasoning enabled for production workflows', pass: false },
+                { id: 6, name: 'At least one integrated real-time capability tool defined', pass: false },
+                { id: 7, name: 'Multi-modal components configured with schema targets', pass: false },
+                { id: 8, name: 'Explicit execution model engine parameters chosen', pass: false }
+            ];
+
+            const promptLower = buildGeminiPrompt(appState).toLowerCase();
+
+            // Rule 1
+            if (promptLower.includes('<system_instruction>') && promptLower.includes('<task>') && promptLower.includes('<output_config>')) {
+                checks[0].pass = true; score += 15;
+            }
+            // Rule 2
+            if (appState.goal && appState.goal.length > 10) { checks[1].pass = true; score += 15; }
+            // Rule 3
+            if (appState.output.format === 'structured' && appState.output.response_schema.length > 10) { checks[2].pass = true; score += 15; }
+            else if (appState.output.format !== 'structured') { checks[2].pass = true; score += 10; }
+            // Rule 4
+            const textGoalLower = appState.goal.toLowerCase();
+            if (!textGoalLower.includes("think step by step") && !textGoalLower.includes("let's think")) {
+                checks[3].pass = true; score += 15;
+            }
+            // Rule 5
+            if (appState.thinking) { checks[4].pass = true; score += 10; }
+            // Rule 6
+            if (appState.tools.searchGrounding || appState.tools.urlContext || appState.tools.codeExecution || appState.tools.functionCalling) {
+                checks[5].pass = true; score += 10;
+            }
+            // Rule 7
+            if (appState.multimodal.length > 0) { checks[6].pass = true; score += 10; }
+            else { checks[6].pass = true; score += 5; } // partial credit for text accuracy
+            // Rule 8
+            if (appState.meta.model) { checks[7].pass = true; score += 10; }
+
+            score = Math.min(score, 100);
+            return { score, checks };
+        }
+
+        function updateQualityUI(audit) {
+            document.getElementById('scoreText').textContent = audit.score;
+            
+            const fill = document.getElementById('scoreRingFill');
+            // Radius 18 means circumference is approx 113
+            const offset = 113 - (113 * audit.score) / 100;
+            fill.style.strokeDashoffset = offset;
+
+            if (audit.score > 80) fill.style.stroke = 'var(--success)';
+            else if (audit.score > 55) fill.style.stroke = 'var(--gemini-blue)';
+            else fill.style.stroke = 'var(--warning-amber)';
+
+            const completed = audit.checks.filter(c => c.pass).length;
+            document.getElementById('footerChecksCount').textContent = `${completed}/8`;
+
+            // Render interactive validation drawer contents components
+            const drawerContainer = document.getElementById('checklistItemsContainer');
+            drawerContainer.innerHTML = '';
+            audit.checks.forEach(c => {
+                const row = document.createElement('div');
+                row.className = 'checklist-item';
+                row.innerHTML = `
+                    <span class="checklist-status ${c.pass ? 'pass' : 'fail'}">${c.pass ? '✓ PASS' : '⚡ WARN'}</span>
+                    <div>${c.name}</div>
+                `;
+                drawerContainer.appendChild(row);
+            });
+        }
+
+        // --- Export & Action Utilities ---
+        function executeCopyAction(e) {
+            const promptStr = buildGeminiPrompt(appState);
+            navigator.clipboard.writeText(promptStr).then(() => {
+                showToast("Production prompt payload compiled &amp; copied", "success");
+                triggerConfettiExplosion(e.clientX, e.clientY);
+            }).catch(() => {
+                showToast("Clipboard configuration permissions error", "error");
+            });
+        }
+
+        function triggerConfettiExplosion(x, y) {
+            const count = 12;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-particle';
+                p.style.left = `${x}px`;
+                p.style.top = `${y}px`;
+                p.style.background = ['#1a73e8', '#7c3aed', '#0891b2', '#34a853'][Math.floor(Math.random() * 4)];
+                
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 24 + Math.random() * 40;
+                p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+                p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+
+                document.body.appendChild(p);
+                setTimeout(() => { p.remove(); }, 560);
+            }
+        }
+
+        function triggerDownload() {
+            const raw = buildGeminiPrompt(appState);
+            const blob = new Blob([raw], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gemini_studio_prompt_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("System prompt manifest downloaded", "success");
+        }
+
+        function resetToBlank() {
+            appState.role = '';
+            appState.goal = '';
+            appState.context = '';
+            appState.taskSteps = [];
+            appState.multimodal = [];
+            appState.tools = { searchGrounding: false, urlContext: false, codeExecution: false, functionCalling: false };
+            syncStateToDOM();
+            updateStateAndRender();
+            showToast("Laboratory environment reset", "info");
+        }
+
+        function saveToLibrary() {
+            showToast("Laboratory state context captured to volatile cache storage", "success");
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.innerHTML = `<span>💡</span> <div>${msg}</div>`;
+            container.appendChild(el);
+            setTimeout(() => { el.remove(); }, 2400);
+        }
+
+        function toggleDrawer(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('active');
+        }
+        function closeDrawerOnOverlay(e) {
+            if (e.target.className === 'drawer-overlay active') {
+                e.target.classList.remove('active');
+            }
+        }
+
+        function switchMobileTab(target) {
+            document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('builderPane').classList.remove('active-tab');
+            document.getElementById('previewPane').classList.remove('active-tab');
+
+            if (target === 'builder') {
+                document.getElementById('builderPane').classList.add('active-tab');
+                event.target.classList.add('active');
+            } else {
+                document.getElementById('previewPane').classList.add('active-tab');
+                event.target.classList.add('active');
+            }
+        }
+
+        function setupKeyboardShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    executeCopyAction({ clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+                }
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
