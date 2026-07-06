@@ -1,0 +1,1214 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grok Lab — Prompt Terminal</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap');
+
+        :root {
+            --bg: #0a0a0b;
+            --surface: #111113;
+            --elevated: #18181b;
+            --ink: #f4f4f5;
+            --secondary: #a1a1aa;
+            --accent: #38bdf8;
+            --volt: #e4e4e7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(800px at 20% -5%, #141416 0%, transparent 65%),
+                radial-gradient(600px at 95% 0%, #18181c 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.6;
+        }
+
+        .crt {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 3px,
+                rgba(255,255,255,0.03) 3px,
+                rgba(255,255,255,0.03) 6px
+            );
+            pointer-events: none;
+            z-index: 2;
+            animation: scanlineDrift 8s linear infinite;
+        }
+
+        @keyframes scanlineDrift {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 800px; }
+        }
+
+        .app {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            z-index: 3;
+        }
+
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .builder-pane {
+            border-right: 1px solid #27272a;
+            max-width: 720px;
+        }
+
+        .preview-pane {
+            background: #050507;
+            position: relative;
+        }
+
+        .topbar {
+            height: 58px;
+            background: #111113;
+            border-bottom: 1px solid #27272a;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 16px;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-dot {
+            width: 7px;
+            height: 7px;
+            background: #38bdf8;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulseLive 1.4s infinite;
+        }
+
+        .model-pill {
+            background: #18181b;
+            color: #a1a1aa;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            letter-spacing: 0.5px;
+        }
+
+        .truth-ring {
+            width: 42px;
+            height: 42px;
+            position: relative;
+            cursor: help;
+        }
+
+        .truth-ring svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .truth-ring circle {
+            transition: stroke-dashoffset 0.44s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #111113;
+            border-bottom: 1px solid #27272a;
+            overflow-x: auto;
+            flex-shrink: 0;
+            scrollbar-width: none;
+        }
+
+        .presets::-webkit-scrollbar {
+            display: none;
+        }
+
+        .preset-chip {
+            background: #18181b;
+            color: #a1a1aa;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #27272a;
+        }
+
+        .preset-chip.active {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background: #111113;
+            border: 1px solid #27272a;
+            border-radius: 10px;
+            padding: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #a1a1aa;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #71717a;
+            margin-bottom: 8px;
+        }
+
+        textarea, input {
+            width: 100%;
+            background: #0f0f12;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            color: #f4f4f5;
+            padding: 12px 14px;
+            font-size: 14.5px;
+            resize: vertical;
+            font-family: inherit;
+            transition: all 0.14s ease;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #27272a;
+            transition: .3s;
+            border-radius: 9999px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: #fff;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: #38bdf8;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #18181b;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.13s ease;
+            border: 1px solid #27272a;
+        }
+
+        .chip.active {
+            background: #38bdf8;
+            color: #000;
+            border-color: #38bdf8;
+        }
+
+        .reasoning-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reason-step {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: grab;
+            transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .reason-step:active {
+            cursor: grabbing;
+        }
+
+        .drag-handle {
+            color: #71717a;
+            font-size: 18px;
+            user-select: none;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: #38bdf8;
+        }
+
+        .preview-header {
+            height: 52px;
+            background: #0a0a0b;
+            border-bottom: 1px solid #27272a;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: #71717a;
+            flex-shrink: 0;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulseLive 1.8s infinite;
+        }
+
+        #grokPreview {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13.5px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            color: #f4f4f5;
+            background: #050507;
+        }
+
+        .token-bar {
+            height: 3px;
+            background: #27272a;
+            position: relative;
+            margin: 8px 20px;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .token-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #a78bfa);
+            transition: width 0.28s ease;
+        }
+
+        .footer {
+            padding: 12px 20px;
+            background: #111113;
+            border-top: 1px solid #27272a;
+            font-size: 12px;
+            color: #71717a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            font-family: inherit;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #e4e4e7;
+            transform: scale(1.02);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #f4f4f5;
+            border: 1px solid #3f3f46;
+        }
+
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: #18181b;
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            animation: toastIn 0.2s ease forwards;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .launch-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10,10,11,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 2000;
+            color: white;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+        }
+
+        .particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .command-palette {
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 520px;
+            background: #111113;
+            border: 1px solid #38bdf8;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            display: none;
+            flex-direction: column;
+            z-index: 3000;
+            overflow: hidden;
+        }
+
+        .mobile-tabs {
+            display: none;
+            background: #111113;
+            border-bottom: 1px solid #27272a;
+        }
+
+        @media (max-width: 880px) {
+            .app {
+                flex-direction: column;
+            }
+            .builder-pane, .preview-pane {
+                max-width: none;
+                border: none;
+            }
+            .mobile-tabs {
+                display: flex;
+            }
+        }
+
+        .highlight-flash {
+            animation: lineFlashWhite 340ms ease forwards;
+        }
+
+        @keyframes lineFlashWhite {
+            0% { background: #1a1a1f; }
+            100% { background: transparent; }
+        }
+
+        .empty-state {
+            font-family: 'IBM Plex Mono', monospace;
+            color: #71717a;
+            text-align: center;
+            padding: 60px 20px;
+            animation: cursorBlink 1s step-end infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="crt"></div>
+    
+    <div class="app">
+        <!-- BUILDER PANE -->
+        <div class="pane builder-pane" id="builderPane">
+            <div class="topbar">
+                <div class="logo">
+                    GROK LAB
+                    <span class="logo-dot"></span>
+                </div>
+                <div class="model-pill" id="modelPill">4.3 • HEAVY</div>
+                
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+                    <div class="truth-ring" id="truthRing">
+                        <svg viewBox="0 0 42 42">
+                            <circle cx="21" cy="21" r="18" fill="none" stroke="#27272a" stroke-width="5"/>
+                            <circle id="truthProgress" cx="21" cy="21" r="18" fill="none" stroke="#22c55e" stroke-width="5" stroke-dasharray="113" stroke-dashoffset="0" transform="rotate(-90 21 21)"/>
+                        </svg>
+                    </div>
+                    <div style="font-size: 13px; font-family: monospace;" id="truthValue">82</div>
+                </div>
+            </div>
+
+            <!-- PRESETS -->
+            <div class="presets" id="presets">
+                <!-- populated by JS -->
+            </div>
+
+            <div class="scroll-container" id="builderScroll">
+                <!-- MISSION -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>MISSION &amp; PERSONA</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="truthToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-label">MISSION</div>
+                    <textarea id="missionInput" rows="3" placeholder="Explain quantum entanglement to a 12 year old using only X posts from physicists..."></textarea>
+                    
+                    <div style="margin-top: 16px;">
+                        <div class="section-label">PERSONA</div>
+                        <textarea id="personaInput" rows="2">You are Grok 4.3, a maximally truth-seeking AI built by xAI. Sharp wit, zero fluff, cite sources when live tools are enabled.</textarea>
+                    </div>
+                    
+                    <div class="slider-container" style="margin-top: 18px;">
+                        <div style="font-size: 13px; width: 80px;">EDGE</div>
+                        <input type="range" id="edgeSlider" min="0" max="100" value="35">
+                        <div id="edgeValue" style="font-family: monospace; width: 42px; text-align: right;">35</div>
+                    </div>
+                </div>
+
+                <!-- LIVE CONTEXT -->
+                <div class="card">
+                    <div class="card-header">LIVE CONTEXT</div>
+                    <textarea id="contextInput" rows="3" placeholder="Latest news on xAI Grok 4.3 release..."></textarea>
+                    
+                    <div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px;" id="toolChips">
+                        <!-- populated by JS -->
+                    </div>
+                    
+                    <div style="margin-top: 14px;">
+                        <input type="text" id="xHandlesInput" placeholder="@xai @elonmusk #Grok" style="font-size: 13px;">
+                    </div>
+                </div>
+
+                <!-- REASONING CHAIN -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>REASONING CHAIN</div>
+                        <button class="btn-ghost" style="padding: 4px 12px; font-size: 12px;" id="addStepBtn">+ STEP</button>
+                    </div>
+                    <div class="reasoning-list" id="reasoningList">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+
+                <!-- OUTPUT -->
+                <div class="card">
+                    <div class="card-header">OUTPUT FORMAT</div>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <div onclick="setOutputFormat('markdown')" class="chip active" id="fmt-markdown">Markdown</div>
+                        <div onclick="setOutputFormat('json')" class="chip" id="fmt-json">JSON</div>
+                        <div onclick="setOutputFormat('thread')" class="chip" id="fmt-thread">X Thread</div>
+                    </div>
+                    <textarea id="outputInstructions" rows="2" placeholder="Respond in clear sections with bold headings..."></textarea>
+                    
+                    <label style="display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; cursor: pointer;">
+                        <input type="checkbox" id="citeToggle" checked>
+                        <span>Cite sources inline</span>
+                    </label>
+                </div>
+
+                <!-- GROK CONTROLS -->
+                <div class="card">
+                    <div class="card-header">GROK CONTROLS</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <div class="section-label">MODEL</div>
+                            <select id="modelSelect" style="width: 100%; background: #0f0f12; border: 1px solid #27272a; color: inherit; padding: 10px; border-radius: 8px;">
+                                <option value="grok-4.3">grok-4.3</option>
+                                <option value="grok-4-heavy">grok-4-heavy</option>
+                                <option value="grok-code-fast-1">grok-code-fast-1</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="section-label">TEMPERATURE</div>
+                            <input type="range" id="tempSlider" min="0" max="2" step="0.1" value="0.6" style="width: 100%;">
+                            <div id="tempValue" style="text-align: center; font-family: monospace; font-size: 12px;">0.6</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STICKY BAR -->
+            <div style="padding: 16px 20px; background: #111113; border-top: 1px solid #27272a; display: flex; gap: 12px; flex-shrink: 0;">
+                <button onclick="resetAll()" class="btn-ghost" style="flex: 1;">RESET</button>
+                <button onclick="saveToLibrary()" class="btn-ghost" style="flex: 1;">SAVE</button>
+                <button onclick="launchPrompt()" class="btn-primary" style="flex: 2; font-size: 15px;">LAUNCH PROMPT 🚀</button>
+            </div>
+        </div>
+
+        <!-- PREVIEW PANE -->
+        <div class="pane preview-pane" id="previewPane">
+            <div class="preview-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="live-dot"></span>
+                    <span id="previewFilename">grok_prompt_4.3.md</span>
+                </div>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 20px; font-size: 13px;">
+                    <span id="tokenCount">~2.4k / 256k</span>
+                    <span id="costDisplay" style="color: #22c55e;">$0.003</span>
+                </div>
+                <button onclick="copyPrompt()" class="btn-ghost" style="margin-left: 16px; font-size: 13px; padding: 6px 14px;">COPY</button>
+            </div>
+            
+            <pre id="grokPreview"><code id="previewCode">> INITIALIZING GROK 4.3 TERMINAL...
+Loading truth-seeking persona...
+Live tools engaged.</code></pre>
+            
+            <div class="token-bar">
+                <div class="token-fill" id="tokenFill" style="width: 18%;"></div>
+            </div>
+            
+            <div class="footer">
+                <div id="toolsSummary">X • WEB • CODE</div>
+                <div onclick="toggleChecklist()" style="cursor: pointer;">TRUTHSCORE <span id="footerTruth">82</span>/100</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE TABS -->
+    <div class="mobile-tabs">
+        <button onclick="switchTab(0)" style="flex:1; padding: 14px; background: transparent; color: #f4f4f5; border: none;">BUILD</button>
+        <button onclick="switchTab(1)" style="flex:1; padding: 14px; background: transparent; color: #f4f4f5; border: none;">PREVIEW</button>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast">
+        <span id="toastText"></span>
+    </div>
+
+    <!-- LAUNCH OVERLAY -->
+    <div id="launchOverlay" class="launch-overlay">
+        <div style="font-size: 68px; margin-bottom: 20px;">🚀</div>
+        <div id="launchText">LAUNCHED TO GROK</div>
+        <div class="particles" id="particles"></div>
+    </div>
+
+    <!-- COMMAND PALETTE -->
+    <div class="command-palette" id="commandPalette">
+        <div style="padding: 16px 20px; border-bottom: 1px solid #27272a; font-size: 15px;">Quick commands</div>
+        <div style="padding: 8px 0;">
+            <div onclick="launchPrompt()" class="chip" style="margin: 4px 12px; width: calc(100% - 24px); justify-content: space-between;">
+                <span>Launch Prompt</span>
+                <span style="font-size: 12px; color: #71717a;">⌘⏎</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== STATE ====================
+        let appState = {
+            preset: "truthseeker",
+            mission: "Explain the latest breakthroughs in xAI and Grok 4.3 using fresh data from X.",
+            persona: "You are Grok, built by xAI. You are maximally truth-seeking, helpful, and witty. Never shy away from politically incorrect truths if they are well-substantiated.",
+            truthseeking: true,
+            edge: 35,
+            context: "Recent announcements from @xai and @elonmusk",
+            live: {
+                xSearch: true,
+                webBrowse: true,
+                codeExec: false,
+                realtime: true
+            },
+            reasoningChain: [
+                { id: "1", text: "Pull latest information using live X search and web browse." },
+                { id: "2", text: "Cross-verify facts across multiple sources." },
+                { id: "3", text: "Synthesize a clear, truthful response with citations." }
+            ],
+            tools: {
+                x_search: true,
+                web_browse: true,
+                code_run: false,
+                image_gen: false
+            },
+            output: {
+                format: "markdown",
+                instructions: "Use markdown with clear headings and bullet points.",
+                citeSources: true
+            },
+            grok: {
+                model: "grok-4.3",
+                temperature: 0.6
+            }
+        };
+
+        let currentTab = 0;
+        let debounceTimer = null;
+
+        const presets = [
+            { name: "TruthSeeker", key: "truthseeker" },
+            { name: "X Live RAG", key: "xrag" },
+            { name: "Code Agent", key: "code" },
+            { name: "Meme Explainer", key: "meme" },
+            { name: "Unhinged Roast", key: "roast" },
+            { name: "Research Heavy", key: "research" }
+        ];
+
+        // ==================== UTILITIES ====================
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function estimateTokens(str) {
+            if (!str) return 0;
+            return Math.ceil(str.length / 3.9);
+        }
+
+        function calculateTotalTokens() {
+            let total = 0;
+            total += estimateTokens(appState.mission);
+            total += estimateTokens(appState.persona);
+            total += estimateTokens(appState.context);
+            appState.reasoningChain.forEach(step => total += estimateTokens(step.text));
+            total += appState.reasoningChain.length * 35;
+            total += Object.values(appState.tools).filter(v => v).length * 90;
+            return total;
+        }
+
+        function calculateCost(tokens) {
+            // Simplified
+            return (tokens / 1000000 * 2.5).toFixed(3);
+        }
+
+        function calcTruthScore() {
+            let score = 60;
+            if (appState.mission.length > 40) score += 12;
+            if (Object.values(appState.tools).some(v => v)) score += 15;
+            if (appState.output.citeSources) score += 8;
+            if (appState.reasoningChain.length >= 3) score += 10;
+            if (appState.edge > 20) score += 5;
+            return Math.min(100, Math.max(40, Math.floor(score)));
+        }
+
+        // ==================== PROMPT BUILDER ====================
+        function buildGrokPrompt() {
+            let prompt = `<system>\nYou are Grok 4.3 — maximally truth-seeking AI by xAI.\n`;
+            
+            if (appState.truthseeking) {
+                prompt += `Prioritize truth over popularity. Use live tools when relevant.\n`;
+            }
+            
+            prompt += `</system>\n\n`;
+            
+            prompt += `<persona>\n${appState.persona}\n</persona>\n\n`;
+            
+            prompt += `<mission>\n${appState.mission}\n</mission>\n\n`;
+            
+            // Live tools
+            prompt += `<live_tools>\n`;
+            if (appState.live.xSearch) prompt += `- X Search enabled\n`;
+            if (appState.live.webBrowse) prompt += `- Web Browse enabled\n`;
+            if (appState.live.codeExec) prompt += `- Code Execution enabled\n`;
+            prompt += `</live_tools>\n\n`;
+            
+            if (appState.context) {
+                prompt += `<context>\n${appState.context}\n</context>\n\n`;
+            }
+            
+            prompt += `<reasoning_chain>\n`;
+            appState.reasoningChain.forEach((step, i) => {
+                prompt += `  ${i+1}. ${step.text}\n`;
+            });
+            prompt += `</reasoning_chain>\n\n`;
+            
+            prompt += `<output_format>\n${appState.output.format.toUpperCase()}\n`;
+            if (appState.output.instructions) prompt += `${appState.output.instructions}\n`;
+            if (appState.output.citeSources) prompt += `Include inline citations.\n`;
+            prompt += `</output_format>\n`;
+            
+            return prompt;
+        }
+
+        // ==================== RENDER ====================
+        function renderPreview() {
+            const previewCode = document.getElementById('previewCode');
+            const promptText = buildGrokPrompt();
+            
+            previewCode.textContent = promptText;
+            
+            // Token count
+            const tokens = calculateTotalTokens();
+            document.getElementById('tokenCount').textContent = `~${tokens} / 256k`;
+            
+            const fillPercent = Math.min(100, Math.floor(tokens / 2560));
+            document.getElementById('tokenFill').style.width = `${fillPercent}%`;
+            
+            // Cost
+            const cost = calculateCost(tokens);
+            document.getElementById('costDisplay').textContent = `$${cost}`;
+            
+            // Truth
+            const score = calcTruthScore();
+            document.getElementById('truthValue').textContent = score;
+            document.getElementById('footerTruth').textContent = score;
+            
+            const progress = document.getElementById('truthProgress');
+            const circumference = 113;
+            const offset = circumference - (circumference * score / 100);
+            progress.setAttribute('stroke-dashoffset', offset);
+            
+            // Update summary
+            let toolsStr = [];
+            if (appState.live.xSearch) toolsStr.push("X");
+            if (appState.live.webBrowse) toolsStr.push("WEB");
+            if (appState.live.codeExec) toolsStr.push("CODE");
+            document.getElementById('toolsSummary').textContent = toolsStr.join(" • ");
+        }
+
+        function debounceRender() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                renderPreview();
+            }, 75);
+        }
+
+        // ==================== REASONING CHAIN ====================
+        function renderReasoningChain() {
+            const container = document.getElementById('reasoningList');
+            container.innerHTML = '';
+            
+            appState.reasoningChain.forEach((step, index) => {
+                const div = document.createElement('div');
+                div.className = 'reason-step';
+                div.draggable = true;
+                div.dataset.index = index;
+                div.innerHTML = `
+                    <div class="drag-handle">⋮⋮</div>
+                    <div style="flex:1;">
+                        <input type="text" value="${escapeHtml(step.text)}" style="border:none; background:transparent; width:100%; color:inherit;" onchange="updateReasonStep(${index}, this.value)">
+                    </div>
+                    <button onclick="removeReasonStep(${index})" style="background:none; border:none; color:#71717a; font-size:18px; cursor:pointer;">×</button>
+                `;
+                
+                // Drag events
+                div.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', index);
+                });
+                
+                div.addEventListener('dragover', (e) => e.preventDefault());
+                
+                div.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = parseInt(this.dataset.index);
+                    reorderReasoning(fromIndex, toIndex);
+                });
+                
+                container.appendChild(div);
+            });
+        }
+
+        function updateReasonStep(index, newText) {
+            appState.reasoningChain[index].text = newText;
+            debounceRender();
+        }
+
+        function removeReasonStep(index) {
+            if (appState.reasoningChain.length <= 1) return;
+            appState.reasoningChain.splice(index, 1);
+            renderReasoningChain();
+            debounceRender();
+        }
+
+        function reorderReasoning(from, to) {
+            const [moved] = appState.reasoningChain.splice(from, 1);
+            appState.reasoningChain.splice(to, 0, moved);
+            renderReasoningChain();
+            debounceRender();
+        }
+
+        function addReasonStep() {
+            appState.reasoningChain.push({
+                id: Date.now().toString(36),
+                text: "New reasoning step..."
+            });
+            renderReasoningChain();
+            debounceRender();
+        }
+
+        // ==================== TOOLS ====================
+        function renderToolChips() {
+            const container = document.getElementById('toolChips');
+            container.innerHTML = `
+                <div onclick="toggleTool('x_search')" class="chip ${appState.tools.x_search ? 'active' : ''}">X Search</div>
+                <div onclick="toggleTool('web_browse')" class="chip ${appState.tools.web_browse ? 'active' : ''}">Web Browse</div>
+                <div onclick="toggleTool('code_run')" class="chip ${appState.tools.code_run ? 'active' : ''}">Code Exec</div>
+            `;
+        }
+
+        function toggleTool(tool) {
+            appState.tools[tool] = !appState.tools[tool];
+            renderToolChips();
+            debounceRender();
+            
+            showToast("Tool toggled", "#38bdf8");
+        }
+
+        // ==================== PRESETS ====================
+        function loadPreset(key) {
+            appState.preset = key;
+            
+            if (key === "truthseeker") {
+                appState.mission = "Explain the latest breakthroughs in xAI and Grok 4.3 using fresh data from X.";
+                appState.edge = 35;
+                appState.live.xSearch = true;
+                appState.live.webBrowse = true;
+                appState.output.format = "markdown";
+                appState.output.citeSources = true;
+            } else if (key === "xrag") {
+                appState.mission = "Summarize latest mentions of Grok from X in structured JSON.";
+                appState.live.xSearch = true;
+                appState.output.format = "json";
+            } else if (key === "code") {
+                appState.mission = "Implement a fast binary search in Rust with tests.";
+                appState.tools.code_run = true;
+                appState.grok.model = "grok-code-fast-1";
+            } else if (key === "roast") {
+                appState.mission = "Roast this terrible take:";
+                appState.edge = 92;
+            }
+            
+            // Re-render everything
+            document.getElementById('missionInput').value = appState.mission;
+            document.getElementById('edgeSlider').value = appState.edge;
+            document.getElementById('edgeValue').textContent = appState.edge;
+            
+            renderToolChips();
+            renderReasoningChain();
+            debounceRender();
+            
+            showToast(`Loaded ${key} preset`, "#22c55e");
+        }
+
+        function renderPresets() {
+            const container = document.getElementById('presets');
+            container.innerHTML = '';
+            
+            presets.forEach(p => {
+                const chip = document.createElement('div');
+                chip.className = `preset-chip ${appState.preset === p.key ? 'active' : ''}`;
+                chip.textContent = p.name;
+                chip.onclick = () => loadPreset(p.key);
+                container.appendChild(chip);
+            });
+        }
+
+        // ==================== INTERACTIONS ====================
+        function setOutputFormat(fmt) {
+            appState.output.format = fmt;
+            
+            document.querySelectorAll('#toolChips ~ div .chip').forEach(c => {
+                c.classList.remove('active');
+                if (c.id === `fmt-${fmt}`) c.classList.add('active');
+            });
+            
+            debounceRender();
+        }
+
+        function launchPrompt() {
+            const overlay = document.getElementById('launchOverlay');
+            overlay.style.display = 'flex';
+            
+            // Particles
+            createParticles();
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                showToast("Prompt copied to clipboard! Ready for Grok.", "#22c55e");
+                copyPrompt();
+            }, 920);
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 18; i++) {
+                const p = document.createElement('div');
+                p.style.position = 'absolute';
+                p.style.width = '6px';
+                p.style.height = '6px';
+                p.style.background = '#38bdf8';
+                p.style.borderRadius = '50%';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.top = Math.random() * 100 + '%';
+                p.style.opacity = '0';
+                p.style.animation = `confettiPop ${400 + Math.random() * 600}ms forwards`;
+                container.appendChild(p);
+                
+                setTimeout(() => p.remove(), 1200);
+            }
+        }
+
+        function copyPrompt() {
+            const text = buildGrokPrompt();
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Prompt copied!", "#38bdf8");
+            });
+        }
+
+        function showToast(message, color = "#38bdf8") {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+            toastText.textContent = message;
+            toast.style.borderLeft = `4px solid ${color}`;
+            toast.style.display = 'flex';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2100);
+        }
+
+        function toggleChecklist() {
+            showToast("Truth checklist: 6/7 checks passed", "#a1a1aa");
+        }
+
+        function resetAll() {
+            if (confirm("Reset everything?")) {
+                location.reload();
+            }
+        }
+
+        function saveToLibrary() {
+            showToast("Saved to library (demo)", "#22c55e");
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            // Simple demo - in full would switch visibility
+            showToast(tab === 0 ? "Builder" : "Preview", "#71717a");
+        }
+
+        // ==================== EVENT BINDINGS ====================
+        function bindEvents() {
+            // Mission
+            const missionInput = document.getElementById('missionInput');
+            missionInput.value = appState.mission;
+            missionInput.addEventListener('input', () => {
+                appState.mission = missionInput.value;
+                debounceRender();
+            });
+            
+            // Persona
+            const personaInput = document.getElementById('personaInput');
+            personaInput.value = appState.persona;
+            personaInput.addEventListener('input', () => {
+                appState.persona = personaInput.value;
+                debounceRender();
+            });
+            
+            // Edge slider
+            const edgeSlider = document.getElementById('edgeSlider');
+            const edgeValue = document.getElementById('edgeValue');
+            edgeSlider.addEventListener('input', () => {
+                appState.edge = parseInt(edgeSlider.value);
+                edgeValue.textContent = appState.edge;
+                debounceRender();
+            });
+            
+            // Context
+            const contextInput = document.getElementById('contextInput');
+            contextInput.value = appState.context;
+            contextInput.addEventListener('input', () => {
+                appState.context = contextInput.value;
+                debounceRender();
+            });
+            
+            // Add step
+            document.getElementById('addStepBtn').addEventListener('click', addReasonStep);
+            
+            // Model select
+            document.getElementById('modelSelect').addEventListener('change', (e) => {
+                appState.grok.model = e.target.value;
+                debounceRender();
+            });
+            
+            // Temperature
+            const tempSlider = document.getElementById('tempSlider');
+            const tempValue = document.getElementById('tempValue');
+            tempSlider.addEventListener('input', () => {
+                appState.grok.temperature = parseFloat(tempSlider.value);
+                tempValue.textContent = appState.grok.temperature.toFixed(1);
+            });
+            
+            // Cite toggle
+            document.getElementById('citeToggle').addEventListener('change', (e) => {
+                appState.output.citeSources = e.target.checked;
+                debounceRender();
+            });
+            
+            // Truth toggle
+            document.getElementById('truthToggle').addEventListener('change', (e) => {
+                appState.truthseeking = e.target.checked;
+                debounceRender();
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.metaKey && e.key === "Enter") {
+                    e.preventDefault();
+                    launchPrompt();
+                }
+                
+                if (e.key === "/" && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "INPUT") {
+                    e.preventDefault();
+                    showToast("Quick insert coming soon...", "#a1a1aa");
+                }
+            });
+            
+            // Initial render
+            renderPresets();
+            renderToolChips();
+            renderReasoningChain();
+            renderPreview();
+        }
+
+        // Add global CSS for confetti
+        function addGlobalStyles() {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes confettiPop {
+                    0% { transform: scale(0.2) translateY(0); opacity: 1; }
+                    100% { transform: scale(0.8) translateY(-180px); opacity: 0; }
+                }
+                .reason-step:hover {
+                    border-color: #38bdf8;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // ==================== INIT ====================
+        window.onload = function() {
+            addGlobalStyles();
+            bindEvents();
+            
+            // Demo flash
+            setTimeout(() => {
+                const preview = document.getElementById('grokPreview');
+                preview.classList.add('highlight-flash');
+                setTimeout(() => preview.classList.remove('highlight-flash'), 800);
+            }, 420);
+            
+            console.log('%cGrok Lab Terminal initialized 🚀', 'color:#38bdf8; font-family:monospace');
+        };
+    </script>
+</body>
+</html>
+```
