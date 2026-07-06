@@ -85,6 +85,13 @@
     "description": "task environment designed exactly around capture → triage → execute → archive lifecycle",
     "category": "Productivity",
     "icon": "📋"
+  },
+  {
+    "title": "Orbit Tasks",
+    "file": "tools/orbit-tasks.html",
+    "description": "another todo app",
+    "category": "Productivity",
+    "icon": "📋"
   }
  
 ]
