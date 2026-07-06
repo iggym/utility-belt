@@ -100,5 +100,13 @@
     "category": "Productivity, AI",
     "icon": "🔮"
   }
+  ,
+  {
+    "title": "Grok Prompt Generator",
+    "file": "tools/grok-prompt-gen.html",
+    "description": "Gemini 3.x Prompt Generator",
+    "category": "Productivity, AI",
+    "icon": "🔮"
+  }
  
 ]
