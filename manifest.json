@@ -114,6 +114,13 @@
     "description": "Copilot Prompt Generator",
     "category": "Productivity, AI",
     "icon": "🔮"
+  },
+  {
+    "title": "Deepseek Prompt Generator",
+    "file": "tools/deepseek-prompt-gen.html",
+    "description": "Deepseek Prompt Generator",
+    "category": "Productivity, AI",
+    "icon": "🔮"
   }
   
  
