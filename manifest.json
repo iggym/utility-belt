@@ -104,9 +104,17 @@
   {
     "title": "Grok Prompt Generator",
     "file": "tools/grok-prompt-gen.html",
-    "description": "Gemini 3.x Prompt Generator",
+    "description": "Grok Prompt Generator",
+    "category": "Productivity, AI",
+    "icon": "🔮"
+  },
+  {
+    "title": "Copilot Prompt Generator",
+    "file": "tools/copilot-prompt-gen.html",
+    "description": "Copilot Prompt Generator",
     "category": "Productivity, AI",
     "icon": "🔮"
   }
+  
  
 ]
