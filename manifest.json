@@ -121,6 +121,13 @@
     "description": "Deepseek Prompt Generator",
     "category": "Productivity, AI",
     "icon": "🔮"
+  },
+  {
+    "title": "Chatgpt Prompt Generator",
+    "file": "tools/chatgpt-prompt-gen.html",
+    "description": "Chatgpt Prompt Generator",
+    "category": "Productivity, AI",
+    "icon": "🔮"
   }
   
  
