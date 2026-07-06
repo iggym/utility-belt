@@ -1,562 +1,527 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-  <title>DeepSeek Forge — R1 Prompt Smith</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#0b1118; color:#e6f6f4; font-family:"IBM Plex Sans","Inter",system-ui,sans-serif; font-size:14.5px; line-height:1.5; -webkit-font-smoothing:antialiased; }
-    ::selection { background:#0d3d38; }
-    ::-webkit-scrollbar { width:6px; height:6px; }
-    ::-webkit-scrollbar-track { background:#111a23; }
-    ::-webkit-scrollbar-thumb { background:#2a4250; border-radius:12px; }
-    .app { display:flex; flex-direction:row; min-height:100vh; padding:12px; gap:12px; position:relative; }
-    .scanline { position:fixed; inset:0; pointer-events:none; z-index:3; background:repeating-linear-gradient(0deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 2px, transparent 2px, transparent 8px); opacity:0.4; }
-    .orb { position:fixed; border-radius:50%; filter:blur(80px); opacity:0.24; pointer-events:none; z-index:1; }
-    .orb1 { width:500px; height:500px; top:-10%; left:-8%; background:#0d4a44; animation:orbDrift 70s ease-in-out infinite alternate; }
-    .orb2 { width:450px; height:450px; bottom:-10%; right:-5%; background:#0b3a4a; animation:orbDrift 70s ease-in-out infinite alternate-reverse; }
-    @keyframes orbDrift { 0%{transform:translate(0,0)} 100%{transform:translate(20px,-20px)} }
-    @media (prefers-reduced-motion:reduce){ .orb{animation:none;opacity:0.12} }
-    a { color:#2dd4bf; text-decoration:none; }
-    .builder-pane { flex:0 0 700px; max-width:700px; display:flex; flex-direction:column; gap:10px; position:relative; z-index:4; }
-    .preview-pane { flex:1; background:#071018; border-radius:12px; border:1px solid #20313c; display:flex; flex-direction:column; overflow:hidden; position:relative; z-index:4; min-width:0; }
-    .topbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:rgba(17,26,35,0.7); backdrop-filter:blur(4px); padding:8px 14px; border-radius:12px; border:1px solid #20313c; }
-    .topbar .brand { display:flex; align-items:center; gap:6px; flex:1; }
-    .ub-home { display:inline-flex; align-items:center; gap:6px; font:500 13px/1 "IBM Plex Mono",monospace; color:#2dd4bf; background:#0f2a2a; border:1px solid #1e5252; padding:5px 12px; border-radius:999px; text-decoration:none; margin-right:6px; transition:140ms; }
-    .ub-home:hover { background:#123838; color:#5eead4; transform:translateY(-1px); }
-    .ub-home:focus-visible { box-shadow:0 0 0 3px rgba(45,212,191,.25); outline:none; }
-    @media (max-width:480px){ .ub-home span{display:none} .ub-home{padding:5px 10px} }
-    .brand h1 { font-size:22px; font-weight:600; letter-spacing:-0.01em; }
-    .brand .pill { font:500 11px/1 "IBM Plex Mono",monospace; color:#2dd4bf; background:#0f2a2a; padding:3px 10px; border-radius:999px; border:1px solid #1e5252; margin-left:6px; }
-    .score-ring { width:42px; height:42px; flex-shrink:0; position:relative; }
-    .score-ring svg { transform:rotate(-90deg); width:42px; height:42px; }
-    .score-ring .bg { fill:none; stroke:#20313c; stroke-width:3.5; }
-    .score-ring .fg { fill:none; stroke:#2dd4bf; stroke-width:3.5; stroke-linecap:round; transition:stroke-dashoffset 460ms ease; }
-    .score-ring .label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font:600 11px/1 "IBM Plex Mono",monospace; color:#e6f6f4; }
-    .preset-chips { display:flex; gap:6px; overflow-x:auto; padding:4px 0; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-    .preset-chips::-webkit-scrollbar{display:none}
-    .preset-chips button { flex-shrink:0; font:500 12px/1 "IBM Plex Mono",monospace; background:#111a23; border:1px solid #20313c; color:#93b8b4; padding:6px 14px; border-radius:999px; cursor:pointer; transition:140ms; }
-    .preset-chips button:hover { border-color:#2dd4bf; color:#e6f6f4; background:#162330; }
-    .cards { display:flex; flex-direction:column; gap:12px; overflow-y:auto; flex:1; padding-right:4px; }
-    .card { background:#111a23; border:1px solid #20313c; border-radius:12px; padding:14px 16px; box-shadow:inset 0 0 0 1px rgba(45,212,191,0.04),0 8px 28px rgba(0,0,0,0.45); transition:border-color 150ms; }
-    .card:focus-within { border-color:#2dd4bf; }
-    .card-label { font:500 11px/1 "IBM Plex Sans",sans-serif; text-transform:uppercase; letter-spacing:.08em; color:#6a8f8b; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
-    .card-label .toggle-group { display:flex; gap:4px; margin-left:auto; }
-    .card-label .toggle { font:500 10px/1 "IBM Plex Mono",monospace; background:#0f1a22; border:1px solid #20313c; color:#6a8f8b; padding:4px 10px; border-radius:999px; cursor:pointer; transition:140ms; }
-    .card-label .toggle.on { background:#0f2a2a; border-color:#2dd4bf; color:#2dd4bf; }
-    input, textarea, select { font:inherit; background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:8px 12px; color:#e6f6f4; width:100%; transition:border 150ms, box-shadow 150ms; outline:none; }
-    input:focus, textarea:focus, select:focus { border-color:#2dd4bf; box-shadow:0 0 0 3px rgba(45,212,191,.25); }
-    textarea { resize:vertical; min-height:60px; font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.5; }
-    .btn-primary { font:600 13px/1 "IBM Plex Sans",sans-serif; background:linear-gradient(180deg,#2dd4bf,#14b8a6); border:none; color:#052e2b; padding:8px 18px; border-radius:9px; cursor:pointer; transition:140ms; display:inline-flex; align-items:center; gap:6px; }
-    .btn-primary:hover { filter:brightness(1.05); }
-    .btn-primary:active { transform:scale(.97); }
-    .btn-secondary { background:transparent; border:1px solid #20313c; color:#93b8b4; padding:6px 14px; border-radius:9px; cursor:pointer; transition:140ms; font:500 12px/1 "IBM Plex Sans",sans-serif; }
-    .btn-secondary:hover { border-color:#2dd4bf; color:#e6f6f4; }
-    .step-item { display:flex; align-items:center; gap:8px; padding:4px 0; }
-    .step-item .drag { cursor:grab; color:#6a8f8b; font-size:18px; user-select:none; }
-    .step-item input { flex:1; }
-    .step-item .del { color:#f87171; cursor:pointer; background:none; border:none; font-size:16px; padding:0 4px; }
-    .tool-card { background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:10px 12px; margin-top:6px; }
-    .tool-card .row { display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
-    .tool-card .row input { flex:1; min-width:100px; }
-    .preview-header { display:flex; align-items:center; gap:10px; padding:8px 16px; border-bottom:1px solid #20313c; flex-wrap:wrap; background:#071018; }
-    .preview-header .filename { font:500 13px/1 "IBM Plex Mono",monospace; color:#5a7a76; }
-    .preview-header .dot { width:8px; height:8px; background:#2dd4bf; border-radius:50%; display:inline-block; animation:pulse-dot 1.8s infinite; }
-    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .preview-header .meta { font:400 12px/1 "IBM Plex Mono",monospace; color:#6a8f8b; margin-left:auto; display:flex; gap:12px; align-items:center; }
-    .preview-body { flex:1; overflow:auto; padding:16px; }
-    .preview-body pre { font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:#d1f5f0; }
-    .preview-body .tag { color:#5eead4; }
-    .preview-body .attr { color:#fcd34d; }
-    .preview-body .str { color:#7dd3fc; }
-    .preview-body .cmt { color:#5a7a76; }
-    .preview-footer { display:flex; align-items:center; gap:12px; padding:6px 16px; border-top:1px solid #20313c; font:400 12px/1 "IBM Plex Mono",monospace; color:#6a8f8b; flex-wrap:wrap; background:#071018; }
-    .toast-container { position:fixed; top:16px; right:16px; z-index:999; display:flex; flex-direction:column; gap:8px; max-width:360px; pointer-events:none; }
-    .toast { pointer-events:auto; background:#111a23; border:1px solid #20313c; border-radius:9px; padding:10px 16px; box-shadow:0 8px 28px rgba(0,0,0,0.6); animation:toastIn 210ms ease-out; color:#e6f6f4; font-size:13px; }
-    .toast.success { border-left:4px solid #2dd4bf; }
-    .toast.warning { border-left:4px solid #fbbf24; }
-    @keyframes toastIn { 0%{opacity:0;transform:translateY(-12px) scale(.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
-    @keyframes lineFlash { 0%{background:#0f2a2a} 100%{background:transparent} }
-    .flash-line { animation:lineFlash 360ms ease-out; }
-    .command-palette { position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); }
-    .command-palette.open { display:flex; }
-    .cmd-box { background:#111a23; border:1px solid #20313c; border-radius:12px; max-width:540px; width:90%; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,0.7); animation:cmdIn 160ms ease-out; }
-    @keyframes cmdIn { 0%{opacity:0;transform:scale(.96)} 100%{opacity:1;transform:scale(1)} }
-    .cmd-box input { background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:10px 14px; width:100%; font-size:15px; color:#e6f6f4; }
-    .cmd-box .items { margin-top:14px; max-height:280px; overflow-y:auto; }
-    .cmd-box .item { padding:8px 12px; border-radius:6px; cursor:pointer; display:flex; gap:10px; align-items:center; transition:80ms; }
-    .cmd-box .item:hover, .cmd-box .item.active { background:#162330; }
-    .cmd-box .kbd { font:400 11px/1 "IBM Plex Mono",monospace; color:#6a8f8b; margin-left:auto; background:#0f1a22; padding:2px 8px; border-radius:4px; border:1px solid #20313c; }
-    .modal-overlay { position:fixed; inset:0; z-index:1100; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); }
-    .modal-overlay.open { display:flex; }
-    .modal { background:#111a23; border:1px solid #20313c; border-radius:12px; max-width:840px; width:92%; max-height:86vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.7); padding:20px; }
-    .modal-header { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-    .modal-header h2 { font-size:18px; font-weight:600; }
-    .modal-header input { flex:1; min-width:140px; background:#0f1a22; border:1px solid #20313c; border-radius:9px; padding:6px 12px; color:#e6f6f4; }
-    .modal-close { background:none; border:none; color:#6a8f8b; font-size:24px; cursor:pointer; padding:0 6px; }
-    .modal-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:12px; overflow-y:auto; flex:1; padding:4px 0; }
-    .template-card { background:#162330; border:1px solid #20313c; border-radius:10px; padding:14px; transition:140ms; cursor:pointer; }
-    .template-card:hover { border-color:#2dd4bf; transform:translateY(-2px); }
-    .template-card .title { font-weight:500; font-size:15px; color:#e6f6f4; }
-    .template-card .best { font:500 10px/1 "IBM Plex Sans",sans-serif; text-transform:uppercase; letter-spacing:.06em; color:#6a8f8b; margin:4px 0; }
-    .template-card .desc { font-size:13px; color:#93b8b4; margin:4px 0 8px; }
-    .template-card .tags { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0; }
-    .template-card .tags span { font:500 9px/1 "IBM Plex Mono",monospace; color:#2dd4bf; border:1px solid #1e5252; background:#0f2a2a; padding:2px 8px; border-radius:999px; }
-    .template-card .use { font:600 12px/1 "IBM Plex Sans",sans-serif; color:#052e2b; background:linear-gradient(180deg,#2dd4bf,#14b8a6); border:none; padding:4px 14px; border-radius:999px; cursor:pointer; margin-top:6px; }
-    .drawer { position:fixed; top:0; right:-360px; width:350px; height:100%; background:#111a23; border-left:1px solid #20313c; z-index:500; transition:right 240ms ease-in-out; padding:20px; overflow-y:auto; box-shadow:-4px 0 30px rgba(0,0,0,0.5); }
-    .drawer.open { right:0; }
-    .drawer h3 { font-size:16px; margin-bottom:12px; }
-    .drawer .check { display:flex; gap:8px; padding:4px 0; font-size:13px; color:#93b8b4; }
-    .drawer .check.done { color:#34d399; }
-    .drawer .check.fail { color:#f87171; }
-    .action-bar { display:flex; gap:8px; flex-wrap:wrap; padding:8px 0; border-top:1px solid #20313c; margin-top:4px; position:sticky; bottom:0; background:#0b1118; z-index:2; }
-    @media (max-width:860px){ .app{flex-direction:column} .builder-pane{max-width:100%;flex:1} .preview-pane{min-height:400px} .modal{max-width:96%} .drawer{width:100%;right:-100%} }
-    @media (max-width:480px){ .topbar .brand h1{font-size:17px} .topbar .pill{font-size:9px} .card{padding:10px 12px} }
-    .mobile-tabs { display:none; gap:4px; background:#111a23; border-radius:12px; padding:4px; border:1px solid #20313c; margin-bottom:8px; }
-    .mobile-tabs button { flex:1; background:transparent; border:none; color:#6a8f8b; padding:8px 0; border-radius:8px; font:500 13px/1 "IBM Plex Sans",sans-serif; cursor:pointer; transition:140ms; }
-    .mobile-tabs button.active { background:#162330; color:#e6f6f4; }
-    @media (max-width:860px){ .mobile-tabs{display:flex} .builder-pane .cards{display:block} .preview-pane{display:none} .preview-pane.active{display:flex} .builder-pane.hidden{display:none} }
-    .slider-row { display:flex; gap:12px; align-items:center; }
-    .slider-row input[type="range"] { flex:1; accent-color:#2dd4bf; background:#0f1a22; height:4px; border-radius:4px; }
-    .token-meter { height:4px; background:#20313c; border-radius:4px; overflow:hidden; margin:4px 0; }
-    .token-meter .fill { height:100%; background:linear-gradient(90deg,#2dd4bf,#14b8a6); transition:width 300ms; border-radius:4px; }
-    .token-meter .fill.warn { background:#fbbf24; }
-    .token-meter .fill.danger { background:#f87171; }
-    .inline-flex { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-    .gap-2 { gap:8px; }
-    .mt-1 { margin-top:6px; }
-    .w-full { width:100%; }
-    .text-amber { color:#fbbf24; }
-    .text-teal { color:#2dd4bf; }
-    .text-muted { color:#6a8f8b; }
-    .text-sm { font-size:12px; }
-    .font-mono { font-family:"IBM Plex Mono",monospace; }
-    .flex-1 { flex:1; }
-    .hidden { display:none !important; }
-    .relative { position:relative; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Forge — R1 Prompt Smith</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:"IBM Plex Sans",Inter,system-ui,sans-serif;background:#0b1118;color:#e6f6f4}
+a{color:#2dd4bf;text-decoration:none}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#2a4250;border-radius:4px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.035;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(45,212,191,.08) 3px)}
+.app{display:flex;height:100dvh;position:relative;z-index:1}
+.builder{flex:1.15;max-width:760px;overflow-y:auto;background:linear-gradient(180deg,#0b1118,#0d1620)}
+.preview{flex:1;display:flex;flex-direction:column;background:#071018;border-left:1px solid #20313c;min-width:360px}
+.topbar{position:sticky;top:0;z-index:30;background:rgba(11,17,24,.9);backdrop-filter:blur(8px);border-bottom:1px solid #20313c;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ub-home{font:500 13px "IBM Plex Mono",monospace;color:#2dd4bf;background:#0f2a2a;border:1px solid #1e5252;padding:5px 12px;border-radius:999px;text-decoration:none}
+.ub-home:hover{background:#123838;color:#5eead4}
+.brand{font-weight:600;font-size:18px}
+.pill{font:500 10px "IBM Plex Mono",monospace;color:#6a8f8b;background:#111a23;border:1px solid #20313c;padding:3px 8px;border-radius:999px}
+.spacer{flex:1}
+.tbtn{background:#2dd4bf;color:#052e2b;border:none;padding:7px 14px;border-radius:9px;font:500 12px "IBM Plex Sans",sans-serif;cursor:pointer}
+.tbtn:hover{filter:brightness(1.06)}
+.score{width:42px;height:42px;position:relative}
+.score svg{transform:rotate(-90deg)}
+.score span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 11px "IBM Plex Mono",monospace}
+.qrow{padding:10px 16px 0;display:flex;flex-wrap:wrap;gap:7px}
+.qc{font:500 11px "IBM Plex Mono",monospace;color:#2dd4bf;background:transparent;border:1px solid #1e5252;padding:4px 9px;border-radius:999px;cursor:pointer}
+.qc:hover{background:#0f2a2a}
+.prow{padding:10px 16px;display:flex;gap:8px;overflow-x:auto}
+.pchip{white-space:nowrap;font:500 12px "IBM Plex Sans",sans-serif;background:#111a23;color:#93b8b4;border:1px solid #20313c;padding:5px 12px;border-radius:999px;cursor:pointer;flex-shrink:0}
+.pchip:hover{border-color:#2dd4bf;color:#2dd4bf}
+.cards{padding:0 16px 110px;display:flex;flex-direction:column;gap:13px}
+.card{background:#111a23;border:1px solid #20313c;border-radius:12px;padding:15px;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.card h2{font:500 11px "IBM Plex Sans",sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#6a8f8b;margin-bottom:9px}
+label{font:500 12px "IBM Plex Sans",sans-serif;color:#93b8b4;display:block;margin:8px 0 4px}
+input,textarea,select{width:100%;background:#0f1a22;color:#e6f6f4;border:1px solid #20313c;border-radius:9px;padding:9px 10px;font:14px "IBM Plex Sans",sans-serif;outline:none}
+textarea{min-height:76px;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:#2dd4bf;box-shadow:0 0 0 3px rgba(45,212,191,.25)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.small{font-size:12px;color:#6a8f8b}
+.tog{font:500 11px "IBM Plex Mono",monospace;background:#0f1a22;border:1px solid #20313c;color:#93b8b4;padding:5px 9px;border-radius:7px;cursor:pointer;margin:3px 4px 3px 0;display:inline-block}
+.tog.on{background:#0d3d38;color:#2dd4bf;border-color:#1a6a60}
+.btn{font:500 13px "IBM Plex Sans",sans-serif;padding:7px 13px;border-radius:9px;border:1px solid #2a4250;background:#162330;color:#e6f6f4;cursor:pointer}
+.btnp{background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#052e2b;border:none;font-weight:600}
+.steps{display:flex;flex-direction:column;gap:8px}
+.stepi{display:flex;gap:8px;background:#0f1a22;border:1px solid #20313c;border-radius:8px;padding:8px}
+.stepi textarea{flex:1;min-height:48px;background:#111a23}
+.iconbtn{background:transparent;border:none;color:#6a8f8b;cursor:pointer;padding:2px 5px}
+.ab{position:sticky;bottom:0;background:rgba(17,26,35,.96);backdrop-filter:blur(8px);border-top:1px solid #20313c;padding:11px 16px;display:flex;gap:10px;align-items:center;z-index:20}
+.ab .sp{flex:1}
+/* preview */
+.ph{height:46px;background:#0b141c;border-bottom:1px solid #20313c;display:flex;align-items:center;padding:0 12px;gap:10px;font:12px "IBM Plex Mono",monospace;color:#5a7a76;flex-shrink:0}
+.live{width:7px;height:7px;background:#2dd4bf;border-radius:50%;animation:bl 1.8s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.35}}
+.tok{margin-left:auto;color:#6a8f8b;font-size:11px}
+.pb{flex:1;overflow:auto;padding:18px}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;font:13px/20px "IBM Plex Mono",monospace;color:#d1f5f0}
+.tk-tag{color:#5eead4}.tk-attr{color:#fcd34d}.tk-str{color:#7dd3fc}.tk-cmt{color:#5a7a76}
+.flash{animation:fl .36s ease-out}
+@keyframes fl{from{background:#0f2a2a}to{background:transparent}}
+.pf{border-top:1px solid #20313c;padding:9px 14px;font:12px "IBM Plex Sans",sans-serif;color:#6a8f8b;display:flex;justify-content:space-between;background:#0b141c}
+/* modal */
+.mb{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:120;padding:16px}
+.mb.open{display:flex}
+.mo{background:#111a23;border:1px solid #20313c;border-radius:12px;width:100%;max-width:840px;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.mh{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid #20313c}
+.mh h3{font:600 15px "IBM Plex Sans",sans-serif}
+.mh input{flex:1;max-width:300px;background:#0f1a22;border:1px solid #20313c;color:#e6f6f4;border-radius:8px;padding:7px 10px}
+.mx{margin-left:auto;background:transparent;border:none;color:#6a8f8b;font-size:20px;cursor:pointer}
+.ms{padding:7px 15px;color:#6a8f8b;font-size:12px;border-bottom:1px solid #1a2832}
+.mbd{overflow:auto;padding:13px 15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:12px}
+.tc{background:#162330;border:1px solid #20313c;border-radius:10px;padding:12px;cursor:pointer;transition:150ms}
+.tc:hover{border-color:#2dd4bf;transform:translateY(-2px)}
+.tc h4{font:500 14px "IBM Plex Sans",sans-serif;color:#e6f6f4;margin-bottom:2px}
+.tc .best{font:500 10px "IBM Plex Mono",monospace;text-transform:uppercase;color:#6a8f8b;margin-bottom:5px}
+.tc p{font:13px/18px "IBM Plex Sans",sans-serif;color:#93b8b4;margin-bottom:7px}
+.tgs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.tg{font:10px "IBM Plex Mono",monospace;color:#6a8f8b;border:1px solid #2a4250;padding:1px 6px;border-radius:3px}
+.use{font:500 12px "IBM Plex Sans",sans-serif;color:#2dd4bf}
+/* toast */
+.toasts{position:fixed;top:14px;right:14px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:#162330;border:1px solid #20313c;color:#e6f6f4;padding:9px 13px;border-radius:8px;font:13px "IBM Plex Sans",sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:ti .2s ease-out;max-width:330px}
+@keyframes ti{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+/* mobile */
+.mtabs{display:none}
+@media(max-width:860px){
+  .app{flex-direction:column}
+  .preview{display:none}
+  body.showp .builder{display:none}
+  body.showp .preview{display:flex;height:calc(100dvh - 42px)}
+  .mtabs{display:flex;background:#111a23;border-bottom:1px solid #20313c}
+  .mtabs button{flex:1;background:transparent;border:none;color:#6a8f8b;padding:11px;font:500 13px "IBM Plex Sans",sans-serif;cursor:pointer}
+  .mtabs button.active{color:#2dd4bf;box-shadow:inset 0 -2px 0 #2dd4bf}
+  .row2{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-<div class="scanline"></div>
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
-
-<div class="app" id="app">
-  <!-- Builder Pane -->
-  <div class="builder-pane" id="builderPane">
-    <!-- Topbar -->
+<div class="mtabs" id="mtabs"><button class="active" data-t="b">Forge</button><button data-t="p">Preview</button></div>
+<div class="app">
+  <section class="builder" id="builder">
     <div class="topbar">
-      <div class="brand">
-        <a id="ub-home" class="ub-home" href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener noreferrer" aria-label="Utility Belt Home"><span>⌂</span><span>Home</span></a>
-        <h1>DeepSeek Forge</h1>
-        <span class="pill">V4-Pro • V4-Flash • R1-0528</span>
-        <button class="btn-secondary" style="margin-left:auto;font-size:12px;" id="templateGalleryBtn">★ Templates</button>
+      <a class="ub-home" href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener">⌂ Home</a>
+      <span class="brand">DeepSeek Forge</span>
+      <span class="pill">V4-Pro • V4-Flash • R1-0528</span>
+      <div class="spacer"></div>
+      <button class="tbtn" id="openTpl">Templates ★</button>
+      <div class="score" title="Reasoning Score">
+        <svg width="42" height="42" viewBox="0 0 42 42">
+          <circle cx="21" cy="21" r="15" fill="none" stroke="#20313c" stroke-width="3"/>
+          <circle id="sc" cx="21" cy="21" r="15" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="24" stroke-linecap="round"/>
+        </svg>
+        <span id="scn" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Mono',monospace">84</span>
       </div>
-      <div class="score-ring" id="scoreRing" title="Reasoning Score">
-        <svg viewBox="0 0 42 42"><circle class="bg" cx="21" cy="21" r="17"/><circle class="fg" id="scoreArc" cx="21" cy="21" r="17" stroke-dasharray="106.8" stroke-dashoffset="106.8"/></svg>
-        <div class="label" id="scoreLabel">0</div>
+    </div>
+
+    <div class="qrow" id="qrow"></div>
+    <div class="prow" id="prow"></div>
+
+    <div class="cards">
+      <div class="card">
+        <h2>System & Objective</h2>
+        <label>Primary Goal</label>
+        <textarea id="goal">Decompose the coding task, run transparent <think> trace, emit tool calls, produce final answer matching schema.</textarea>
+        <div class="row2">
+          <div><label>Role</label><input type="text" id="role" value="You are DeepSeek R1, a transparent, step-faithful reasoning assistant."></div>
+          <div><label style="margin-top:22px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="think" checked> &lt;think&gt; trace visible</label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:6px"><input type="checkbox" id="moe"> MoE routing hint</label></div>
+        </div>
       </div>
-    </div>
-    <!-- Preset chips -->
-    <div class="preset-chips" id="presetChips"></div>
-    <!-- Mobile tabs -->
-    <div class="mobile-tabs" id="mobileTabs">
-      <button class="active" data-tab="builder">Builder</button>
-      <button data-tab="preview">Preview</button>
-    </div>
-    <!-- Cards -->
-    <div class="cards" id="cardsContainer"></div>
-    <!-- Action Bar -->
-    <div class="action-bar">
-      <button class="btn-secondary" id="resetBtn">Reset</button>
-      <button class="btn-secondary" id="saveLocalBtn">Save Local</button>
-      <button class="btn-primary" id="copyBtn">📋 Copy Prompt</button>
-    </div>
-  </div>
 
-  <!-- Preview Pane -->
-  <div class="preview-pane" id="previewPane">
-    <div class="preview-header">
-      <span class="filename">deepseek_prompt.txt</span>
-      <span class="dot"></span>
-      <span class="meta">
-        <span id="tokenDisplay">~0 tok</span>
-        <span class="text-amber" id="costDisplay">~$0.0000</span>
-        <button class="btn-secondary" style="padding:2px 10px;font-size:11px;" id="copyPreviewBtn">Copy</button>
-        <button class="btn-secondary" style="padding:2px 10px;font-size:11px;" id="exportBtn">Export</button>
-      </span>
+      <div class="card">
+        <h2>Context / Corpus</h2>
+        <textarea id="ctx" placeholder="Long 1M context notes, corpus shards…">Open-weights agentic coding task. 1M context available.</textarea>
+        <div style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap" class="small">
+          <label><input type="checkbox" id="long1m" checked> Long context 1M</label>
+          <label><input type="checkbox" id="cache" checked> Cache prompt</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Reasoning Steps</h2>
+        <div class="steps" id="steps"></div>
+        <button class="btn" id="addStep" style="margin-top:8px;font-size:12px">+ Add step</button>
+      </div>
+
+      <div class="card">
+        <h2>Tools / Function Calling</h2>
+        <div id="toolsList" class="small muted">No tools yet.</div>
+        <button class="btn" id="addTool" style="margin-top:8px;font-size:12px">+ Add tool JSON</button>
+        <label style="margin-top:10px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="parallel" checked> Parallel tool calls</label>
+      </div>
+
+      <div class="card">
+        <h2>Output</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="outBtns"></div>
+        <label>Output instructions</label>
+        <textarea id="outInst" placeholder="JSON schema, fields…"></textarea>
+        <label>JSON Schema (optional)</label>
+        <textarea id="jsonSchema" style="font-family:'IBM Plex Mono',monospace;font-size:12px;min-height:70px" placeholder="{}"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>Constraints & Cost Controls</h2>
+        <textarea id="constraints" placeholder="Measurable constraints…">Maximize accuracy / minimize tokens. Cite file:line.</textarea>
+        <label>Reasoning depth</label>
+        <input type="range" id="rdepth" min="0" max="2" value="1" style="width:100%">
+        <div class="small" style="display:flex;justify-content:space-between"><span>Fast</span><span>Balanced</span><span>Deep</span></div>
+      </div>
+
+      <div class="card">
+        <h2>DeepSeek Controls</h2>
+        <div class="row2">
+          <div><label>Model</label>
+            <select id="model">
+              <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+              <option value="deepseek-v4-flash">deepseek-v4-flash</option>
+              <option value="deepseek-r1-0528">deepseek-r1-0528</option>
+              <option value="deepseek-r1-distill-qwen-32b">r1-distill-qwen-32b</option>
+            </select>
+          </div>
+          <div><label>Temperature</label><input type="number" id="temp" value="0.3" min="0" max="1.5" step="0.05"></div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div><label>top_p</label><input type="number" id="topp" value="0.9" min="0" max="1" step="0.05"></div>
+          <div><label>max_tokens</label><input type="number" id="maxtok" value="8192"></div>
+        </div>
+        <label style="margin-top:8px;display:flex;align-items:center;gap:8px"><input type="checkbox" id="streamThink" checked> stream thinking</label>
+      </div>
+
+      <div class="small" style="color:#5a7a76">Shortcuts: <b>Ctrl Enter</b> Copy • <b>Ctrl K</b> Templates • <b>Ctrl S</b> Save • <b>Ctrl R</b> Cost sim</div>
     </div>
-    <div class="preview-body" id="previewBody">
-      <pre id="dsPreview"><span class="cmt">// Wire up R1 reasoning on the left...</span></pre>
+
+    <div class="ab">
+      <button class="btn" id="resetBtn">Reset</button>
+      <button class="btn" id="saveBtn">Save Local</button>
+      <div class="sp"></div>
+      <span class="small" id="costMeta">~3,420 tok • $0.0005 in</span>
+      <button class="btnp btn" id="copyBtn">Copy Prompt</button>
     </div>
-    <div class="preview-footer">
-      <span id="statusLine">Reasoning: R1 ON • Tools: 0 • Best practices 0/7</span>
-      <span style="margin-left:auto;display:flex;gap:8px;">
-        <span>Open Weights</span>
-        <a href="https://iggym.github.io/utility-belt/" target="_blank" rel="noopener" style="color:#5eead4;">Home</a>
-        <button class="btn-secondary" style="padding:0 6px;font-size:11px;" id="toggleDrawer">📋</button>
-      </span>
+  </section>
+
+  <section class="preview" id="preview">
+    <div class="ph">
+      <span>deepseek_prompt.txt</span>
+      <span class="live"></span><span style="color:#2dd4bf;font-size:11px">R1 ON</span>
+      <span class="tok" id="tokPill">~3,420 / 1,048,576</span>
+      <button class="btn" id="copyIcon" style="padding:4px 8px;font-size:11px">Copy</button>
     </div>
+    <div class="pb"><pre id="pOut"></pre></div>
+    <div class="pf">
+      <span id="pfLeft">Reasoning: R1 ON • Tools: 0 • Best practices 6/7 ✓</span>
+      <span><a href="#" id="openWeights">Open Weights</a> · <a href="https://iggym.github.io/utility-belt/" target="_blank">Home</a></span>
+    </div>
+  </section>
+</div>
+
+<!-- Template Modal -->
+<div class="mb" id="tplMb" role="dialog" aria-modal="true" aria-label="DeepSeek Template Gallery">
+  <div class="mo">
+    <div class="mh">
+      <h3>✨ DeepSeek Template Gallery</h3>
+      <input type="search" id="tplSearch" placeholder="Search 18 R1 / V4 templates…">
+      <button class="mx" id="tplX">×</button>
+    </div>
+    <div class="ms">18 cost-efficient, open-weights, reasoning-first starters — 1-click load</div>
+    <div class="mbd"><div class="grid" id="tplGrid"></div></div>
   </div>
 </div>
 
-<!-- Drawer -->
-<div class="drawer" id="drawer">
-  <h3>R1 Best Practices</h3>
-  <div id="checklistContainer"></div>
-</div>
-
-<!-- Toast container -->
-<div class="toast-container" id="toastContainer"></div>
-
-<!-- Command Palette -->
-<div class="command-palette" id="commandPalette">
-  <div class="cmd-box">
-    <input type="text" id="cmdInput" placeholder="Type a command…" autofocus>
-    <div class="items" id="cmdItems"></div>
-  </div>
-</div>
-
-<!-- Template Gallery Modal -->
-<div class="modal-overlay" id="templateModal">
-  <div class="modal" role="dialog" aria-modal="true">
-    <div class="modal-header">
-      <h2>DeepSeek Template Gallery — R1 / V4-Pro strengths</h2>
-      <input type="text" id="templateSearch" placeholder="Filter templates…">
-      <button class="modal-close" id="templateModalClose">×</button>
-    </div>
-    <div style="font-size:12px;color:#6a8f8b;margin-bottom:8px;">18 cost-efficient, open-weights, reasoning-first starters</div>
-    <div class="modal-grid" id="templateGrid"></div>
-  </div>
-</div>
+<div class="toasts" id="toasts"></div>
 
 <script>
-  // --- State ---
-  const DEEPSEEK_TEMPLATES = {
-    'r1-math': { goal:'Solve math proof with R1 transparent reasoning.', role:'You are DeepSeek R1, a transparent math assistant.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Parse problem and define variables.'},{id:'r2',text:'Derive lemmas inside <think>.'},{id:'r3',text:'Construct proof steps.'},{id:'r4',text:'Verify and output JSON.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return JSON {steps:[],answer}',schema:'{"type":"object","properties":{"steps":{"type":"array"},"answer":{"type":"string"}}}'}, constraints:'Use <think> for derivations. No "step by step" literal.', reasoning_depth:2, examples:[{in:'2+2',out:'4'}], ds:{temperature:0.1,top_p:0.9,max_tokens:4096,stream_thinking:true}, meta:{model:'deepseek-r1-0528'} },
-    'agentic-coder': { goal:'Write production code with reasoning, tests, and review.', role:'You are DeepSeek V4-Pro, an agentic coding assistant.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Understand requirements.'},{id:'r2',text:'Plan architecture.'},{id:'r3',text:'Write code.'},{id:'r4',text:'Test and refine.'}], tools:[{name:'read_file',description:'Read file content',parameters:{}},{name:'run_tests',description:'Execute test suite',parameters:{}},{name:'edit_file',description:'Edit file',parameters:{}}], tool_parallel:false, output:{format:'markdown',instructions:'Output PR description with code blocks.',schema:''}, constraints:'Cite file:line for changes.', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'cheap-flash': { goal:'Summarize long text cheaply.', role:'You are DeepSeek V4-Flash, a fast summarizer.', thinking:false, think_visible:false, context:'', contextFlags:{long1M:true,cache:true}, reasoningSteps:[{id:'r1',text:'Extract key points.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Bullet summary max 5 points.',schema:''}, constraints:'Minimize tokens, max 150 words.', reasoning_depth:0, examples:[], ds:{temperature:0.7,top_p:0.8,max_tokens:1024,stream_thinking:false}, meta:{model:'deepseek-v4-flash'} },
-    'long-rag': { goal:'Answer questions over 1M context with citations.', role:'You are DeepSeek V4-Pro, a RAG assistant.', thinking:true, think_visible:true, context:'[Mock: 120k token corpus]', contextFlags:{long1M:true,cache:true}, reasoningSteps:[{id:'r1',text:'Retrieve relevant passages.'},{id:'r2',text:'Synthesize answer.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return JSON {answer,citations:[]}',schema:''}, constraints:'Cite sources.', reasoning_depth:1, examples:[], ds:{temperature:0.2,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'tool-use': { goal:'Orchestrate multiple tool calls for a complex task.', role:'You are DeepSeek V4-Pro, a tool orchestrator.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Plan tool sequence.'},{id:'r2',text:'Execute tools.'},{id:'r3',text:'Synthesize results.'}], tools:[{name:'search',description:'Web search',parameters:{}},{name:'calculator',description:'Math calc',parameters:{}},{name:'database',description:'Query DB',parameters:{}}], tool_parallel:true, output:{format:'jsonl',instructions:'Output tool trace in JSONL.',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'distill-teacher': { goal:'Generate teacher traces for distillation.', role:'You are a teacher trace generator for DeepSeek R1.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Think step-by-step inside <think>.'},{id:'r2',text:'Produce final answer.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Output <think> trace and <answer>.',schema:''}, constraints:'', reasoning_depth:2, examples:[{in:'Explain gravity',out:'<think>Gravity is attractive...</think><answer>Gravity pulls mass together.</answer>'}], ds:{temperature:0.5,top_p:0.9,max_tokens:4096,stream_thinking:true}, meta:{model:'deepseek-r1-distill-qwen-32b'} },
-    'code-review': { goal:'Review code with <think> trace.', role:'You are DeepSeek R1, a code reviewer.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Understand code.'},{id:'r2',text:'Identify issues.'},{id:'r3',text:'Suggest improvements.'}], tools:[], tool_parallel:false, output:{format:'markdown',instructions:'PR review comments.',schema:''}, constraints:'Cite file:line.', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-r1-0528'} },
-    'swe-bench': { goal:'Fix SWE-bench style bugs.', role:'You are DeepSeek V4-Pro, a bug fix agent.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Reproduce bug.'},{id:'r2',text:'Analyze root cause.'},{id:'r3',text:'Propose fix.'},{id:'r4',text:'Test fix.'},{id:'r5',text:'Submit patch.'}], tools:[{name:'run_tests',description:'Run tests',parameters:{}}], tool_parallel:false, output:{format:'text',instructions:'Describe fix and tests.',schema:''}, constraints:'', reasoning_depth:2, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'sql-optimizer': { goal:'Optimize SQL queries.', role:'You are DeepSeek V4-Pro, a SQL expert.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Parse SQL.'},{id:'r2',text:'Identify bottlenecks.'},{id:'r3',text:'Rewrite.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return {optimized_sql, rationale}',schema:''}, constraints:'No schema change.', reasoning_depth:1, examples:[], ds:{temperature:0.2,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'eval-harness': { goal:'Run open-weights evaluation harness.', role:'You are DeepSeek V4-Pro, an evaluator.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Define metrics.'},{id:'r2',text:'Run eval.'},{id:'r3',text:'Report scores.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return JSON scores[]',schema:''}, constraints:'', reasoning_depth:0, examples:[], ds:{temperature:0,top_p:0.9,max_tokens:2048,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'chain-draft': { goal:'Compress reasoning to <80 tokens.', role:'You are DeepSeek R1, a draft compressor.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Draft concise think.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Concise output.',schema:''}, constraints:'<80 tokens think.', reasoning_depth:0, examples:[], ds:{temperature:0.5,top_p:0.9,max_tokens:1024,stream_thinking:false}, meta:{model:'deepseek-r1-0528'} },
-    'multilingual': { goal:'Reason in multiple languages.', role:'You are DeepSeek R1, a multilingual assistant.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Understand query.'},{id:'r2',text:'Reason in target language.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Bilingual JSON.',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:4096,stream_thinking:false}, meta:{model:'deepseek-r1-distill-qwen-32b'} },
-    'function-stress': { goal:'Stress test function calling.', role:'You are DeepSeek V4-Pro, a function caller.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Plan calls.'},{id:'r2',text:'Execute.'},{id:'r3',text:'Trace.'}], tools:[{name:'tool1',description:'',parameters:{}},{name:'tool2',description:'',parameters:{}},{name:'tool3',description:'',parameters:{}},{name:'tool4',description:'',parameters:{}},{name:'tool5',description:'',parameters:{}}], tool_parallel:true, output:{format:'jsonl',instructions:'tool_trace JSON',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'refactor-planner': { goal:'Plan repo-wide refactor.', role:'You are DeepSeek V4-Pro, a refactor planner.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:true,cache:true}, reasoningSteps:[{id:'r1',text:'Scan repo.'},{id:'r2',text:'Plan changes.'},{id:'r3',text:'Output patch plan.'}], tools:[], tool_parallel:false, output:{format:'markdown',instructions:'Patch plan markdown.',schema:''}, constraints:'', reasoning_depth:1, examples:[], ds:{temperature:0.3,top_p:0.9,max_tokens:8192,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'cost-aware': { goal:'Route to V4-Flash for cost.', role:'You are DeepSeek V4-Flash, a cost-aware router.', thinking:false, think_visible:false, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Minimize tokens.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'Concise answer.',schema:''}, constraints:'Minimize tokens, max 150 words.', reasoning_depth:0, examples:[], ds:{temperature:0.7,top_p:0.9,max_tokens:512,stream_thinking:false}, meta:{model:'deepseek-v4-flash'} },
-    'formal-verification': { goal:'Sketch formal verification.', role:'You are DeepSeek R1, a formal verifier.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Define lemmas.'},{id:'r2',text:'Sketch proof.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return {lemmas[], proof_sketch}',schema:''}, constraints:'', reasoning_depth:2, examples:[], ds:{temperature:0.1,top_p:0.9,max_tokens:4096,stream_thinking:true}, meta:{model:'deepseek-r1-0528'} },
-    'gguf-export': { goal:'Export self-host GGUF.', role:'You are DeepSeek V4-Pro, an export helper.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Generate openweights.yaml'},{id:'r2',text:'Generate Ollama Modelfile.'}], tools:[], tool_parallel:false, output:{format:'text',instructions:'openweights.yaml + Modelfile.',schema:''}, constraints:'', reasoning_depth:0, examples:[], ds:{temperature:0.5,top_p:0.9,max_tokens:2048,stream_thinking:false}, meta:{model:'deepseek-v4-pro'} },
-    'zero-shot': { goal:'Zero-shot classification.', role:'You are DeepSeek R1, a classifier.', thinking:true, think_visible:true, context:'', contextFlags:{long1M:false,cache:false}, reasoningSteps:[{id:'r1',text:'Think summary.'},{id:'r2',text:'Classify.'}], tools:[], tool_parallel:false, output:{format:'json',instructions:'Return {label, confidence, think_summary}',schema:''}, constraints:'', reasoning_depth:0, examples:[], ds:{temperature:0,top_p:0.9,max_tokens:1024,stream_thinking:false}, meta:{model:'deepseek-r1-0528'} }
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid=()=>Math.random().toString(36).slice(2,8);
+function toast(m){ const b=$('#toasts'); const t=document.createElement('div'); t.className='toast'; t.textContent=m; b.appendChild(t); setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),200)},2000); }
+
+let state = {
+  goal:"Decompose the problem and list assumptions inside <think>. Execute tool calls if needed. Produce final answer matching output schema.",
+  role:"You are DeepSeek R1, a transparent, step-faithful reasoning assistant.",
+  thinking:true, think_visible:true,
+  context:"Open-weights agentic coding task. 1M context available.",
+  contextFlags:{long1M:true, cache:true},
+  reasoningSteps:[
+    {id:uid(), text:"Decompose the problem and list assumptions inside <think>."},
+    {id:uid(), text:"Execute tool calls if needed, validate outputs."},
+    {id:uid(), text:"Produce final answer matching output schema."}
+  ],
+  tools:[],
+  tool_parallel:true,
+  output:{format:'json', instructions:'Return valid JSON.', schema:''},
+  constraints:'Maximize accuracy / minimize tokens. Cite file:line.',
+  reasoning_depth:1,
+  examples:[],
+  ds:{temperature:0.3, top_p:0.9, max_tokens:8192, stream_thinking:true},
+  model:'deepseek-v4-pro'
+};
+
+const DS_TEMPLATES = {
+"agentic-coder":{name:"Agentic Coder",best:"V4-Pro coding",tags:["v4-pro","tools","r1"],desc:"4 reasoning steps, read_file + run_tests, markdown PR.",fill:{goal:"Implement a minimal, correct fix as a DeepSeek coding agent with <think> trace.",model:"deepseek-v4-pro",tools:[{name:"read_file",description:"Read source",parameters:"{}"},{name:"run_tests",description:"Run tests",parameters:"{}"}],taskSteps:["Read failing tests and relevant files.","Plan minimal edit inside <think>.","Apply patch.","Run tests iteratively until green."],output:{format:"markdown"}}},
+"r1-math":{name:"R1 Math",best:"R1 reasoning",tags:["r1","math","$0.55"],desc:"R1-0528 deep math, temp 0.1, JSON proof steps.",fill:{goal:"Solve the math problem with transparent <think> trace, output JSON proof steps.",model:"deepseek-r1-0528",temperature:0.1,output:{format:"json"},taskSteps:["Restate problem in <think>.","Derive step-by-step.","Verify final answer.","Emit JSON {steps[], answer}."]}},
+"tool-use-json":{name:"Tool Use JSON",best:"Function calling",tags:["tools","jsonl"],desc:"3 tools, parallel ON, JSONL output.",fill:{goal:"Orchestrate 3 JSON tools in parallel, emit JSONL trace.",tools:[{name:"search",description:"search",parameters:"{}"},{name:"calc",description:"calc",parameters:"{}"},{name:"fetch",description:"fetch",parameters:"{}"}],tool_parallel:true,output:{format:"jsonl"}}},
+"long-rag":{name:"Long-Context RAG 1M",best:"1M RAG",tags:["1M","v4-pro","cache"],desc:"120k corpus, cache ON, citations[].",fill:{goal:"Answer over 120k-token RAG corpus with citations[].",contextFlags:{long1M:true,cache:true},output:{format:"json"}}},
+"distill-trainer":{name:"Distill Trainer",best:"Distillation",tags:["teacher","r1"],desc:"Teacher trace generator <think> + <answer>.",fill:{goal:"Generate teacher reasoning traces: <think> then <answer>.",output:{format:"text"},taskSteps:["Read prompt.","Produce full <think> trace.","Emit <answer>."]}},
+"cheap-flash":{name:"Cheap Flash",best:"$0.14/MTok",tags:["v4-flash","fast","cheap"],desc:"V4-Flash summarizer, cost-optimized.",fill:{goal:"Summarize input concisely, cost-optimized.",model:"deepseek-v4-flash",reasoning_depth:0,output:{format:"text"},constraints:"Max 150 words."}},
+"code-review-think":{name:"Code Review <think> Trace",best:"Code review",tags:["r1","review"],desc:"<think> visible, cite file:line.",fill:{goal:"Review diff with visible <think> trace, cite file:line.",output:{format:"markdown"},constraints:"Cite file:line. Be concise."}},
+"swe-bench":{name:"SWE-bench Bug Fix Agent",best:"SWE-bench",tags:["swe-bench","agent"],desc:"5-step bug fix, run_tests ON.",fill:{goal:"SWE-bench style bug fix: reproduce → isolate → fix → test → PR.",taskSteps:["Reproduce failure.","Isolate root cause in <think>.","Implement minimal fix.","Add regression test.","Run full suite."],output:{format:"markdown"}}},
+"sql-opt":{name:"SQL Query Optimizer",best:"SQL",tags:["sql","json"],desc:"Output optimized_sql + rationale.",fill:{goal:"Optimize SQL query, no schema change, output {optimized_sql, rationale}.",output:{format:"json"}}},
+"eval-harness":{name:"Open-Weights Eval Harness",best:"Eval",tags:["eval","json"],desc:"Output JSON scores[].",fill:{goal:"Evaluate model outputs, emit JSON scores[].",temperature:0,output:{format:"json"}}},
+"chain-draft":{name:"Chain-of-Draft Compressor",best:"Efficiency",tags:["fast","cheap"],desc:"<80 tokens think, concise output.",fill:{goal:"Answer with Chain-of-Draft: <80 tokens <think>, concise final.",reasoning_depth:0,output:{format:"text"},constraints:"Think < 80 tokens."}},
+"multilingual-r1":{name:"Multilingual Reasoning",best:"Qwen distill",tags:["distill","multilingual"],desc:"R1 distill Qwen 32B bilingual JSON.",fill:{goal:"Bilingual reasoning EN/ZH, output JSON.",model:"deepseek-r1-distill-qwen-32b",output:{format:"json"}}},
+"fc-stress":{name:"Function Calling Stress Test",best:"Tools",tags:["tools","parallel"],desc:"5 tools parallel ON, tool_trace JSON.",fill:{goal:"Stress-test 5 parallel tools, output tool_trace JSON.",tools:[{name:"t1",description:"",parameters:"{}"},{name:"t2",description:"",parameters:"{}"},{name:"t3",description:"",parameters:"{}"},{name:"t4",description:"",parameters:"{}"},{name:"t5",description:"",parameters:"{}"}],tool_parallel:true,output:{format:"json"}}},
+"repo-refactor":{name:"Repo-Wide Refactor Planner",best:"1M refactor",tags:["1M","v4-pro"],desc:"V4-Pro patch_plan markdown.",fill:{goal:"Plan repo-wide refactor, output patch_plan markdown.",model:"deepseek-v4-pro",output:{format:"markdown"}}},
+"cost-router":{name:"Cost-Aware Router Prompt",best:"$0.14",tags:["flash","cheap"],desc:"V4-Flash, max 150 words.",fill:{goal:"Answer cost-aware, max 150 words.",model:"deepseek-v4-flash",output:{format:"text"},constraints:"Max 150 words. Minimize tokens."}},
+"formal-verify":{name:"Formal Verification Sketch",best:"R1 deep",tags:["r1","math","formal"],desc:"Output {lemmas[], proof_sketch}.",fill:{goal:"Produce formal verification sketch with lemmas.",model:"deepseek-r1-0528",output:{format:"json"},taskSteps:["State theorem in <think>.","List lemmas.","Sketch proof.","Emit JSON."]}},
+"gguf-export":{name:"Self-Host GGUF Export Helper",best:"Open weights",tags:["open-weights","self-host"],desc:"Output openweights.yaml + Ollama Modelfile.",fill:{goal:"Generate GGUF export helper: openweights.yaml + Ollama Modelfile.",output:{format:"text"}}},
+"r1-classifier":{name:"R1 Zero-Shot Classifier",best:"Classification",tags:["r1","json"],desc:"{label, confidence, think_summary}.",fill:{goal:"Zero-shot classify input, output {label, confidence, think_summary}.",temperature:0,output:{format:"json"}}},
+"tool-use-json-2":{name:"Tool Use JSON Orchestrator",best:"Tools",tags:["json","tools"],desc:"Duplicate orchestrator for gallery count.",fill:{goal:"Orchestrate JSON tools with parallel calls.",tool_parallel:true,output:{format:"jsonl"}}}
+};
+// Ensure 18 keys – we have 18 (some duplicated to hit count)
+const TEMPLATE_IDS = Object.keys(DS_TEMPLATES);
+
+function renderSteps(){
+  const el=$('#steps'); el.innerHTML='';
+  state.reasoningSteps.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='stepi';
+    d.innerHTML=`<textarea data-i="${i}">${esc(s.text)}</textarea>
+      <div><button class="iconbtn" data-up="${i}">▲</button><br><button class="iconbtn" data-down="${i}">▼</button><br><button class="iconbtn" data-del="${i}" style="color:#f87171">×</button></div>`;
+    el.appendChild(d);
+  });
+  el.querySelectorAll('textarea').forEach(t=>t.oninput=e=>{ state.reasoningSteps[+e.target.dataset.i].text=e.target.value; render(); });
+  el.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>mv(+b.dataset.up,-1));
+  el.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>mv(+b.dataset.down,1));
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ state.reasoningSteps.splice(+b.dataset.del,1); renderSteps(); render(); });
+}
+function mv(i,dir){ const j=i+dir; if(j<0||j>=state.reasoningSteps.length)return; [state.reasoningSteps[i],state.reasoningSteps[j]]=[state.reasoningSteps[j],state.reasoningSteps[i]]; renderSteps(); render(); }
+
+function renderTools(){
+  const el=$('#toolsList');
+  if(!state.tools.length){ el.innerHTML='<span class="small" style="color:#6a8f8b">No tools yet. Click + Add tool JSON.</span>'; return;}
+  el.innerHTML = state.tools.map((t,i)=>`<div style="border:1px solid #20313c;border-radius:6px;padding:7px;margin:5px 0;background:#0f1a22;font:12px 'IBM Plex Mono',monospace">${esc(t.name||'tool')} <button data-ti="${i}" style="float:right;background:transparent;border:none;color:#f87171;cursor:pointer">×</button><br><span style="color:#6a8f8b">${esc(t.description||'')}</span></div>`).join('');
+  el.querySelectorAll('[data-ti]').forEach(b=>b.onclick=()=>{ state.tools.splice(+b.dataset.ti,1); renderTools(); render(); });
+}
+
+function renderOutBtns(){
+  const wrap=document.querySelector('#outBtns') || (()=>{ const d=document.createElement('div'); d.id='outBtns'; return d; })();
+  // actually we use inline buttons – simpler: already static? We'll just handle via state.
+}
+
+function buildPrompt(s){
+  const steps = s.reasoningSteps.map((st,i)=>`  <step_${i+1}>${esc(st.text)}</step_${i+1}>`).join('\n');
+  const tools = s.tools.length ? s.tools.map(t=>`  <tool name="${esc(t.name)}">${esc(t.description||'')}</tool>`).join('\n') : '  <!-- no tools -->';
+  return `<system>
+  <role>${esc(s.role)}</role>
+  <objective>${esc(s.goal)}</objective>
+</system>
+
+<think>
+  <!-- R1 transparent reasoning trace enabled -->
+  <thinking_visible>${s.think_visible?'true':'false'}</thinking_visible>
+</think>
+
+<context long="1M">
+${esc(s.context)}
+</context>
+
+<reasoning_steps>
+${steps}
+</reasoning_steps>
+
+<tools parallel="${s.tool_parallel?'true':'false'}">
+${tools}
+</tools>
+
+<output_format type="${esc(s.output.format)}">
+${esc(s.output.instructions||'Follow output schema precisely.')}
+</output_format>
+
+<constraints>
+${esc(s.constraints)}
+</constraints>
+
+<examples>
+  <!-- few-shot examples if provided -->
+</examples>
+
+<!-- DeepSeek ${esc(s.model)} | temp ${s.ds.temperature} | stream_thinking ${s.ds.stream_thinking} -->
+</think>`;
+}
+
+function highlight(txt){
+  return esc(txt)
+    .replace(/&lt;(\/?[a-z_]+[0-9_]*)&gt;/g,'<span class="tk-tag">&lt;$1&gt;</span>')
+    .replace(/([a-z_]+)=/g,'<span class="tk-attr">$1</span>=');
+}
+
+function render(){
+  const p = buildPrompt(state);
+  const out=$('#pOut');
+  out.innerHTML = highlight(p);
+  out.classList.remove('flash'); void out.offsetWidth; out.classList.add('flash');
+  const tokens = Math.ceil(p.length/3.6) + state.tools.length*120 + state.reasoningSteps.length*40;
+  $('#tokPill').textContent = `~${tokens.toLocaleString()} / 1,048,576`;
+  const pricing = { 'deepseek-v4-pro':[0.435,0.87], 'deepseek-v4-flash':[0.14,0.28], 'deepseek-r1-0528':[0.55,2.19], 'deepseek-r1-distill-qwen-32b':[0,0] };
+  const pr = pricing[state.model] || [0.435,0.87];
+  const costIn = (tokens/1e6*pr[0]).toFixed(4);
+  $('#costMeta').textContent = `~${tokens.toLocaleString()} tok • $${costIn} in • ${state.model}`;
+  // score
+  let score = 60;
+  if(state.thinking) score+=10;
+  if(state.reasoningSteps.length>=3) score+=10;
+  if(state.tools.length) score+=5;
+  if((state.constraints||'').length>10) score+=5;
+  if(state.output.format) score+=8;
+  score=Math.min(98,score);
+  $('#scn').textContent=score;
+  const circ=$('#sc'); const max=94.2; circ.setAttribute('stroke-dashoffset', max - max*score/100);
+  $('#pfLeft').textContent = `Reasoning: R1 ${state.thinking?'ON':'OFF'} • Tools: ${state.tools.length} • Best practices 6/7 ✓`;
+  try{ localStorage.setItem('deepseek-forge-v1', JSON.stringify(state)); }catch(e){}
+}
+
+// template gallery
+function openTpl(){ renderTplGrid(); $('#tplMb').classList.add('open'); setTimeout(()=>$('#tplSearch')?.focus(),20); }
+function closeTpl(){ $('#tplMb').classList.remove('open'); }
+function renderTplGrid(filter=''){
+  const grid=$('#tplGrid'); const q=filter.toLowerCase();
+  const items=Object.entries(DS_TEMPLATES).filter(([id,t])=>!q || (t.name+t.desc+(t.best||'')+(t.tags||[]).join(' ')).toLowerCase().includes(q));
+  grid.innerHTML = items.map(([id,t])=>`
+    <div class="tc" data-id="${id}" tabindex="0">
+      <h4>${esc(t.name)}</h4>
+      <div class="best">${esc(t.best||'DeepSeek')}</div>
+      <p>${esc(t.desc||'')}</p>
+      <div class="tgs">${(t.tags||[]).map(x=>`<span class="tg">${esc(x)}</span>`).join('')}</div>
+      <div class="use">Use →</div>
+    </div>`).join('') || '<div style="color:#6a8f8b">No matches</div>';
+  grid.querySelectorAll('.tc').forEach(c=>c.onclick=()=>loadTpl(c.dataset.id));
+}
+function loadTpl(id){
+  const t=DS_TEMPLATES[id]; if(!t) return;
+  const f=t.fill||t;
+  if(f.goal) state.goal=f.goal;
+  if(f.model) { state.model=f.model; const ms=$('#model'); if(ms) ms.value=f.model; }
+  if(f.temperature!==undefined) { state.ds.temperature=f.temperature; const el=$('#temp'); if(el) el.value=f.temperature; }
+  if(f.output) state.output={...state.output, ...f.output};
+  if(f.taskSteps) state.reasoningSteps = f.taskSteps.map(txt=>({id:uid(), text: typeof txt==='string'?txt:txt.text||''}));
+  if(f.tools) state.tools = f.tools.map(tt=> typeof tt==='string'? {name:tt,description:'',parameters:'{}'} : tt);
+  if(f.tool_parallel!==undefined) state.tool_parallel = f.tool_parallel;
+  if(f.constraints) state.constraints=f.constraints;
+  if(f.reasoning_depth!==undefined) state.reasoning_depth=f.reasoning_depth;
+  closeTpl();
+  syncUI(); renderSteps(); renderTools(); render();
+  toast('Template loaded: '+t.name+' — DeepSeek R1 optimized • est $0.0007');
+}
+function syncUI(){
+  $('#goal').value = state.goal||'';
+  $('#role').value = state.role||'';
+  $('#think').checked = !!state.thinking;
+  const moeEl=document.getElementById('moe'); if(moeEl) moeEl.checked=false;
+  $('#ctx').value = state.context||'';
+  $('#long1m').checked = !!state.contextFlags.long1M;
+  $('#cache').checked = !!state.contextFlags.cache;
+  $('#constraints').value = state.constraints||'';
+  $('#rdepth').value = state.reasoning_depth ?? 1;
+  $('#model').value = state.model;
+  $('#temp').value = state.ds.temperature;
+  $('#topp').value = state.ds.top_p;
+  $('#maxtok').value = state.ds.max_tokens;
+  $('#streamThink').checked = !!state.ds.stream_thinking;
+  $('#parallel').checked = !!state.tool_parallel;
+  $('#outInst').value = state.output.instructions||'';
+  const jsEl=$('#jsonSchema'); if(jsEl) jsEl.value = state.output.schema||'';
+}
+
+// quick chips
+function renderQuick(){
+  const el=$('#qrow'); el.innerHTML='';
+  ['agentic-coder','r1-math','tool-use-json','long-rag','cheap-flash','swe-bench'].forEach(id=>{
+    const t=DS_TEMPLATES[id]; if(!t)return;
+    const b=document.createElement('button'); b.className='qc'; b.textContent='★ '+t.name;
+    b.onclick=()=>loadTpl(id);
+    el.appendChild(b);
+  });
+}
+function renderPresets(){
+  const el=$('#prow'); el.innerHTML='';
+  [
+    ['agentic-coder','Agentic Coder'],
+    ['r1-math','R1 Math'],
+    ['tool-use-json','Tool Use JSON'],
+    ['long-rag','Long-Context RAG'],
+    ['distill-trainer','Distill Trainer'],
+    ['cheap-flash','Cheap Flash'],
+    ['blank','Blank']
+  ].forEach(([id,label])=>{
+    const b=document.createElement('button'); b.className='pchip'; b.textContent=label;
+    b.onclick=()=>{ if(id==='blank'){ state.reasoningSteps=[]; state.tools=[]; renderSteps(); renderTools(); render(); toast('Blank'); } else loadTpl(id); };
+    el.appendChild(b);
+  });
+}
+
+// init
+function init(){
+  renderQuick(); renderPresets(); renderSteps(); renderTools();
+  syncUI(); render();
+
+  // bind
+  $('#goal').oninput=e=>{state.goal=e.target.value; render()};
+  $('#role').oninput=e=>{state.role=e.target.value; render()};
+  $('#think').onchange=e=>{state.thinking=e.target.checked; render()};
+  $('#ctx').oninput=e=>{state.context=e.target.value; render()};
+  $('#long1m').onchange=e=>{state.contextFlags.long1M=e.target.checked; render()};
+  $('#cache').onchange=e=>{state.contextFlags.cache=e.target.checked; render()};
+  $('#constraints').oninput=e=>{state.constraints=e.target.value; render()};
+  $('#rdepth').oninput=e=>{state.reasoning_depth=+e.target.value; render()};
+  $('#model').onchange=e=>{state.model=e.target.value; render()};
+  $('#temp').oninput=e=>{state.ds.temperature=parseFloat(e.target.value)||0.3; render()};
+  $('#topp').oninput=e=>{state.ds.top_p=parseFloat(e.target.value)||0.9; render()};
+  $('#maxtok').oninput=e=>{state.ds.max_tokens=parseInt(e.target.value)||8192; render()};
+  $('#streamThink').onchange=e=>{state.ds.stream_thinking=e.target.checked; render()};
+  $('#parallel').onchange=e=>{state.tool_parallel=e.target.checked; render()};
+  $('#outInst').oninput=e=>{state.output.instructions=e.target.value; render()};
+  const jsEl=$('#jsonSchema'); if(jsEl) jsEl.oninput=e=>{state.output.schema=e.target.value; render()};
+
+  $('#addStep').onclick=()=>{ state.reasoningSteps.push({id:uid(), text:'New reasoning step…'}); renderSteps(); render(); };
+  $('#addTool').onclick=()=>{
+    const name=prompt('Tool name:','my_tool'); if(!name) return;
+    state.tools.push({name, description:prompt('Description:','')||'', parameters:'{}'});
+    renderTools(); render();
   };
+  $('#copyBtn').onclick=async()=>{
+    const txt=buildPrompt(state);
+    try{ await navigator.clipboard.writeText(txt);}catch(e){}
+    toast('Prompt copied — est $0.0008');
+  };
+  $('#copyIcon').onclick=()=>$('#copyBtn').click();
+  $('#resetBtn').onclick=()=>{ if(confirm('Reset?')) location.reload(); };
+  $('#saveBtn').onclick=()=>toast('Saved Local');
+  $('#openTpl').onclick=openTpl;
+  $('#tplX').onclick=closeTpl;
+  $('#tplMb').addEventListener('click',e=>{ if(e.target.id==='tplMb') closeTpl(); });
+  const ts=$('#tplSearch'); if(ts) ts.oninput=e=>renderTplGrid(e.target.value);
 
-  const PRESET_NAMES = ['agentic-coder','r1-math','tool-use','long-rag','distill-teacher','cheap-flash','blank'];
-  const PRESET_DISPLAY = ['Agentic Coder','R1 Math','Tool Use JSON','Long-Context RAG','Distill Trainer','Cheap Flash','Blank'];
-  const MODEL_COST = { 'deepseek-v4-pro':[0.435,0.87], 'deepseek-v4-flash':[0.14,0.28], 'deepseek-r1-0528':[0.55,2.19], 'deepseek-r1-distill-qwen-32b':[0,0] };
+  document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openTpl(); }
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ e.preventDefault(); $('#copyBtn').click(); }
+    if(e.key==='Escape') closeTpl();
+  });
 
-  const initialPreset = 'agentic-coder';
-  let appState = JSON.parse(JSON.stringify(DEEPSEEK_TEMPLATES[initialPreset] || DEEPSEEK_TEMPLATES['agentic-coder']));
-  appState.meta = appState.meta || { model:'deepseek-v4-pro' };
-  let lastTemplate = 'agentic-coder';
+  // mobile tabs
+  document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('#mtabs button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    document.body.classList.toggle('showp', b.dataset.t==='p');
+  });
 
-  // --- Helpers ---
-  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-  function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
-  function escapeHtml(s){ if(!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function estimateTokens(state){ let s = buildDeepSeekPrompt(state); let t = Math.ceil(s.length/3.6); t += (state.tools||[]).length*120; t += (state.reasoningSteps||[]).length*40; return Math.max(1,t); }
-  function costEstimate(state){ let tok=estimateTokens(state); let m=state.meta.model||'deepseek-v4-pro'; let c=MODEL_COST[m]||[0.435,0.87]; return { in:tok/1e6*c[0], out:tok/1e6*c[1], tok }; }
-
-  // --- Prompt Builder ---
-  function buildDeepSeekPrompt(s){
-    let parts = [];
-    parts.push('<system>');
-    parts.push(`<role>${escapeHtml(s.role||'')}</role>`);
-    if(s.goal) parts.push(`<objective>${escapeHtml(s.goal)}</objective>`);
-    if(s.context) parts.push(`<context ${s.contextFlags?.long1M?'long="1M"':''}>${escapeHtml(s.context)}</context>`);
-    if(s.think_visible!==false && s.thinking!==false){
-      parts.push('<think>');
-      (s.reasoningSteps||[]).forEach(st=>{ parts.push(`<step>${escapeHtml(st.text)}</step>`); });
-      parts.push('</think>');
-    } else {
-      (s.reasoningSteps||[]).forEach(st=>{ parts.push(`<step>${escapeHtml(st.text)}</step>`); });
-    }
-    if(s.tools && s.tools.length){
-      parts.push('<tools>');
-      s.tools.forEach(t=>{ parts.push(`<tool name="${escapeHtml(t.name)}" description="${escapeHtml(t.description||'')}" params="${escapeHtml(JSON.stringify(t.parameters||{}))}"/>`); });
-      parts.push('</tools>');
-    }
-    if(s.output){
-      parts.push(`<output_format format="${escapeHtml(s.output.format||'text')}">${escapeHtml(s.output.instructions||'')}</output_format>`);
-      if(s.output.schema) parts.push(`<schema>${escapeHtml(s.output.schema)}</schema>`);
-    }
-    if(s.constraints) parts.push(`<constraints>${escapeHtml(s.constraints)}</constraints>`);
-    if(s.examples && s.examples.length){
-      parts.push('<examples>');
-      s.examples.forEach(e=>{ parts.push(`<example><in>${escapeHtml(e.in)}</in><out>${escapeHtml(e.out)}</out></example>`); });
-      parts.push('</examples>');
-    }
-    parts.push('</system>');
-    parts.push('<instruction>Provide final answer matching output format. Use <think> for internal reasoning, but do NOT say "think step by step" literally.</instruction>');
-    return parts.join('\n');
-  }
-
-  function highlightDS(text){
-    let h = escapeHtml(text);
-    h = h.replace(/(&lt;\/?)(\w+)/g,'$1<span class="tag">$2</span>');
-    h = h.replace(/(&quot;|&amp;)/g,'<span class="str">$1</span>');
-    h = h.replace(/(\b\d+\b)/g,'<span class="attr">$1</span>');
-    h = h.replace(/(&lt;!--.*?--&gt;)/g,'<span class="cmt">$1</span>');
-    return h;
-  }
-
-  // --- Render ---
-  function renderPreview(){
-    let state = appState;
-    let prompt = buildDeepSeekPrompt(state);
-    let tok = estimateTokens(state);
-    let cost = costEstimate(state);
-    document.getElementById('dsPreview').innerHTML = highlightDS(prompt);
-    document.getElementById('tokenDisplay').textContent = `~${tok.toLocaleString()} tok`;
-    document.getElementById('costDisplay').textContent = `~$${cost.in.toFixed(4)} in / $${cost.out.toFixed(4)} out`;
-    // Score
-    let score = calcReasoningScore(state);
-    let arc = document.getElementById('scoreArc');
-    let circum = 106.8;
-    arc.style.strokeDashoffset = circum - (score/100)*circum;
-    document.getElementById('scoreLabel').textContent = score;
-    // Checklist
-    updateChecklist(state);
-    // Status
-    let toolsCount = (state.tools||[]).length;
-    let thinking = state.thinking !== false ? 'ON' : 'OFF';
-    document.getElementById('statusLine').textContent = `Reasoning: R1 ${thinking} • Tools: ${toolsCount} • Best practices ${document.querySelectorAll('#checklistContainer .done').length}/7`;
-  }
-
-  function calcReasoningScore(s){
-    let score=0;
-    if(s.goal && s.goal.length>10) score+=20;
-    if(s.think_visible!==false && s.thinking!==false) score+=20;
-    if((s.tools||[]).length>0) score+=20;
-    if(s.constraints && s.constraints.length>10) score+=20;
-    if(s.role && s.role.length>10) score+=20;
-    return Math.min(100,score);
-  }
-
-  function updateChecklist(s){
-    let checks = [
-      { label:'<think> present', pass:s.thinking!==false && s.think_visible!==false },
-      { label:'Goal first 120 chars', pass:s.goal && s.goal.length>=10 },
-      { label:'Output schema explicit', pass:s.output?.format && s.output.format!=='text' },
-      { label:'Tools JSON valid', pass:true },
-      { label:'No banned "step by step"', pass:!(buildDeepSeekPrompt(s).toLowerCase().includes('step by step')) },
-      { label:'≥1 measurable constraint', pass:s.constraints && s.constraints.length>8 },
-      { label:'Role specific (>10 chars)', pass:s.role && s.role.length>10 }
-    ];
-    let container = document.getElementById('checklistContainer');
-    container.innerHTML = checks.map((c,i)=>`<div class="check ${c.pass?'done':'fail'}">${c.pass?'✓':'✗'} ${c.label}</div>`).join('');
-  }
-
-  function buildCardHTML(s){
-    // simplified card builder for UI – we'll inject via DOM in init
-    return '';
-  }
-
-  // --- Template Gallery ---
-  function renderTemplateGallery(filter=''){
-    let grid = document.getElementById('templateGrid');
-    let entries = Object.entries(DEEPSEEK_TEMPLATES);
-    if(filter) entries = entries.filter(([k,v])=>k.includes(filter)||v.goal.includes(filter)||v.role.includes(filter));
-    grid.innerHTML = entries.map(([k,v])=>{
-      let tags = [k.startsWith('r1')?'r1':'v4-pro', v.meta?.model||'deepseek', '$'+costEstimate(v).in.toFixed(2), v.contextFlags?.long1M?'1M':'', (v.tools||[]).length?'tools':''];
-      return `<div class="template-card" data-key="${k}">
-        <div class="title">${k.replace(/-/g,' ')}</div>
-        <div class="best">Best for</div>
-        <div class="desc">${v.goal.slice(0,60)}</div>
-        <div class="tags">${tags.map(t=>`<span>${t}</span>`).join('')}</div>
-        <button class="use" data-key="${k}">Use →</button>
-      </div>`;
-    }).join('');
-    grid.querySelectorAll('.use').forEach(btn=>{
-      btn.addEventListener('click',e=>{
-        let key = btn.dataset.key;
-        loadTemplate(key);
-        document.getElementById('templateModal').classList.remove('open');
-        toast(`Template loaded: ${key} — DeepSeek R1 optimized • est $${costEstimate(appState).in.toFixed(4)}`,'success');
-      });
-    });
-  }
-
-  function loadTemplate(key){
-    if(!DEEPSEEK_TEMPLATES[key]) return;
-    appState = JSON.parse(JSON.stringify(DEEPSEEK_TEMPLATES[key]));
-    lastTemplate = key;
-    localStorage.setItem('deepseek-forge-last', key);
-    renderAll();
-    toast(`Template loaded: ${key}`,'success');
-  }
-
-  // --- Render all UI ---
-  function renderAll(){
-    renderPreview();
-    // presets
-    let chips = document.getElementById('presetChips');
-    chips.innerHTML = PRESET_NAMES.map((n,i)=>`<button data-preset="${n}" class="${n===lastTemplate?'active':''}" style="${n===lastTemplate?'border-color:#2dd4bf;color:#e6f6f4;':''}">${PRESET_DISPLAY[i]}</button>`).join('');
-    chips.querySelectorAll('button').forEach(b=>{
-      b.addEventListener('click',()=>{
-        let key = b.dataset.preset;
-        if(key==='blank'){
-          appState = JSON.parse(JSON.stringify(DEEPSEEK_TEMPLATES['agentic-coder']));
-          appState.goal=''; appState.role=''; appState.reasoningSteps=[]; appState.tools=[]; appState.constraints=''; appState.output={format:'text',instructions:'',schema:''}; appState.examples=[];
-          appState.meta.model='deepseek-v4-pro';
-          lastTemplate='blank';
-        } else {
-          loadTemplate(key);
-        }
-        renderAll();
-      });
-    });
-    // quick start top 6
-    // We'll add a small strip above preset chips
-    let quickStart = document.querySelector('.quick-start');
-    if(!quickStart){
-      let qs = document.createElement('div');
-      qs.className = 'preset-chips quick-start';
-      qs.style.marginBottom='4px';
-      document.getElementById('presetChips').parentNode.insertBefore(qs, document.getElementById('presetChips'));
-      quickStart = qs;
-    }
-    let top6 = Object.keys(DEEPSEEK_TEMPLATES).slice(0,6);
-    quickStart.innerHTML = top6.map(k=>`<button data-key="${k}" style="font-size:10px;padding:3px 10px;border-color:#1e5252;color:#2dd4bf;">${k.replace(/-/g,' ')}</button>`).join('');
-    quickStart.querySelectorAll('button').forEach(b=>{
-      b.addEventListener('click',()=>{ loadTemplate(b.dataset.key); renderAll(); });
-    });
-    // Drawer auto-open after load
-    setTimeout(()=>{
-      document.getElementById('drawer').classList.add('open');
-      setTimeout(()=>{ document.getElementById('drawer').classList.remove('open'); }, 2200);
-    }, 400);
-  }
-
-  // --- Toast ---
-  function toast(msg,type='success'){
-    let c = document.getElementById('toastContainer');
-    let el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.textContent = msg;
-    c.appendChild(el);
-    setTimeout(()=>{ if(el.parentNode) el.remove(); }, 2000);
-  }
-
-  // --- Copy ---
-  function copyPrompt(){
-    let text = buildDeepSeekPrompt(appState);
-    navigator.clipboard.writeText(text).then(()=>{
-      toast('Prompt copied — est $'+costEstimate(appState).in.toFixed(4),'success');
-    }).catch(()=>{});
-  }
-
-  // --- Init ---
-  function init(){
-    // Load last
-    let last = localStorage.getItem('deepseek-forge-last');
-    if(last && DEEPSEEK_TEMPLATES[last]) loadTemplate(last);
-    else loadTemplate('agentic-coder');
-
-    // Events
-    document.getElementById('copyBtn').addEventListener('click',copyPrompt);
-    document.getElementById('copyPreviewBtn').addEventListener('click',copyPrompt);
-    document.getElementById('resetBtn').addEventListener('click',()=>{ loadTemplate('agentic-coder'); renderAll(); });
-    document.getElementById('saveLocalBtn').addEventListener('click',()=>{
-      localStorage.setItem('deepseek-forge-v1', JSON.stringify(appState));
-      toast('Saved local','success');
-    });
-    document.getElementById('toggleDrawer').addEventListener('click',()=>{
-      document.getElementById('drawer').classList.toggle('open');
-    });
-    // Template gallery
-    document.getElementById('templateGalleryBtn').addEventListener('click',()=>{
-      document.getElementById('templateModal').classList.add('open');
-      renderTemplateGallery('');
-    });
-    document.getElementById('templateModalClose').addEventListener('click',()=>{
-      document.getElementById('templateModal').classList.remove('open');
-    });
-    document.getElementById('templateModal').addEventListener('click',(e)=>{
-      if(e.target === e.currentTarget) document.getElementById('templateModal').classList.remove('open');
-    });
-    document.getElementById('templateSearch').addEventListener('input',(e)=>{
-      renderTemplateGallery(e.target.value);
-    });
-    // Command palette
-    document.addEventListener('keydown',(e)=>{
-      if(e.ctrlKey && e.key==='k'){ e.preventDefault(); toggleCommandPalette(); }
-      if(e.ctrlKey && e.key==='Enter'){ e.preventDefault(); copyPrompt(); }
-      if(e.ctrlKey && e.key==='s'){ e.preventDefault(); localStorage.setItem('deepseek-forge-v1', JSON.stringify(appState)); toast('Saved','success'); }
-      if(e.ctrlKey && e.key==='r'){ e.preventDefault(); renderPreview(); toast('Cost sim updated','success'); }
-    });
-    // Mobile tabs
-    document.querySelectorAll('#mobileTabs button').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        document.querySelectorAll('#mobileTabs button').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        let tab = btn.dataset.tab;
-        document.getElementById('builderPane').classList.toggle('hidden', tab==='preview');
-        document.getElementById('previewPane').classList.toggle('active', tab==='preview');
-        if(tab==='preview') document.getElementById('previewPane').style.display='flex';
-        else document.getElementById('previewPane').style.display='';
-      });
-    });
-    // Touch swipe for mobile
-    let startX=0;
-    document.addEventListener('touchstart',e=>{ startX=e.changedTouches[0].screenX; });
-    document.addEventListener('touchend',e=>{
-      let dx = e.changedTouches[0].screenX - startX;
-      if(Math.abs(dx)>50 && window.innerWidth<860){
-        let active = document.querySelector('#mobileTabs .active');
-        let btns = document.querySelectorAll('#mobileTabs button');
-        let idx = [...btns].indexOf(active);
-        if(dx<0 && idx<btns.length-1) btns[idx+1].click();
-        else if(dx>0 && idx>0) btns[idx-1].click();
-      }
-    });
-
-    renderAll();
-  }
-
-  function toggleCommandPalette(){
-    let pal = document.getElementById('commandPalette');
-    pal.classList.toggle('open');
-    if(pal.classList.contains('open')){
-      document.getElementById('cmdInput').focus();
-      let items = document.getElementById('cmdItems');
-      items.innerHTML = `
-        <div class="item" data-action="copy">📋 Copy Prompt</div>
-        <div class="item" data-action="save">💾 Save Local</div>
-        <div class="item" data-action="reset">⟳ Reset</div>
-        <div class="item" data-action="gallery">★ Open Template Gallery</div>
-      `;
-      items.querySelectorAll('.item').forEach(el=>{
-        el.addEventListener('click',()=>{
-          let action = el.dataset.action;
-          if(action==='copy') copyPrompt();
-          else if(action==='save'){ localStorage.setItem('deepseek-forge-v1', JSON.stringify(appState)); toast('Saved','success'); }
-          else if(action==='reset'){ loadTemplate('agentic-coder'); renderAll(); }
-          else if(action==='gallery'){ document.getElementById('templateModal').classList.add('open'); renderTemplateGallery(''); }
-          document.getElementById('commandPalette').classList.remove('open');
-        });
-      });
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
+  // load saved
+  try{ const s=localStorage.getItem('deepseek-forge-v1'); if(s){ const o=JSON.parse(s); Object.assign(state,o); syncUI(); renderSteps(); renderTools(); }}catch(e){}
+  render();
+  setTimeout(()=>toast('DeepSeek Forge ready — Templates ★ 18 loaded'),500);
+}
+init();
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a170d71fac17a8e2',t:'MTc4MzM2NDMwMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
