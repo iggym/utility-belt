@@ -19,27 +19,30 @@
     .btn-primary:hover { background: #1d4ed8; }
     main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
     .panel { padding: 1rem; overflow-y: auto; border-right: 1px solid var(--border); }
-    .task-card { background: var(--surface); border: 1px solid var(--border); margin-bottom: 0.75rem; border-radius: 6px; overflow: hidden; transition: border-color 0.2s; cursor: pointer; }
+    .task-card { background: var(--surface); border: 1px solid var(--border); margin-bottom: 0.75rem; border-radius: 6px; overflow: hidden; transition: border-color 0.2s; cursor: pointer; padding: 0.75rem; }
     .task-card:hover, .task-card.active { border-color: var(--primary); }
-    .task-card-header { padding: 0.75rem; display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
+    .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
     .status-badge { font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 99px; background: #e0f2fe; color: #0369a1; }
+    
+    .task-summary-grid { font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; }
     
     .field-group { margin-bottom: 1rem; }
     label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.25rem; font-weight: 700; }
-    .property-value { font-size: 0.95rem; background: var(--bg); padding: 0.5rem; border-radius: 4px; border: 1px solid transparent; }
-    textarea, input[type="text"], select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; resize: vertical; background: var(--surface); }
+    .property-value { font-size: 0.95rem; background: var(--bg); padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); }
     
-    .editable-field .property-value { display: block; }
-    .editable-field .property-input { display: none; }
-    .editing .editable-field .property-value { display: none; }
-    .editing .editable-field .property-input { display: block; }
-
-    .subtask-card { background: var(--surface); border: 1px solid var(--border); padding: 0.75rem; border-radius: 4px; margin-bottom: 0.75rem; }
+    .subtask-card { background: var(--bg); border: 1px solid var(--border); padding: 0.75rem; border-radius: 4px; margin-bottom: 0.75rem; }
     .subtask-card header { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
     .subtask-details { font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
     
+    textarea, input[type="text"], select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; resize: vertical; background: var(--surface); font-size: 0.875rem; }
+    
     #editor-panel { display: none; background: var(--surface); }
     #editor-panel.active { display: block; }
+
+    /* Modal Styles */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--surface); padding: 1.5rem; border-radius: 8px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
 </style>
 </head>
 <body>
@@ -52,83 +55,82 @@
 
 <main>
     <div class="panel" id="list-panel">
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">Subtasks Workspace</h3>
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-                <input type="text" id="rapid-subtask-input" placeholder="Rapid add subtask to active task..." autocomplete="off" disabled>
-                <button class="btn btn-primary" id="add-subtask-btn" disabled>Add</button>
-            </div>
-            <div id="subtasks-list">
-                <p style="font-size: 0.875rem; color: var(--text-muted); font-style: italic;">Select a task to view and manage subtasks.</p>
-            </div>
-        </div>
-
-        <hr style="border:0; border-top:1px solid var(--border); margin: 1.5rem 0;">
-
         <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">Tasks List</h3>
         <div id="task-list"></div>
     </div>
     
     <div class="panel" id="editor-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 id="edit-title">Task Details</h2>
-            <button class="btn btn-primary" id="toggle-edit-btn">Edit Properties</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <div>
+                <h2 id="edit-title" style="font-size: 1.25rem;">Task Details</h2>
+                <span id="header-status" class="status-badge" style="margin-top: 0.25rem; display: inline-block;">Not Started</span>
+            </div>
+            <button class="btn btn-primary" id="open-modal-btn">Edit Properties</button>
         </div>
 
-        <div id="properties-container">
-            <div class="field-group editable-field" data-field="status">
-                <label>Status Tracking</label>
-                <div class="property-value" id="val-status">-</div>
-                <div class="property-input">
-                    <select id="edit-status">
-                        <option value="Not Started">Not Started</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Blocked">Blocked</option>
-                        <option value="Done">Done</option>
-                    </select>
-                </div>
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">Subtasks Workspace</h3>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <input type="text" id="rapid-subtask-input" placeholder="Rapid add subtask..." autocomplete="off">
+                <button class="btn btn-primary" id="add-subtask-btn">Add</button>
             </div>
-            <div class="field-group editable-field" data-field="specificity">
-                <label>Specificity</label>
-                <div class="property-value" id="val-specificity">-</div>
-                <div class="property-input"><textarea id="edit-specificity" rows="2"></textarea></div>
-            </div>
-            <div class="field-group editable-field" data-field="measurability">
-                <label>Measurability</label>
-                <div class="property-value" id="val-measurability">-</div>
-                <div class="property-input"><textarea id="edit-measurability" rows="2"></textarea></div>
-            </div>
-            <div class="field-group editable-field" data-field="time">
-                <label>Time-Bound</label>
-                <div class="property-value" id="val-time">-</div>
-                <div class="property-input"><input type="text" id="edit-time"></div>
-            </div>
-            <div class="field-group editable-field" data-field="dependencies">
-                <label>Dependencies</label>
-                <div class="property-value" id="val-dependencies">-</div>
-                <div class="property-input"><textarea id="edit-dependencies" rows="2"></textarea></div>
-            </div>
-            <div class="field-group editable-field" data-field="resources">
-                <label>Resources</label>
-                <div class="property-value" id="val-resources">-</div>
-                <div class="property-input"><textarea id="edit-resources" rows="2"></textarea></div>
-            </div>
+            <div id="subtasks-list"></div>
         </div>
     </div>
 </main>
 
+<!-- Modal for editing task properties -->
+<div class="modal-overlay" id="property-modal">
+    <div class="modal">
+        <h3 style="margin-bottom: 1rem;" id="modal-task-title">Edit Task Properties</h3>
+        <div class="field-group">
+            <label>Status Tracking</label>
+            <select id="edit-status">
+                <option value="Not Started">Not Started</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Blocked">Blocked</option>
+                <option value="Done">Done</option>
+            </select>
+        </div>
+        <div class="field-group">
+            <label>Specificity</label>
+            <textarea id="edit-specificity" rows="2"></textarea>
+        </div>
+        <div class="field-group">
+            <label>Measurability</label>
+            <textarea id="edit-measurability" rows="2"></textarea>
+        </div>
+        <div class="field-group">
+            <label>Time-Bound</label>
+            <input type="text" id="edit-time">
+        </div>
+        <div class="field-group">
+            <label>Dependencies</label>
+            <textarea id="edit-dependencies" rows="2"></textarea>
+        </div>
+        <div class="field-group">
+            <label>Resources</label>
+            <textarea id="edit-resources" rows="2"></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+            <button class="btn" id="close-modal-btn">Done</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let tasks = JSON.parse(localStorage.getItem('taskDecomp')) || [];
     let activeId = null;
-    let isEditing = false;
 
     const els = {
         input: document.getElementById('rapid-input'),
         list: document.getElementById('task-list'),
         editor: document.getElementById('editor-panel'),
         title: document.getElementById('edit-title'),
-        toggleEditBtn: document.getElementById('toggle-edit-btn'),
-        propertiesContainer: document.getElementById('properties-container'),
+        headerStatus: document.getElementById('header-status'),
+        openModalBtn: document.getElementById('open-modal-btn'),
+        closeModalBtn: document.getElementById('close-modal-btn'),
+        propertyModal: document.getElementById('property-modal'),
         subtaskInput: document.getElementById('rapid-subtask-input'),
         addSubtaskBtn: document.getElementById('add-subtask-btn'),
         subtasksList: document.getElementById('subtasks-list'),
@@ -171,34 +173,24 @@
                     <span style="font-weight: 600;">${t.title}</span>
                     <span class="status-badge">${t.status}</span>
                 </div>
+                <div class="task-summary-grid">
+                    <span>Time: ${t.time || 'N/A'}</span>
+                    <span>Subtasks: ${t.subtasks ? t.subtasks.length : 0}</span>
+                </div>
             </div>
         `).join('');
     }
 
-    function openEditor(id, resetEdit = true) {
+    function openEditor(id) {
         activeId = id;
-        if (resetEdit) {
-            isEditing = false;
-            els.propertiesContainer.classList.remove('editing');
-            els.toggleEditBtn.textContent = 'Edit Properties';
-        }
-        
         const task = tasks.find(t => t.id === id);
         if (!task) return;
         
         renderList();
         els.editor.classList.add('active');
         els.title.textContent = task.title;
-        
-        // Update display values
-        document.getElementById('val-status').textContent = task.status;
-        document.getElementById('val-specificity').textContent = task.specificity || '-';
-        document.getElementById('val-measurability').textContent = task.measurability || '-';
-        document.getElementById('val-time').textContent = task.time || '-';
-        document.getElementById('val-dependencies').textContent = task.dependencies || '-';
-        document.getElementById('val-resources').textContent = task.resources || '-';
+        els.headerStatus.textContent = task.status;
 
-        // Update input values
         els.status.value = task.status;
         els.specificity.value = task.specificity || '';
         els.measurability.value = task.measurability || '';
@@ -206,20 +198,16 @@
         els.dependencies.value = task.dependencies || '';
         els.resources.value = task.resources || '';
 
-        els.subtaskInput.disabled = false;
-        els.addSubtaskBtn.disabled = false;
         renderSubtasks();
     }
 
-    els.toggleEditBtn.addEventListener('click', () => {
-        isEditing = !isEditing;
-        if (isEditing) {
-            els.propertiesContainer.classList.add('editing');
-            els.toggleEditBtn.textContent = 'Save Properties';
-        } else {
-            els.propertiesContainer.classList.remove('editing');
-            els.toggleEditBtn.textContent = 'Edit Properties';
-        }
+    els.openModalBtn.addEventListener('click', () => {
+        if (!activeId) return;
+        els.propertyModal.classList.add('active');
+    });
+
+    els.closeModalBtn.addEventListener('click', () => {
+        els.propertyModal.classList.remove('active');
     });
 
     ['status', 'specificity', 'measurability', 'time', 'dependencies', 'resources'].forEach(field => {
