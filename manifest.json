@@ -3,136 +3,133 @@
     "title": "Time Tools",
     "file": "tools/time-command-center.html",
     "description": "Useful time utilities — timers, world clocks, countdowns, and more.",
-    "category": "Productivity",
+    "category": ["Productivity"],
     "icon": "⏱"
   },
   {
     "title": "Prompt Generator",
     "file": "tools/prompt-generator.html",
     "description": "Generate structured prompts for AI models across any use case.",
-    "category": "AI",
+    "category": ["AI"],
     "icon": "✨"
   },
   {
     "title": "Payroll Calculator",
     "file": "tools/payroll-calc.html",
     "description": "Calculate gross pay, deductions, and net payroll quickly.",
-    "category": "Finance",
+    "category": ["Finance"],
     "icon": "💰"
   },
   {
     "title": "Password Generator",
     "file": "tools/password-generator.html",
     "description": "Generate strong, customizable passwords with entropy scoring.",
-    "category": "Security",
+    "category": ["Security"],
     "icon": "🔐"
   },
   {
     "title": "Prompt Workbench",
     "file": "tools/prompt-workbench.html",
-    "description": "Write prompts, Transform them (rewrite, compress, expand, modularize)",
-    "category": "AI",
+    "description": "Write prompts, transform them (rewrite, compress, expand, modularize).",
+    "category": ["AI"],
     "icon": "💫"
   },
   {
     "title": "Theme Select",
     "file": "tools/theme-select.html",
-    "description": "Select Theme for web app",
-    "category": "AI",
+    "description": "Select theme for web app.",
+    "category": ["UI"],
     "icon": "🎭"
-  }
- ,
+  },
   {
     "title": "Theme Select with options",
     "file": "tools/theme-select-options.html",
-    "description": "Select Theme for web app with lots of options",
-    "category": "AI",
-    "icon": "🧩"
-  }
-   ,
+    "description": "Select theme for web app with lots of options.",
+    "category": ["UI"],
+    "icon": "🎨"
+  },
   {
     "title": "Theme Select with options + blending",
     "file": "tools/theme-select-options-blend.html",
-    "description": "Select Theme for web app with lots of options and theme blending",
-    "category": "AI",
-    "icon": "🧩"
-  }
-    ,
+    "description": "Select theme for web app with options and theme blending.",
+    "category": ["UI"],
+    "icon": "🧪"
+  },
   {
     "title": "Clip Vault",
     "file": "tools/clip-vault.html",
-    "description": "clipboard designed to store, organize",
-    "category": "Productivity",
+    "description": "Clipboard designed to store and organize snippets.",
+    "category": ["Productivity"],
     "icon": "📋"
-  } ,
+  },
   {
     "title": "Unit Converter",
     "file": "tools/converter.html",
-    "description": "live, step-by-step breakdown of the math for every conversion",
-    "category": "Productivity",
-    "icon": "📋"
-  } ,
+    "description": "Live, step-by-step breakdown of the math for every conversion.",
+    "category": ["Productivity"],
+    "icon": "📐"
+  },
   {
     "title": "20 Units Converter",
     "file": "tools/20converter.html",
-    "description": "conversion for 20 key units",
-    "category": "Productivity",
-    "icon": "📋"
+    "description": "Fast conversion for 20 key measurement units.",
+    "category": ["Productivity"],
+    "icon": "⚖️"
   },
   {
     "title": "Tasks and Todos",
     "file": "tools/tasks.html",
-    "description": "task environment designed exactly around capture → triage → execute → archive lifecycle",
-    "category": "Productivity",
-    "icon": "📋"
+    "description": "Task environment designed around capture → triage → execute → archive lifecycle.",
+    "category": ["Productivity"],
+    "icon": "✅"
   },
   {
     "title": "Orbit Tasks",
     "file": "tools/orbit-tasks.html",
-    "description": "another todo app",
-    "category": "Productivity",
-    "icon": "📋"
+    "description": "Lightweight, interactive task tracking manager.",
+    "category": ["Productivity"],
+    "icon": "🪐"
   },
   {
     "title": "Gemini Prompt Generator",
     "file": "tools/gemini-prompt-gen.html",
-    "description": "Gemini 3.x Prompt Generator",
-    "category": "Productivity, AI",
-    "icon": "🔮"
-  }
-  ,
+    "description": "Gemini 3.x prompt generator.",
+    "category": ["Productivity", "AI"],
+    "icon": "♊"
+  },
   {
     "title": "Grok Prompt Generator",
     "file": "tools/grok-prompt-gen.html",
-    "description": "Grok Prompt Generator",
-    "category": "Productivity, AI",
-    "icon": "🔮"
+    "description": "Grok prompt generator.",
+    "category": ["Productivity", "AI"],
+    "icon": "⚡"
   },
   {
     "title": "Copilot Prompt Generator",
     "file": "tools/copilot-prompt-gen.html",
-    "description": "Copilot Prompt Generator",
-    "category": "Productivity, AI",
-    "icon": "🔮"
+    "description": "Copilot prompt generator.",
+    "category": ["Productivity", "AI"],
+    "icon": "✈️"
   },
   {
     "title": "Deepseek Prompt Generator",
     "file": "tools/deepseek-prompt-gen.html",
-    "description": "Deepseek Prompt Generator",
-    "category": "Productivity, AI",
-    "icon": "🔮"
+    "description": "Deepseek prompt generator.",
+    "category": ["Productivity", "AI"],
+    "icon": "🐋"
   },
   {
-    "title": "Chatgpt Prompt Generator",
+    "title": "ChatGPT Prompt Generator",
     "file": "tools/chatgpt-prompt-gen.html",
-    "description": "Chatgpt Prompt Generator",
-    "category": "Productivity, AI",
-    "icon": "🔮"
-  }, {
+    "description": "ChatGPT prompt generator.",
+    "category": ["Productivity", "AI"],
+    "icon": "🤖"
+  },
+  {
     "title": "Rapid To Do",
     "file": "tools/rapid-todo.html",
-    "description": "Rapid To do app",
-    "category": "Productivity, AI",
-    "icon": "🔮"
+    "description": "Rapid task execution list.",
+    "category": ["Productivity"],
+    "icon": "⚡"
   }
 ]
