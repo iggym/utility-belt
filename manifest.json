@@ -128,7 +128,11 @@
     "description": "Chatgpt Prompt Generator",
     "category": "Productivity, AI",
     "icon": "🔮"
+  } {
+    "title": "Rapid To Do",
+    "file": "tools/rapid-todo.html",
+    "description": "Rapid To do app",
+    "category": "Productivity, AI",
+    "icon": "🔮"
   }
-  
- 
 ]
