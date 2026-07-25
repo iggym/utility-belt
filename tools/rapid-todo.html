@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskDecomp</title>
+<style>
+    :root {
+        --bg: #f9fafb; --surface: #ffffff; --border: #e5e7eb;
+        --text: #111827; --text-muted: #6b7280; --primary: #2563eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 1rem; background: var(--surface); border-bottom: 1px solid var(--border); }
+    #rapid-input { width: 100%; padding: 0.75rem; font-size: 1.1rem; border: 1px solid var(--border); border-radius: 4px; }
+    main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
+    .panel { padding: 1rem; overflow-y: auto; border-right: 1px solid var(--border); }
+    .task-item { padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); margin-bottom: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; }
+    .task-item:hover { border-color: var(--primary); }
+    .status-badge { font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 99px; background: #e0f2fe; color: #0369a1; }
+    .field-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; }
+    textarea, input[type="text"], select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; resize: vertical; }
+    #editor-panel { display: none; background: var(--surface); }
+    #editor-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+    <input type="text" id="rapid-input" placeholder="Type task and press Enter for rapid addition..." autocomplete="off">
+</header>
+
+<main>
+    <div class="panel" id="list-panel">
+        <div id="task-list"></div>
+    </div>
+    
+    <div class="panel" id="editor-panel">
+        <h2 id="edit-title" style="margin-bottom: 1rem;">Task Details</h2>
+        <div class="field-group">
+            <label>Status Tracking</label>
+            <select id="edit-status">
+                <option value="Not Started">Not Started</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Blocked">Blocked</option>
+                <option value="Done">Done</option>
+            </select>
+        </div>
+        <div class="field-group">
+            <label>Specificity (Clear, unambiguous description)</label>
+            <textarea id="edit-specificity" rows="2"></textarea>
+        </div>
+        <div class="field-group">
+            <label>Measurability (Definition of Done)</label>
+            <textarea id="edit-measurability" rows="2"></textarea>
+        </div>
+        <div class="field-group">
+            <label>Time-Bound (Deadline/Duration)</label>
+            <input type="text" id="edit-time" placeholder="e.g., 4-40 hours, Due Friday">
+        </div>
+        <div class="field-group">
+            <label>Dependencies (Before/After)</label>
+            <textarea id="edit-dependencies" rows="2"></textarea>
+        </div>
+        <div class="field-group">
+            <label>Resources (Tools, Access, Info)</label>
+            <textarea id="edit-resources" rows="2"></textarea>
+        </div>
+    </div>
+</main>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem('taskDecomp')) || [];
+    let activeId = null;
+
+    const els = {
+        input: document.getElementById('rapid-input'),
+        list: document.getElementById('task-list'),
+        editor: document.getElementById('editor-panel'),
+        title: document.getElementById('edit-title'),
+        status: document.getElementById('edit-status'),
+        specificity: document.getElementById('edit-specificity'),
+        measurability: document.getElementById('edit-measurability'),
+        time: document.getElementById('edit-time'),
+        dependencies: document.getElementById('edit-dependencies'),
+        resources: document.getElementById('edit-resources')
+    };
+
+    function save() {
+        localStorage.setItem('taskDecomp', JSON.stringify(tasks));
+        renderList();
+    }
+
+    els.input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && els.input.value.trim()) {
+            const newTask = {
+                id: Date.now().toString(),
+                title: els.input.value.trim(),
+                status: 'Not Started',
+                specificity: '', measurability: '', time: '', dependencies: '', resources: ''
+            };
+            tasks.unshift(newTask);
+            els.input.value = '';
+            save();
+            openEditor(newTask.id);
+        }
+    });
+
+    function renderList() {
+        els.list.innerHTML = tasks.map(t => `
+            <div class="task-item" onclick="openEditor('${t.id}')">
+                <span>${t.title}</span>
+                <span class="status-badge">${t.status}</span>
+            </div>
+        `).join('');
+    }
+
+    function openEditor(id) {
+        activeId = id;
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        
+        els.editor.classList.add('active');
+        els.title.textContent = task.title;
+        els.status.value = task.status;
+        els.specificity.value = task.specificity;
+        els.measurability.value = task.measurability;
+        els.time.value = task.time;
+        els.dependencies.value = task.dependencies;
+        els.resources.value = task.resources;
+    }
+
+    // Bind auto-save to all editor inputs
+    ['status', 'specificity', 'measurability', 'time', 'dependencies', 'resources'].forEach(field => {
+        els[field].addEventListener('input', (e) => {
+            if (!activeId) return;
+            const task = tasks.find(t => t.id === activeId);
+            task[field] = e.target.value;
+            save();
+        });
+    });
+
+    renderList();
+</script>
+</body>
+</html>
