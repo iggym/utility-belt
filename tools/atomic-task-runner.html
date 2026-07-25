@@ -57,7 +57,12 @@
             letter-spacing: -0.025em;
         }
 
-        .mode-switch {
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .mode-switch, .export-btn {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text-muted);
@@ -68,7 +73,7 @@
             transition: all 0.2s;
         }
 
-        .mode-switch:hover {
+        .mode-switch:hover, .export-btn:hover {
             color: var(--text-main);
             border-color: var(--text-muted);
         }
@@ -143,20 +148,6 @@
             margin-top: 2rem;
         }
 
-        button.secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        button.secondary:hover {
-            background: var(--surface-hover);
-        }
-
         .macro-item {
             margin-bottom: 1rem;
             border-bottom: 1px solid var(--border);
@@ -200,6 +191,69 @@
             padding: 2rem;
             font-size: 0.9rem;
         }
+
+        /* Modal styling for Markdown export */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        textarea.markdown-output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            height: 250px;
+            resize: none;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -207,7 +261,10 @@
     <div class="container">
         <header>
             <h1>Atomic Task Runner</h1>
-            <button class="mode-switch" id="modeToggle" onclick="toggleView()">Switch to Focus Tunnel</button>
+            <div class="header-actions">
+                <button class="export-btn" onclick="exportMarkdown()">Export MD</button>
+                <button class="mode-switch" id="modeToggle" onclick="toggleView()">Switch to Focus Tunnel</button>
+            </div>
         </header>
 
         <div id="manageView">
@@ -226,6 +283,18 @@
 
         <div id="focusView" style="display: none;">
             <div class="card" id="focusCard"></div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Pipeline Markdown Export</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <textarea class="markdown-output" id="markdownOutput" readonly></textarea>
+            <button class="primary" onclick="copyMarkdown()">Copy Markdown to Clipboard</button>
         </div>
     </div>
 
@@ -295,6 +364,39 @@
             toggleMicro(macroId, microId);
         }
 
+        function exportMarkdown() {
+            let md = `# Atomic Task Runner - Pipeline State\n\n`;
+            if (state.macros.length === 0) {
+                md += `*No objectives recorded.*\n`;
+            } else {
+                state.macros.forEach(macro => {
+                    md += `## ${macro.title}\n`;
+                    macro.micros.forEach(micro => {
+                        const status = micro.completed ? 'x' : ' ';
+                        md += `- [${status}] ${micro.text}\n`;
+                    });
+                    md += `\n`;
+                });
+            }
+            document.getElementById('markdownOutput').value = md.trim();
+            document.getElementById('exportModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        function copyMarkdown() {
+            const textarea = document.getElementById('markdownOutput');
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied to Clipboard!';
+                setTimeout(() => { btn.textContent = originalText; }, 2000);
+            });
+        }
+
         function render() {
             const manageView = document.getElementById('manageView');
             const focusView = document.getElementById('focusView');
@@ -328,7 +430,7 @@
                     <ul class="micro-list">
                         ${macro.micros.map(micro => `
                             <li class="micro-item ${micro.completed ? 'completed' : ''}" onclick="toggleMicro('${macro.id}', '${micro.id}')" style="cursor: pointer;">
-                                <input type="checkbox" ${micro.completed ? 'checked' : ''} onclick="event.stopPropagation(); toggleMicro('${macro.id}', '${micro.id}')">
+                                <input type="checkbox" ${micro.completed ? 'checked' : ''} onclick="event.stopPropagation(); toggleMicro('${macro.id}', '${macro.id}')">
                                 <span>${escapeHtml(micro.text)}</span>
                             </li>
                         `).join('')}
