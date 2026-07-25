@@ -11,8 +11,12 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
     body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
-    header { padding: 1rem; background: var(--surface); border-bottom: 1px solid var(--border); }
-    #rapid-input { width: 100%; padding: 0.75rem; font-size: 1.1rem; border: 1px solid var(--border); border-radius: 4px; }
+    header { padding: 1rem; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 0.75rem; align-items: center; }
+    #rapid-input { flex: 1; padding: 0.75rem; font-size: 1.1rem; border: 1px solid var(--border); border-radius: 4px; }
+    .btn { padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 600; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--text); }
+    .btn:hover { background: var(--bg); border-color: var(--primary); }
+    .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .btn-primary:hover { background: #1d4ed8; }
     main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
     .panel { padding: 1rem; overflow-y: auto; border-right: 1px solid var(--border); }
     .task-item { padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); margin-bottom: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; }
@@ -23,12 +27,17 @@
     textarea, input[type="text"], select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; resize: vertical; }
     #editor-panel { display: none; background: var(--surface); }
     #editor-panel.active { display: block; }
+    .subtask-card { background: var(--bg); border: 1px solid var(--border); padding: 0.75rem; border-radius: 4px; margin-bottom: 0.75rem; }
+    .subtask-card header { padding: 0; background: transparent; border: none; margin-bottom: 0.5rem; justify-content: space-between; font-size: 0.875rem; font-weight: 600; }
+    .subtask-card input, .subtask-card textarea { font-size: 0.875rem; margin-bottom: 0.5rem; }
 </style>
 </head>
 <body>
 
 <header>
     <input type="text" id="rapid-input" placeholder="Type task and press Enter for rapid addition..." autocomplete="off">
+    <button class="btn" id="export-json">Export JSON</button>
+    <button class="btn" id="export-md">Export MD</button>
 </header>
 
 <main>
@@ -67,6 +76,17 @@
             <label>Resources (Tools, Access, Info)</label>
             <textarea id="edit-resources" rows="2"></textarea>
         </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin: 1.5rem 0;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Subtasks</h3>
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" id="rapid-subtask-input" placeholder="Rapid add subtask (press Enter)..." autocomplete="off">
+            <button class="btn btn-primary" id="add-subtask-btn">Add</button>
+        </div>
+        <div id="subtasks-list"></div>
     </div>
 </main>
 
@@ -84,7 +104,12 @@
         measurability: document.getElementById('edit-measurability'),
         time: document.getElementById('edit-time'),
         dependencies: document.getElementById('edit-dependencies'),
-        resources: document.getElementById('edit-resources')
+        resources: document.getElementById('edit-resources'),
+        exportJson: document.getElementById('export-json'),
+        exportMd: document.getElementById('export-md'),
+        subtaskInput: document.getElementById('rapid-subtask-input'),
+        addSubtaskBtn: document.getElementById('add-subtask-btn'),
+        subtasksList: document.getElementById('subtasks-list')
     };
 
     function save() {
@@ -98,7 +123,8 @@
                 id: Date.now().toString(),
                 title: els.input.value.trim(),
                 status: 'Not Started',
-                specificity: '', measurability: '', time: '', dependencies: '', resources: ''
+                specificity: '', measurability: '', time: '', dependencies: '', resources: '',
+                subtasks: []
             };
             tasks.unshift(newTask);
             els.input.value = '';
@@ -124,14 +150,14 @@
         els.editor.classList.add('active');
         els.title.textContent = task.title;
         els.status.value = task.status;
-        els.specificity.value = task.specificity;
-        els.measurability.value = task.measurability;
-        els.time.value = task.time;
-        els.dependencies.value = task.dependencies;
-        els.resources.value = task.resources;
+        els.specificity.value = task.specificity || '';
+        els.measurability.value = task.measurability || '';
+        els.time.value = task.time || '';
+        els.dependencies.value = task.dependencies || '';
+        els.resources.value = task.resources || '';
+        renderSubtasks();
     }
 
-    // Bind auto-save to all editor inputs
     ['status', 'specificity', 'measurability', 'time', 'dependencies', 'resources'].forEach(field => {
         els[field].addEventListener('input', (e) => {
             if (!activeId) return;
@@ -139,6 +165,105 @@
             task[field] = e.target.value;
             save();
         });
+    });
+
+    function addSubtask() {
+        const title = els.subtaskInput.value.trim();
+        if (!title || !activeId) return;
+        const task = tasks.find(t => t.id === activeId);
+        if (!task.subtasks) task.subtasks = [];
+        
+        task.subtasks.push({
+            id: Date.now().toString(),
+            title: title,
+            doneDescription: '',
+            output: '',
+            outboundTask: ''
+        });
+        els.subtaskInput.value = '';
+        save();
+        renderSubtasks();
+    }
+
+    els.addSubtaskBtn.addEventListener('click', addSubtask);
+    els.subtaskInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addSubtask();
+    });
+
+    function renderSubtasks() {
+        const task = tasks.find(t => t.id === activeId);
+        if (!task || !task.subtasks) {
+            els.subtasksList.innerHTML = '';
+            return;
+        }
+
+        els.subtasksList.innerHTML = task.subtasks.map((sub, index) => `
+            <div class="subtask-card" data-sub-id="${sub.id}">
+                <header>
+                    <span>#${index + 1}: ${sub.title}</span>
+                    <button class="btn" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="removeSubtask('${sub.id}')">Delete</button>
+                </header>
+                <input type="text" placeholder="Detailed done description..." value="${sub.doneDescription || ''}" oninput="updateSubtask('${sub.id}', 'doneDescription', this.value)">
+                <input type="text" placeholder="Output..." value="${sub.output || ''}" oninput="updateSubtask('${sub.id}', 'output', this.value)">
+                <input type="text" placeholder="Outbound task..." value="${sub.outboundTask || ''}" oninput="updateSubtask('${sub.id}', 'outboundTask', this.value)">
+            </div>
+        `).join('');
+    }
+
+    window.updateSubtask = function(subId, field, value) {
+        const task = tasks.find(t => t.id === activeId);
+        if (!task) return;
+        const sub = task.subtasks.find(s => s.id === subId);
+        if (sub) {
+            sub[field] = value;
+            save();
+        }
+    }
+
+    window.removeSubtask = function(subId) {
+        const task = tasks.find(t => t.id === activeId);
+        if (!task) return;
+        task.subtasks = task.subtasks.filter(s => s.id !== subId);
+        save();
+        renderSubtasks();
+    }
+
+    function downloadFile(content, filename, type) {
+        const blob = new Blob([content], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    els.exportJson.addEventListener('click', () => {
+        downloadFile(JSON.stringify(tasks, null, 2), 'tasks.json', 'application/json');
+    });
+
+    els.exportMd.addEventListener('click', () => {
+        let md = '# TaskDecomp Export\n\n';
+        tasks.forEach(t => {
+            md += `## ${t.title}\n`;
+            md += `- **Status:** ${t.status}\n`;
+            md += `- **Specificity:** ${t.specificity || 'N/A'}\n`;
+            md += `- **Measurability:** ${t.measurability || 'N/A'}\n`;
+            md += `- **Time-Bound:** ${t.time || 'N/A'}\n`;
+            md += `- **Dependencies:** ${t.dependencies || 'N/A'}\n`;
+            md += `- **Resources:** ${t.resources || 'N/A'}\n`;
+            if (t.subtasks && t.subtasks.length > 0) {
+                md += `\n### Subtasks\n`;
+                t.subtasks.forEach(s => {
+                    md += `- **[${s.title}]**\n`;
+                    md += `  - Done Description: ${s.doneDescription || 'N/A'}\n`;
+                    md += `  - Output: ${s.output || 'N/A'}\n`;
+                    md += `  - Outbound Task: ${s.outboundTask || 'N/A'}\n`;
+                });
+            }
+            md += `\n`;
+        });
+        downloadFile(md, 'tasks.md', 'text/markdown');
     });
 
     renderList();
