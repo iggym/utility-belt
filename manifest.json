@@ -94,35 +94,35 @@
     "title": "Gemini Prompt Generator",
     "file": "tools/gemini-prompt-gen.html",
     "description": "Gemini 3.x prompt generator.",
-    "category": ["Productivity", "AI"],
+    "category": ["Productivity","AI"],
     "icon": "♊"
   },
   {
     "title": "Grok Prompt Generator",
     "file": "tools/grok-prompt-gen.html",
     "description": "Grok prompt generator.",
-    "category": ["Productivity", "AI"],
+    "category": ["Productivity","AI"],
     "icon": "⚡"
   },
   {
     "title": "Copilot Prompt Generator",
     "file": "tools/copilot-prompt-gen.html",
     "description": "Copilot prompt generator.",
-    "category": ["Productivity", "AI"],
+    "category": ["Productivity","AI"],
     "icon": "✈️"
   },
   {
     "title": "Deepseek Prompt Generator",
     "file": "tools/deepseek-prompt-gen.html",
     "description": "Deepseek prompt generator.",
-    "category": ["Productivity", "AI"],
+    "category": ["Productivity","AI"],
     "icon": "🐋"
   },
   {
     "title": "ChatGPT Prompt Generator",
     "file": "tools/chatgpt-prompt-gen.html",
     "description": "ChatGPT prompt generator.",
-    "category": ["Productivity", "AI"],
+    "category": ["Productivity","AI"],
     "icon": "🤖"
   },
   {
