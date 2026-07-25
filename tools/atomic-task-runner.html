@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Task Runner</title>
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --surface: #141418;
+            --surface-hover: #1c1c24;
+            --border: #262630;
+            --text-main: #f4f4f6;
+            --text-muted: #8e8e99;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .mode-switch {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-switch:hover {
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: var(--font);
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        button.primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        button.primary:hover {
+            background: var(--accent-hover);
+        }
+
+        #focus-view {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .focus-task-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .focus-macro {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 2rem;
+        }
+
+        .focus-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button.secondary:hover {
+            background: var(--surface-hover);
+        }
+
+        .macro-item {
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .macro-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .macro-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .micro-list {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .micro-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.35rem 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .micro-item.completed {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Atomic Task Runner</h1>
+            <button class="mode-switch" id="modeToggle" onclick="toggleView()">Switch to Focus Tunnel</button>
+        </header>
+
+        <div id="manageView">
+            <div class="card">
+                <form id="taskForm" onsubmit="addMacroTask(event)">
+                    <input type="text" id="macroInput" placeholder="Enter macro objective (e.g., Build Auth Pipeline)..." required autocomplete="off">
+                    <textarea id="microInput" rows="3" placeholder="Decompose into micro-tasks (one per line)..." required></textarea>
+                    <button type="submit" class="primary">Initialize Atomic Pipeline</button>
+                </form>
+            </div>
+
+            <div class="card" id="taskListContainer">
+                <div class="empty-state">No active objectives forged. Create one above.</div>
+            </div>
+        </div>
+
+        <div id="focusView" style="display: none;">
+            <div class="card" id="focusCard"></div>
+        </div>
+    </div>
+
+    <script>
+        let state = JSON.parse(localStorage.getItem('atomic_runner_state')) || {
+            macros: [],
+            currentView: 'manage'
+        };
+
+        function saveState() {
+            localStorage.setItem('atomic_runner_state', JSON.stringify(state));
+        }
+
+        function toggleView() {
+            state.currentView = state.currentView === 'manage' ? 'focus' : 'manage';
+            saveState();
+            render();
+        }
+
+        function addMacroTask(e) {
+            e.preventDefault();
+            const macroTitle = document.getElementById('macroInput').value.trim();
+            const microRaw = document.getElementById('microInput').value.trim();
+            
+            const microTasks = microRaw.split('\n')
+                .map(t => t.trim())
+                .filter(t => t.length > 0)
+                .map(text => ({ id: Math.random().toString(36).substr(2, 9), text, completed: false }));
+
+            if (!macroTitle || microTasks.length === 0) return;
+
+            state.macros.push({
+                id: Math.random().toString(36).substr(2, 9),
+                title: macroTitle,
+                micros: microTasks
+            });
+
+            document.getElementById('taskForm').reset();
+            saveState();
+            render();
+        }
+
+        function toggleMicro(macroId, microId) {
+            const macro = state.macros.find(m => m.id === macroId);
+            if (macro) {
+                const micro = macro.micros.find(mi => mi.id === microId);
+                if (micro) {
+                    micro.completed = !micro.completed;
+                    saveState();
+                    render();
+                }
+            }
+        }
+
+        function getNextActiveMicro() {
+            for (let macro of state.macros) {
+                for (let micro of macro.micros) {
+                    if (!micro.completed) {
+                        return { macroTitle: macro.title, macroId: macro.id, micro };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function completeActiveFocus(macroId, microId) {
+            toggleMicro(macroId, microId);
+        }
+
+        function render() {
+            const manageView = document.getElementById('manageView');
+            const focusView = document.getElementById('focusView');
+            const modeToggle = document.getElementById('modeToggle');
+
+            if (state.currentView === 'focus') {
+                manageView.style.display = 'none';
+                focusView.style.display = 'block';
+                modeToggle.textContent = 'Switch to Dashboard';
+                renderFocusTunnel();
+            } else {
+                manageView.style.display = 'block';
+                focusView.style.display = 'none';
+                modeToggle.textContent = 'Switch to Focus Tunnel';
+                renderDashboard();
+            }
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('taskListContainer');
+            if (state.macros.length === 0) {
+                container.innerHTML = '<div class="empty-state">No active objectives forged. Create one above.</div>';
+                return;
+            }
+
+            container.innerHTML = state.macros.map(macro => `
+                <div class="macro-item">
+                    <div class="macro-header">
+                        <span class="macro-title">${escapeHtml(macro.title)}</span>
+                    </div>
+                    <ul class="micro-list">
+                        ${macro.micros.map(micro => `
+                            <li class="micro-item ${micro.completed ? 'completed' : ''}" onclick="toggleMicro('${macro.id}', '${micro.id}')" style="cursor: pointer;">
+                                <input type="checkbox" ${micro.completed ? 'checked' : ''} onclick="event.stopPropagation(); toggleMicro('${macro.id}', '${micro.id}')">
+                                <span>${escapeHtml(micro.text)}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        function renderFocusTunnel() {
+            const focusCard = document.getElementById('focusCard');
+            const active = getNextActiveMicro();
+
+            if (!active) {
+                focusCard.innerHTML = `
+                    <div class="focus-task-title">Pipeline Execution Complete</div>
+                    <div class="focus-macro">Zero pending execution nodes</div>
+                    <button class="primary" onclick="toggleView()" style="margin-top: 1.5rem;">Return to Dashboard</button>
+                `;
+                return;
+            }
+
+            focusCard.innerHTML = `
+                <div class="focus-macro">Objective: ${escapeHtml(active.macroTitle)}</div>
+                <div class="focus-task-title">${escapeHtml(active.micro.text)}</div>
+                <div class="focus-actions">
+                    <button class="primary" onclick="completeActiveFocus('${active.macroId}', '${active.micro.id}')">Complete & Proceed</button>
+                </div>
+            `;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        render();
+    </script>
+</body>
+</html>
