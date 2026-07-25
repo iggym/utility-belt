@@ -19,9 +19,13 @@
     .btn-primary:hover { background: #1d4ed8; }
     main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
     .panel { padding: 1rem; overflow-y: auto; border-right: 1px solid var(--border); }
-    .task-item { padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); margin-bottom: 0.5rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; }
-    .task-item:hover { border-color: var(--primary); }
+    .task-card { background: var(--surface); border: 1px solid var(--border); margin-bottom: 0.75rem; border-radius: 6px; overflow: hidden; transition: border-color 0.2s; }
+    .task-card:hover { border-color: var(--primary); }
+    .task-card-header { padding: 0.75rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: var(--surface); }
     .status-badge { font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 99px; background: #e0f2fe; color: #0369a1; }
+    .subtask-preview-list { background: var(--bg); border-top: 1px solid var(--border); padding: 0.5rem 0.75rem; }
+    .subtask-preview-item { font-size: 0.8rem; color: var(--text-muted); padding: 0.25rem 0; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); }
+    .subtask-preview-item:last-child { border-bottom: none; }
     .field-group { margin-bottom: 1rem; }
     label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem; }
     textarea, input[type="text"], select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; resize: vertical; }
@@ -134,12 +138,29 @@
     });
 
     function renderList() {
-        els.list.innerHTML = tasks.map(t => `
-            <div class="task-item" onclick="openEditor('${t.id}')">
-                <span>${t.title}</span>
-                <span class="status-badge">${t.status}</span>
-            </div>
-        `).join('');
+        els.list.innerHTML = tasks.map(t => {
+            const hasSubtasks = t.subtasks && t.subtasks.length > 0;
+            const subtaskHtml = hasSubtasks ? `
+                <div class="subtask-preview-list">
+                    ${t.subtasks.map((s, idx) => `
+                        <div class="subtask-preview-item">
+                            <span>#${idx + 1} ${s.title}</span>
+                            <span>${s.estimatedTime ? '(' + s.estimatedTime + ')' : ''}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+
+            return `
+                <div class="task-card">
+                    <div class="task-card-header" onclick="openEditor('${t.id}')">
+                        <span style="font-weight: 600;">${t.title}</span>
+                        <span class="status-badge">${t.status}</span>
+                    </div>
+                    ${subtaskHtml}
+                </div>
+            `;
+        }).join('');
     }
 
     function openEditor(id) {
@@ -176,6 +197,7 @@
         task.subtasks.push({
             id: Date.now().toString(),
             title: title,
+            estimatedTime: '',
             doneDescription: '',
             output: '',
             outboundTask: ''
@@ -203,6 +225,7 @@
                     <span>#${index + 1}: ${sub.title}</span>
                     <button class="btn" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="removeSubtask('${sub.id}')">Delete</button>
                 </header>
+                <input type="text" placeholder="Estimated Time (e.g., 2h, 45m)..." value="${sub.estimatedTime || ''}" oninput="updateSubtask('${sub.id}', 'estimatedTime', this.value)">
                 <input type="text" placeholder="Detailed done description..." value="${sub.doneDescription || ''}" oninput="updateSubtask('${sub.id}', 'doneDescription', this.value)">
                 <input type="text" placeholder="Output..." value="${sub.output || ''}" oninput="updateSubtask('${sub.id}', 'output', this.value)">
                 <input type="text" placeholder="Outbound task..." value="${sub.outboundTask || ''}" oninput="updateSubtask('${sub.id}', 'outboundTask', this.value)">
@@ -255,7 +278,7 @@
             if (t.subtasks && t.subtasks.length > 0) {
                 md += `\n### Subtasks\n`;
                 t.subtasks.forEach(s => {
-                    md += `- **[${s.title}]**\n`;
+                    md += `- **[${s.title}]** (${s.estimatedTime || 'No estimate'})\n`;
                     md += `  - Done Description: ${s.doneDescription || 'N/A'}\n`;
                     md += `  - Output: ${s.output || 'N/A'}\n`;
                     md += `  - Outbound Task: ${s.outboundTask || 'N/A'}\n`;
