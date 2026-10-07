@@ -55,6 +55,7 @@ utility-belt/
 ├── manifest.json
 │
 ├── tools/
+│   ├── prompt-architect.html    ← 24 workflows × 12 frontier models, model-tuned prompt templates
 │   ├── prompt-generator.html
 │   ├── json-formatter.html
 │   ├── markdown-editor.html

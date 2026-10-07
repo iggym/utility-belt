@@ -180,5 +180,12 @@
     "description": "Palette harmonies, tint/shade scales, WCAG contrast checks and CSS/JSON/Tailwind export.",
     "category": ["Design", "UI"],
     "icon": "🎨"
+  },
+  {
+    "title": "Prompt Architect",
+    "file": "tools/prompt-architect.html",
+    "description": "24 enterprise workflows x 12 frontier models — four-pillar, model-tuned prompt templates with copy, download and direct chat launch.",
+    "category": ["AI", "Productivity"],
+    "icon": "🏛"
   }
 ]
