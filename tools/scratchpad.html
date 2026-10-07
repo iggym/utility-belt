@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scratchpad — Utility Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#232327;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.16);
+  --text:#fafafa;--muted:#71717a;--subtle:#3f3f46;
+  --accent:#6366f1;--accent-2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --good:#34d399;--radius:10px;--card-radius:14px;--transition:160ms cubic-bezier(.4,0,.2,1);
+}
+html,body{height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;
+  line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden}
+.app{display:grid;grid-template-columns:260px 1fr;height:100vh}
+@media(max-width:820px){.app{grid-template-columns:1fr}.sidebar{display:none}.sidebar.show{display:flex;position:fixed;
+  z-index:40;inset:0 auto 0 0;width:260px;box-shadow:0 0 60px rgba(0,0,0,.6)}}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0}
+.sb-head{padding:14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none}
+.logo-mark{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+.searchbox{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 9px}
+.searchbox svg{width:14px;height:14px;color:var(--muted);flex:none}
+.searchbox input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font:12.5px inherit;font-family:inherit}
+.notes{flex:1;overflow-y:auto;padding:8px}
+.note{padding:9px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent;margin-bottom:3px}
+.note:hover{background:var(--surface-2)}
+.note.on{background:var(--accent-glow);border-color:rgba(99,102,241,.28)}
+.note .t{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note .m{font-size:11px;color:var(--muted);display:flex;gap:7px;margin-top:2px}
+.note .m .pin{color:var(--accent-2)}
+.sb-foot{padding:10px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.storage{font-size:10.5px;color:var(--subtle)}
+.storage .bar{height:3px;background:var(--surface-3);border-radius:2px;margin-top:4px;overflow:hidden}
+.storage .fill{height:100%;background:var(--accent);width:0;transition:width .3s}
+
+/* ── Editor ──────────────────────────────────────────── */
+.editor{display:flex;flex-direction:column;min-width:0}
+.toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);
+  background:rgba(9,9,11,.7);backdrop-filter:blur(14px);flex-wrap:wrap}
+.title-input{flex:1;min-width:120px;background:transparent;border:none;outline:none;color:var(--text);
+  font:14.5px inherit;font-family:inherit;font-weight:600;letter-spacing:-.01em}
+.panes{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+.panes.solo{grid-template-columns:1fr}
+.pane{min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.pane:last-child{border-right:none}
+textarea{flex:1;width:100%;resize:none;background:transparent;border:none;outline:none;color:#e4e4e7;
+  padding:16px;font:13px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace}
+.preview{flex:1;overflow-y:auto;padding:16px 20px;font-size:14.5px;line-height:1.75}
+.preview h1{font-size:24px;margin:14px 0 8px;letter-spacing:-.02em}
+.preview h2{font-size:19px;margin:18px 0 7px;letter-spacing:-.015em}
+.preview h3{font-size:16px;margin:14px 0 6px}
+.preview p{margin:8px 0}
+.preview ul,.preview ol{margin:8px 0 8px 22px}
+.preview li{margin:3px 0}
+.preview a{color:var(--accent-2)}
+.preview code{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 5px;
+  font:12.5px ui-monospace,Menlo,monospace}
+.preview pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 14px;overflow:auto;margin:10px 0}
+.preview pre code{background:none;border:none;padding:0;font-size:12.5px;line-height:1.65;display:block}
+.preview blockquote{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:10px 0;color:var(--muted)}
+.preview hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+.preview table{border-collapse:collapse;margin:10px 0;font-size:13px}
+.preview th,.preview td{border:1px solid var(--border);padding:6px 10px;text-align:left}
+.preview th{background:var(--surface-2)}
+.preview input[type=checkbox]{margin-right:6px}
+.preview .li-done{color:var(--muted);text-decoration:line-through}
+.preview img{max-width:100%;border-radius:var(--radius)}
+
+/* ── Buttons & bits ──────────────────────────────────── */
+button{font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:6px 11px;cursor:pointer;transition:all var(--transition)}
+button:hover{border-color:var(--border-hover);background:var(--surface-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#4f46e5;border-color:#4f46e5}
+button.ghost{background:transparent}
+button.on{background:var(--accent-glow);border-color:rgba(99,102,241,.4);color:var(--accent-2)}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:transparent;color:var(--muted);padding:6px 11px}
+.seg button.on{background:var(--accent-glow);color:var(--accent-2)}
+.seg button+button{border-left:1px solid var(--border)}
+.status{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.dot.saved{background:var(--good)}
+.dot.dirty{background:#fbbf24}
+.hist{position:absolute;top:0;right:0;bottom:0;width:330px;background:var(--surface);border-left:1px solid var(--border);
+  transform:translateX(102%);transition:transform .22s cubic-bezier(.4,0,.2,1);z-index:30;display:flex;flex-direction:column;
+  box-shadow:-20px 0 60px rgba(0,0,0,.45)}
+.hist.open{transform:none}
+.hist h3{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.hist .list{flex:1;overflow-y:auto;padding:8px}
+.snap{padding:9px 10px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;cursor:pointer;background:var(--surface-2)}
+.snap:hover{border-color:var(--border-hover)}
+.snap .when{font-size:12px;font-weight:500}
+.snap .what{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.snap .sz{font-size:10.5px;color:var(--subtle)}
+.snap.auto{border-style:dashed}
+.wrap{position:relative;flex:1;display:flex;min-height:0}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface-3);
+  border:1px solid var(--border-hover);padding:10px 18px;border-radius:var(--radius);font-size:13px;opacity:0;
+  transition:.2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.undo{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);display:flex;align-items:center;
+  gap:12px;background:var(--surface-3);border:1px solid var(--border-hover);border-radius:var(--radius);
+  padding:9px 12px 9px 16px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:61;overflow:hidden}
+.undo.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.undo button{padding:4px 11px;font-size:12px}
+.undo .bar{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:100%}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <a class="brand" href="../index.html"><span class="logo-mark">🛠</span> Scratchpad</a>
+      <div class="searchbox">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+        <input id="search" placeholder="Search notes…" autocomplete="off">
+      </div>
+      <button class="primary" id="newNote">＋ New note</button>
+    </div>
+    <div class="notes" id="noteList"></div>
+    <div class="sb-foot">
+      <div class="storage" id="storage">localStorage · 0 KB
+        <div class="bar"><div class="fill" id="storageFill"></div></div>
+      </div>
+      <button class="ghost" id="importBtn">📂 Import .md / .txt</button>
+      <button class="ghost" id="exportAll">💾 Export all notes (.md)</button>
+      <input type="file" id="importFile" style="display:none" accept=".md,.txt,.markdown">
+    </div>
+  </aside>
+
+  <div class="wrap">
+    <section class="editor">
+      <div class="toolbar">
+        <button class="ghost" id="menuBtn" title="Toggle note list">☰</button>
+        <input class="title-input" id="title" placeholder="Untitled note">
+        <span class="status"><span class="dot saved" id="saveDot"></span><span id="saveText">saved</span></span>
+        <div class="seg" id="viewSeg">
+          <button data-view="split" class="on">Split</button>
+          <button data-view="edit">Edit</button>
+          <button data-view="read">Read</button>
+        </div>
+        <button id="histBtn">🕘 History</button>
+        <button id="copyBtn">📋 Copy</button>
+        <button id="dlBtn">💾 .md</button>
+        <button id="htmlBtn">🌐 .html</button>
+        <button class="ghost" id="deleteBtn" title="Delete note">🗑</button>
+      </div>
+      <div class="panes" id="panes">
+        <div class="pane"><textarea id="body" spellcheck="true"
+          placeholder="# Start typing…&#10;&#10;This pad autosaves as you type, keeps version history, and renders Markdown live."></textarea></div>
+        <div class="pane"><div class="preview" id="preview"></div></div>
+      </div>
+    </section>
+
+    <aside class="hist" id="hist">
+      <h3>Version history <button class="ghost" id="closeHist" style="margin-left:auto;padding:2px 8px">✕</button></h3>
+      <div class="list" id="snapList"></div>
+      <div style="padding:10px 12px;border-top:1px solid var(--border);font-size:11px;color:var(--subtle)">
+        Snapshots are stored locally with this note. Autosave keeps one every 60 seconds of editing.
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="undo" id="undoBar"><span id="undoMsg"></span><button id="undoGo">Undo</button><div class="bar" id="undoBarFill"></div></div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var KEY = 'ub.scratchpad.v1', SNAP_MAX = 40;
+
+/* ══ Markdown → HTML (small, dependency-free, escaping first) ══════ */
+function mdToHTML(md){
+  var src = String(md).replace(/\r\n?/g, '\n');
+  var codeBlocks = [];
+  // 1. protect fenced code
+  src = src.replace(/```([\w-]*)\n([\s\S]*?)```/g, function(m, lang, code){
+    codeBlocks.push('<pre><code data-lang="' + esc(lang) + '">' + esc(code.replace(/\n$/, '')) + '</code></pre>');
+    return '\u0000CB' + (codeBlocks.length - 1) + '\u0000';
+  });
+  src = esc(src);
+  function inline(s){
+    return s
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">')
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+      .replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>')
+      .replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+      .replace(/(^|\s)_([^_\n]+)_/g, '$1<em>$2</em>')
+      .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+      .replace(/==([^=]+)==/g, '<mark>$1</mark>');
+  }
+  var lines = src.split('\n'), out = [], i = 0;
+  while(i < lines.length){
+    var line = lines[i];
+    if(/^\u0000CB\d+\u0000\s*$/.test(line.trim())){
+      out.push(codeBlocks[parseInt(line.trim().replace(/\u0000CB|\u0000/g,''),10)]); i++; continue;
+    }
+    if(/^\s*$/.test(line)){ i++; continue; }
+    if(/^```/.test(line)){ i++; continue; }
+    // table
+    if(/\|/.test(line) && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i+1])){
+      var head = splitRow(line), rows = [];
+      i += 2;
+      while(i < lines.length && /\|/.test(lines[i]) && lines[i].trim() !== ''){ rows.push(splitRow(lines[i])); i++; }
+      out.push('<table><thead><tr>' + head.map(function(c){ return '<th>' + inline(c) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' + rows.map(function(r){
+          return '<tr>' + head.map(function(_, ci){ return '<td>' + inline(r[ci] || '') + '</td>'; }).join('') + '</tr>';
+        }).join('') + '</tbody></table>');
+      continue;
+    }
+    var h = line.match(/^(#{1,6})\s+(.*)$/);
+    if(h){ var lvl = h[1].length; out.push('<h' + lvl + '>' + inline(h[2]) + '</h' + lvl + '>'); i++; continue; }
+    if(/^\s*([-*_])\s*\1\s*\1[\s-*_]*$/.test(line)){ out.push('<hr>'); i++; continue; }
+    if(/^\s*>/.test(line)){
+      var quote = [];
+      while(i < lines.length && /^\s*>/.test(lines[i])){ quote.push(lines[i].replace(/^\s*>\s?/,'')); i++; }
+      out.push('<blockquote>' + mdToHTML(quote.join('\n')) + '</blockquote>');
+      continue;
+    }
+    if(/^\s*(\d+\.|[-*+])\s+/.test(line)){
+      var ordered = /^\s*\d+\./.test(line), items = [];
+      while(i < lines.length && /^\s*(\d+\.|[-*+])\s+/.test(lines[i])){
+        var text = lines[i].replace(/^\s*(\d+\.|[-*+])\s+/, '');
+        var box = text.match(/^\[( |x|X)\]\s+(.*)$/);
+        if(box) items.push('<li' + (box[1].toLowerCase() === 'x' ? ' class="li-done"' : '') + '>' +
+          '<input type="checkbox" disabled' + (box[1].toLowerCase() === 'x' ? ' checked' : '') + '>' + inline(box[2]) + '</li>');
+        else items.push('<li>' + inline(text) + '</li>');
+        i++;
+      }
+      out.push('<' + (ordered ? 'ol' : 'ul') + '>' + items.join('') + '</' + (ordered ? 'ol' : 'ul') + '>');
+      continue;
+    }
+    // paragraph: consume until blank line or another block starter
+    var para = [line]; i++;
+    while(i < lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,6}\s|\s*>|\s*(\d+\.|[-*+])\s|```|\u0000CB)/.test(lines[i])){
+      para.push(lines[i]); i++;
+    }
+    out.push('<p>' + inline(para.join('\n').replace(/\n/g, '<br>')) + '</p>');
+  }
+  return out.join('\n');
+
+  function splitRow(l){
+    return l.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(function(c){ return c.trim(); });
+  }
+}
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══ Storage ═══════════════════════════════════════════════════════ */
+var state = {notes:[], activeId:null}, saveTimer = null, snapTimer = null, dirty = false;
+function load(){
+  try {
+    var raw = localStorage.getItem(KEY);
+    if(raw){ state = JSON.parse(raw); }
+  } catch(e){ /* corrupted store — start fresh */ }
+  if(!state.notes || !state.notes.length){
+    state.notes = [newNote(true)];
+    state.activeId = state.notes[0].id;
+  }
+  if(!state.notes.some(function(n){ return n.id === state.activeId; })) state.activeId = state.notes[0].id;
+}
+function persist(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); updateStorageBar(); }
+  catch(e){ toast('Storage full — export notes to free space'); }
+}
+function newNote(silent){
+  var n = {id:'n' + Date.now() + Math.random().toString(36).slice(2,7), title:'Untitled note', body:'',
+    created:Date.now(), updated:Date.now(), snaps:[]};
+  if(!silent) state.notes.unshift(n);
+  return n;
+}
+function active(){ return state.notes.filter(function(n){ return n.id === state.activeId; })[0]; }
+function noteTitle(n){
+  var t = (n.title || '').trim();
+  if(t && t !== 'Untitled note') return t;
+  var first = (n.body || '').split('\n').filter(function(l){ return l.trim(); })[0] || 'Untitled note';
+  return first.replace(/^#+\s*/, '').slice(0, 60);
+}
+function when(ts){
+  var d = new Date(ts), diff = Date.now() - ts;
+  if(diff < 60000) return 'just now';
+  if(diff < 3600000) return Math.round(diff / 60000) + 'm ago';
+  if(diff < 86400000) return Math.round(diff / 3600000) + 'h ago';
+  return d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' +
+    d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
+}
+
+/* ══ Rendering ═════════════════════════════════════════════════════ */
+function renderList(){
+  var q = $('search').value.toLowerCase().trim();
+  var notes = state.notes.slice().sort(function(a, b){ return b.updated - a.updated; })
+    .filter(function(n){
+      return !q || (noteTitle(n) + ' ' + (n.body || '')).toLowerCase().indexOf(q) !== -1;
+    });
+  $('noteList').innerHTML = notes.map(function(n){
+    var words = (n.body || '').trim() ? (n.body || '').trim().split(/\s+/).length : 0;
+    return '<div class="note' + (n.id === state.activeId ? ' on' : '') + '" data-id="' + n.id + '">' +
+      '<div class="t">' + esc(noteTitle(n)) + '</div>' +
+      '<div class="m"><span>' + when(n.updated) + '</span><span>' + words + 'w</span>' +
+      (n.snaps && n.snaps.length ? '<span class="pin">🕘 ' + n.snaps.length + '</span>' : '') +
+      '</div></div>';
+  }).join('') || '<div style="padding:16px;color:var(--subtle);font-size:12.5px">No notes match.</div>';
+}
+function renderEditor(){
+  var n = active(); if(!n) return;
+  $('title').value = n.title === 'Untitled note' ? '' : n.title;
+  $('body').value = n.body || '';
+  renderPreview(); renderSnaps(); setSaved(true);
+}
+function renderPreview(){
+  var md = $('body').value;
+  $('preview').innerHTML = md.trim() ? mdToHTML(md) : '<p style="color:var(--subtle)">Live preview — start typing on the left.</p>';
+}
+function renderSnaps(){
+  var n = active(); if(!n) return;
+  var list = (n.snaps || []).slice().reverse();
+  $('snapList').innerHTML = list.length ? list.map(function(s, i){
+    return '<div class="snap' + (s.auto ? ' auto' : '') + '" data-i="' + (list.length - 1 - i) + '">' +
+      '<div class="when">' + when(s.at) + (s.auto ? ' · autosave' : ' · manual') + '</div>' +
+      '<div class="what">' + esc((s.body || '').replace(/[#*`>]/g,'').slice(0, 80) || '(empty note)') + '</div>' +
+      '<div class="sz">' + (s.body || '').length.toLocaleString() + ' chars · click to restore</div></div>';
+  }).join('') : '<div style="padding:14px;color:var(--subtle);font-size:12.5px">No snapshots yet. One is kept every minute while you edit, plus one on each manual save.</div>';
+}
+function updateStorageBar(){
+  var bytes = 0;
+  try { bytes = new Blob([localStorage.getItem(KEY) || '']).size; } catch(e){}
+  var pct = Math.min(100, (bytes / (5 * 1024 * 1024)) * 100);
+  $('storageFill').style.width = pct.toFixed(1) + '%';
+  $('storage').firstChild.nodeValue = 'localStorage · ' + (bytes / 1024).toFixed(1) + ' KB of ~5 MB';
+}
+function setSaved(saved){
+  dirty = !saved;
+  $('saveDot').className = 'dot ' + (saved ? 'saved' : 'dirty');
+  $('saveText').textContent = saved ? 'saved' : 'saving…';
+}
+
+/* ══ Undo toast (Gmail-style hold window) ══════════════════════════ */
+var toastEl = $('toast'), toastT, undoAction = null, undoTick = null, undoTimer = null;
+function toast(m){
+  toastEl.textContent = m; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 1900);
+}
+function offerUndo(msg, action, seconds){
+  $('undoMsg').textContent = msg;
+  var bar = $('undoBar'); bar.classList.add('show');
+  undoAction = action;
+  var total = (seconds || 10) * 1000, left = total;
+  clearInterval(undoTick); clearTimeout(undoTimer);
+  $('undoBarFill').style.width = '100%';
+  undoTick = setInterval(function(){
+    left -= 100;
+    $('undoBarFill').style.width = Math.max(0, (left / total) * 100) + '%';
+    if(left <= 0) closeUndo();
+  }, 100);
+  undoTimer = setTimeout(closeUndo, total);
+}
+function closeUndo(){
+  clearInterval(undoTick); clearTimeout(undoTimer);
+  $('undoBar').classList.remove('show');
+  undoAction = null;
+}
+$('undoGo').onclick = function(){
+  if(undoAction) undoAction();
+  closeUndo();
+};
+
+/* ══ Autosave + snapshots ══════════════════════════════════════════ */
+function touch(){
+  var n = active(); if(!n) return;
+  n.title = $('title').value.trim() || 'Untitled note';
+  n.body = $('body').value;
+  n.updated = Date.now();
+  setSaved(false);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    persist(); setSaved(true); renderList();
+  }, 350);
+}
+function snapshot(auto){
+  var n = active(); if(!n) return;
+  n.snaps = n.snaps || [];
+  var last = n.snaps[n.snaps.length - 1];
+  if(last && last.body === n.body) return;               // nothing changed
+  n.snaps.push({at:Date.now(), body:n.body, auto:!!auto});
+  if(n.snaps.length > SNAP_MAX) n.snaps = n.snaps.slice(-SNAP_MAX);
+  persist(); renderSnaps(); renderList();
+}
+/* periodic autosave snapshot: every 60s of active editing */
+function armSnapshots(){
+  clearInterval(snapTimer);
+  snapTimer = setInterval(function(){
+    if(document.hidden) return;
+    var n = active();
+    if(n && n.body && dirty) snapshot(true);
+  }, 60000);
+}
+
+/* ══ Wire up ═══════════════════════════════════════════════════════ */
+$('body').addEventListener('input', function(){ touch(); renderPreview(); });
+$('title').addEventListener('input', touch);
+$('body').addEventListener('focus', function(){ armSnapshots(); });
+document.addEventListener('visibilitychange', function(){ if(document.hidden && dirty) { persist(); setSaved(true); } });
+
+$('newNote').onclick = function(){
+  var n = newNote();
+  state.activeId = n.id;
+  persist(); renderList(); renderEditor(); $('body').focus();
+  toast('New note created');
+};
+$('noteList').addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('.note') : null;
+  if(!el) return;
+  state.activeId = el.getAttribute('data-id');
+  $('sidebar').classList.remove('show');
+  persist(); renderList(); renderEditor();
+});
+$('search').addEventListener('input', renderList);
+$('menuBtn').onclick = function(){ $('sidebar').classList.toggle('show'); };
+
+$('deleteBtn').onclick = function(){
+  var n = active(); if(!n) return;
+  if(state.notes.length === 1){ $('body').value = ''; $('title').value = ''; touch(); toast('Cleared the last note'); return; }
+  var idx = state.notes.indexOf(n);
+  var removed = state.notes.splice(idx, 1)[0];
+  state.activeId = state.notes[Math.max(0, idx - 1)].id;
+  persist(); renderList(); renderEditor();
+  offerUndo('Note deleted', function(){
+    state.notes.splice(Math.min(idx, state.notes.length), 0, removed);
+    state.activeId = removed.id;
+    persist(); renderList(); renderEditor();
+    toast('Note restored');
+  }, 10);
+};
+
+$('snapList').addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('.snap') : null;
+  if(!el) return;
+  var n = active(), i = parseInt(el.getAttribute('data-i'), 10);
+  var snap = n.snaps[i]; if(!snap) return;
+  var previous = {body:n.body, title:n.title};
+  n.body = snap.body; n.updated = Date.now();
+  persist(); renderEditor(); renderList();
+  offerUndo('Restored version from ' + when(snap.at), function(){
+    n.body = previous.body; n.title = previous.title;
+    persist(); renderEditor(); renderList(); toast('Restore undone');
+  }, 10);
+});
+
+$('histBtn').onclick = function(){ $('hist').classList.toggle('open'); };
+$('closeHist').onclick = function(){ $('hist').classList.remove('open'); };
+
+document.querySelectorAll('#viewSeg button').forEach(function(b){
+  b.onclick = function(){
+    document.querySelectorAll('#viewSeg button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    var v = b.getAttribute('data-view');
+    var panes = $('panes');
+    panes.classList.toggle('solo', v !== 'split');
+    panes.children[0].style.display = v === 'read' ? 'none' : 'flex';
+    panes.children[1].style.display = v === 'edit' ? 'none' : 'flex';
+  };
+});
+
+function copyText(t, msg){
+  function done(){ toast(msg); }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+  function fb(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard unavailable'); }
+    document.body.removeChild(ta); }
+}
+function download(name, text, type){
+  var b = new Blob([text], {type:type || 'text/plain'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast('Downloaded ' + name);
+}
+$('copyBtn').onclick = function(){
+  if(!$('body').value){ toast('Note is empty'); return; }
+  copyText($('body').value, 'Note copied (' + $('body').value.length.toLocaleString() + ' chars)');
+};
+$('dlBtn').onclick = function(){
+  if(!$('body').value){ toast('Note is empty'); return; }
+  snapshot(false);
+  download(noteTitle(active()).replace(/[^\w\-. ]+/g,'').trim().replace(/\s+/g,'-').toLowerCase() + '.md', $('body').value);
+};
+$('htmlBtn').onclick = function(){
+  var md = $('body').value; if(!md){ toast('Note is empty'); return; }
+  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>' + esc(noteTitle(active())) + '</title><style>body{font-family:system-ui,-apple-system,sans-serif;' +
+    'max-width:760px;margin:40px auto;padding:0 20px;line-height:1.7;color:#18181b}' +
+    'pre{background:#f4f4f5;padding:12px 14px;border-radius:8px;overflow:auto}code{background:#f4f4f5;padding:1px 5px;border-radius:4px}' +
+    'blockquote{border-left:3px solid #6366f1;margin:0;padding-left:14px;color:#52525b}table{border-collapse:collapse}' +
+    'th,td{border:1px solid #e4e4e7;padding:6px 10px}</style></head><body>' + mdToHTML(md) + '</body></html>';
+  snapshot(false);
+  download(noteTitle(active()).replace(/[^\w\-. ]+/g,'').trim().replace(/\s+/g,'-').toLowerCase() + '.html', html, 'text/html');
+};
+$('exportAll').onclick = function(){
+  var out = state.notes.map(function(n){
+    return '# ' + noteTitle(n) + '\n\n<!-- saved ' + new Date(n.updated).toISOString() + ' -->\n\n' + (n.body || '');
+  }).join('\n\n---\n\n');
+  download('utility-belt-notes.md', out);
+};
+$('importBtn').onclick = function(){ $('importFile').click(); };
+$('importFile').onchange = function(e){
+  var f = e.target.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    var n = newNote();
+    n.body = String(fr.result);
+    n.title = f.name.replace(/\.(md|txt|markdown)$/i,'');
+    n.created = n.updated = Date.now();
+    state.notes.unshift(n); state.activeId = n.id;
+    persist(); renderList(); renderEditor(); toast('Imported ' + f.name);
+  };
+  fr.readAsText(f);
+  e.target.value = '';
+};
+
+/* keyboard-first: Cmd/Ctrl+S saves a snapshot, Cmd/Ctrl+K new note */
+document.addEventListener('keydown', function(e){
+  var mod = e.metaKey || e.ctrlKey;
+  if(mod && (e.key === 's' || e.key === 'S')){
+    e.preventDefault(); snapshot(false); toast('Snapshot saved to history'); return;
+  }
+  if(mod && (e.key === 'k' || e.key === 'K')){
+    e.preventDefault(); $('newNote').click(); return;
+  }
+  if(e.key === 'Escape'){ closeUndo(); $('hist').classList.remove('open'); }
+});
+window.addEventListener('beforeunload', function(){ if(dirty){ persist(); } });
+
+/* ══ Init ══════════════════════════════════════════════════════════ */
+load();
+persist();
+renderList();
+renderEditor();
+updateStorageBar();
+if(!$('body').value){
+  $('body').value = '# Welcome to Scratchpad\n\n- **Autosaves** as you type (no Save button)\n' +
+  '- Keeps a **version history** — press `Ctrl/Cmd+S` for a manual snapshot, or open 🕘 History\n' +
+  '- **Split view** renders Markdown on the right\n\nTry deleting a note: you get 10 seconds to undo.\n';
+  touch();
+  renderPreview();
+  setTimeout(function(){ persist(); setSaved(true); renderList(); }, 400);
+}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pivot Table — Utility Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#232327;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.16);
+  --text:#fafafa;--muted:#71717a;--subtle:#3f3f46;
+  --accent:#6366f1;--accent-2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --good:#34d399;--warn:#fbbf24;--bad:#f87171;
+  --radius:10px;--card-radius:14px;--transition:160ms cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(600px 380px at 15% 0%,rgba(99,102,241,.10),transparent 70%),
+             radial-gradient(520px 400px at 92% 8%,rgba(139,92,246,.08),transparent 70%)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;
+  padding:0 20px;height:56px;background:rgba(9,9,11,.86);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border)}
+header a{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;
+  font-size:14px;font-weight:600}
+.logo-mark{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+header .spacer{flex:1}
+header .meta{font-size:12px;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);padding:3px 10px;border-radius:20px}
+main{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 20px 70px}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);
+  padding:18px;margin-bottom:16px}
+.card h2{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2 .step{width:20px;height:20px;border-radius:6px;background:var(--accent-glow);
+  color:var(--accent-2);display:flex;align-items:center;justify-content:center;font-size:11px}
+textarea{width:100%;height:130px;resize:vertical;background:var(--surface-2);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;font:12.5px/1.6
+  ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}
+textarea:focus{border-color:rgba(99,102,241,.5)}
+select,input[type=text],input[type=number]{background:var(--surface-2);color:var(--text);
+  border:1px solid var(--border);border-radius:8px;padding:7px 10px;font:13px inherit;
+  font-family:inherit;outline:none;max-width:100%}
+select:focus,input:focus{border-color:rgba(99,102,241,.5)}
+button{font-family:inherit;font-size:13px;font-weight:500;color:var(--text);
+  background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  padding:7px 14px;cursor:pointer;transition:all var(--transition)}
+button:hover{border-color:var(--border-hover);background:var(--surface-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#4f46e5;border-color:#4f46e5}
+button.ghost{background:transparent}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.mt{margin-top:12px}
+label.file{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;
+  font-size:13px;font-weight:500;transition:all var(--transition)}
+label.file:hover{border-color:var(--border-hover);background:var(--surface-3)}
+label.file input{display:none}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.field-box{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px}
+.field-box h3{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--subtle);margin-bottom:8px}
+.field-box select[multiple]{width:100%;min-height:104px;padding:5px;font-size:12.5px}
+.field-box select[multiple] option{padding:3px 6px;border-radius:5px}
+.val-row{display:flex;gap:6px;margin-bottom:6px}
+.val-row select{flex:1;min-width:0}
+.val-row button{padding:6px 9px;color:var(--muted)}
+.hintline{font-size:11.5px;color:var(--subtle);margin-top:8px}
+.tablewrap{overflow:auto;max-height:60vh;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--surface-2)}
+table{border-collapse:separate;border-spacing:0;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 11px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+  white-space:nowrap;text-align:right}
+th{position:sticky;top:0;background:var(--surface-3);font-weight:600;z-index:2;text-align:right}
+th.rowhead,td.rowhead{position:sticky;left:0;background:var(--surface-3);text-align:left;
+  font-weight:500;z-index:1;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+th.corner{left:0;z-index:3;text-align:left}
+tr.total td,tr.total th{font-weight:600;background:rgba(99,102,241,.10);color:var(--accent-2)}
+td.total,th.total{background:rgba(99,102,241,.06)}
+tr:hover td{background:rgba(255,255,255,.03)}
+tr:hover td.rowhead{background:var(--surface-3)}
+.tag{font-size:10.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:20px;padding:2px 9px}
+.empty{padding:44px 16px;text-align:center;color:var(--muted);font-size:13px}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:6px;font-weight:600}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface-3);border:1px solid var(--border-hover);padding:10px 18px;
+  border-radius:var(--radius);font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:5px}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html"><span class="logo-mark">🛠</span> Utility Belt</a>
+  <span class="spacer"></span>
+  <span class="meta" id="meta">no data loaded</span>
+</header>
+
+<main>
+  <h1>Pivot Table</h1>
+  <p class="sub">Paste CSV or TSV, drop fields into Rows / Columns / Values, and get grouped totals,
+  averages and counts instantly — the Excel pivot table workflow, in your browser.</p>
+
+  <section class="card">
+    <h2><span class="step">1</span> Source data</h2>
+    <textarea id="src" spellcheck="false" placeholder="region,product,month,units,price
+North,Widget,Jan,120,9.99
+South,Gadget,Jan,80,14.50
+..."></textarea>
+    <div class="row mt">
+      <button class="primary" id="parse">Build table</button>
+      <label class="file">📂 Open CSV/TSV<input type="file" id="file" accept=".csv,.tsv,.txt"></label>
+      <button class="ghost" id="sample">Load sample</button>
+      <button class="ghost" id="clear">Clear</button>
+      <span class="tag" id="srcStat">Detected: —</span>
+    </div>
+    <div class="hintline">First row is treated as the header. Delimiter (comma, tab, semicolon or pipe)
+      is detected automatically; quoted fields containing delimiters or line breaks are supported.</div>
+  </section>
+
+  <section class="card" id="fieldsCard" style="display:none">
+    <h2><span class="step">2</span> Pivot layout</h2>
+    <div class="fields">
+      <div class="field-box">
+        <h3>Rows</h3>
+        <select id="rows" multiple></select>
+        <div class="hintline">Group rows by these fields (multi-select).</div>
+      </div>
+      <div class="field-box">
+        <h3>Columns</h3>
+        <select id="cols" multiple></select>
+        <div class="hintline">Optional: spread one or more fields across columns.</div>
+      </div>
+      <div class="field-box">
+        <h3>Values</h3>
+        <div id="vals"></div>
+        <button class="ghost" id="addVal" style="margin-top:6px">＋ Add value</button>
+      </div>
+      <div class="field-box">
+        <h3>Filter</h3>
+        <div class="row">
+          <select id="filterCol" style="flex:1"><option value="">— none —</option></select>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <select id="filterOp" style="flex:1">
+            <option value="contains">contains</option>
+            <option value="equals">equals</option>
+            <option value="ne">not equal</option>
+            <option value="gt">greater than</option>
+            <option value="lt">less than</option>
+          </select>
+          <input type="text" id="filterVal" placeholder="value" style="flex:1;min-width:0">
+        </div>
+        <div class="hintline">Filters are applied before aggregation (like Excel's report filter).</div>
+      </div>
+    </div>
+    <div class="row mt">
+      <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="showTotals" checked> Show totals</label>
+      <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="sortRows" checked> Sort rows by value (desc)</label>
+    </div>
+  </section>
+
+  <section class="card" id="resultCard" style="display:none">
+    <h2><span class="step">3</span> Result</h2>
+    <div class="row" style="margin-bottom:12px">
+      <button id="copyCSV">📋 Copy CSV</button>
+      <button id="copyMD">📋 Copy Markdown</button>
+      <button id="copyJSON">📋 Copy JSON</button>
+      <button id="dl">💾 Download CSV</button>
+      <span class="tag" id="outStat"></span>
+    </div>
+    <div class="tablewrap" id="tablewrap"></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+/* ══ CSV parsing (RFC-4180 style, with delimiter sniffing) ══════════ */
+function sniff(text){
+  var line = text.split(/\r?\n/).find(function(l){ return l.trim().length; }) || '';
+  var counts = [[',',0],['\t',0],[';',0],['|',0]];
+  var inQ = false;
+  for(var i=0;i<line.length;i++){
+    var c = line[i];
+    if(c === '"') inQ = !inQ;
+    else if(!inQ) counts.forEach(function(p){ if(c === p[0]) p[1]++; });
+  }
+  counts.sort(function(a,b){ return b[1]-a[1]; });
+  return counts[0][1] > 0 ? counts[0][0] : ',';
+}
+function parseCSV(text, delim){
+  var rows = [], row = [], field = '', inQ = false;
+  text = text.replace(/^\uFEFF/, '');
+  for(var i=0;i<text.length;i++){
+    var c = text[i];
+    if(inQ){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; }
+        else inQ = false;
+      } else field += c;
+    } else {
+      if(c === '"') inQ = true;
+      else if(c === delim){ row.push(field); field = ''; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else if(c === '\r'){ /* skip */ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  // drop fully-empty trailing rows
+  return rows.filter(function(r){ return r.some(function(v){ return String(v).trim() !== ''; }); });
+}
+function num(v){
+  if(typeof v === 'number') return isFinite(v) ? v : null;
+  var s = String(v).trim().replace(/[$€£,\s]/g,'').replace(/%$/,'');
+  if(s === '' || s === '-' || s === '—') return null;
+  var n = Number(s);
+  return isFinite(n) ? n : null;
+}
+function fmt(n){
+  if(n === null || n === undefined || !isFinite(n)) return '';
+  var d = Math.abs(n) >= 1000 ? 0 : (Math.abs(n % 1) < 1e-9 ? 0 : 2);
+  return n.toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+
+/* ══ Aggregations ═══════════════════════════════════════════════════ */
+var AGGS = {
+  sum:  {label:'Sum',       fn:function(a){ var t=0,c=0; for(var i=0;i<a.length;i++){ if(a[i]!==null){t+=a[i];c++;} } return c?t:null; }},
+  count:{label:'Count',     fn:function(a){ return a.length; }},
+  countd:{label:'Count distinct', fn:function(a){ var s={},c=0; for(var i=0;i<a.length;i++){ var k='#'+a[i]; if(!s[k]){s[k]=1;c++;} } return c; }},
+  avg:  {label:'Average',   fn:function(a){ var t=0,c=0; for(var i=0;i<a.length;i++){ if(a[i]!==null){t+=a[i];c++;} } return c?t/c:null; }},
+  min:  {label:'Min',       fn:function(a){ var m=null; a.forEach(function(v){ if(v!==null&&(m===null||v<m)) m=v; }); return m; }},
+  max:  {label:'Max',       fn:function(a){ var m=null; a.forEach(function(v){ if(v!==null&&(m===null||v>m)) m=v; }); return m; }},
+  median:{label:'Median',   fn:function(a){ var s=a.filter(function(v){return v!==null;}).sort(function(x,y){return x-y;});
+            if(!s.length) return null; var m=Math.floor(s.length/2);
+            return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }},
+  stdev:{label:'Std dev',   fn:function(a){ var s=a.filter(function(v){return v!==null;}); if(s.length<2) return null;
+            var m=s.reduce(function(x,y){return x+y;},0)/s.length;
+            return Math.sqrt(s.reduce(function(x,y){return x+(y-m)*(y-m);},0)/(s.length-1)); }},
+  first:{label:'First',     fn:function(a){ return a.length ? a[0] : null; }},
+  last: {label:'Last',      fn:function(a){ return a.length ? a[a.length-1] : null; }}
+};
+
+/* ══ State ══════════════════════════════════════════════════════════ */
+var header = [], data = [], numericCols = {}, delimiter = ',';
+var $ = function(id){ return document.getElementById(id); };
+var toastEl = $('toast'), toastT;
+function toast(m){ toastEl.textContent = m; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 2000); }
+
+/* ══ Load data ══════════════════════════════════════════════════════ */
+function setData(text){
+  if(!text || !text.trim()){ toast('Nothing to parse'); return; }
+  delimiter = sniff(text);
+  var rows = parseCSV(text, delimiter);
+  if(rows.length < 2){ toast('Need a header row plus at least one data row'); return; }
+  header = rows[0].map(function(h, i){ return (h || '').trim() || ('Column ' + (i+1)); });
+  data = rows.slice(1).map(function(r){
+    var o = {};
+    header.forEach(function(h, i){ o[h] = r[i] === undefined ? '' : String(r[i]).trim(); });
+    return o;
+  });
+  // numeric column detection
+  numericCols = {};
+  header.forEach(function(h){
+    var n = 0, t = 0;
+    data.forEach(function(r){ var v = r[h]; if(v === '') return; t++; if(num(v) !== null) n++; });
+    numericCols[h] = t > 0 && n / t > 0.7;
+  });
+  $('srcStat').textContent = 'Detected: ' + (delimiter === '\t' ? 'TAB' : '"' + delimiter + '"') +
+    ' · ' + data.length.toLocaleString() + ' rows × ' + header.length + ' cols';
+  $('meta').textContent = data.length.toLocaleString() + ' rows loaded';
+  buildFieldPickers();
+  $('fieldsCard').style.display = 'block';
+  $('resultCard').style.display = 'block';
+  compute();
+}
+function buildFieldPickers(){
+  var rowsSel = $('rows'), colsSel = $('cols'), fCol = $('filterCol');
+  rowsSel.innerHTML = colsSel.innerHTML = fCol.innerHTML = '';
+  header.forEach(function(h){
+    var opt = function(){ var o = document.createElement('option'); o.value = h; o.textContent = h + (numericCols[h] ? ' 123' : ' ⓐ'); return o; };
+    rowsSel.appendChild(opt());
+    colsSel.appendChild(opt());
+  });
+  fCol.innerHTML = '<option value="">— none —</option>';
+  header.forEach(function(h){ var o = document.createElement('option'); o.value = h; o.textContent = h; fCol.appendChild(o); });
+  rowsSel.options[0] && (rowsSel.options[0].selected = true);
+  var firstNum = header.find(function(h){ return numericCols[h]; }) || header[header.length-1];
+  $('vals').innerHTML = '';
+  addValue(firstNum, numericCols[firstNum] ? 'sum' : 'count');
+}
+function addValue(field, agg){
+  var wrap = document.createElement('div');
+  wrap.className = 'val-row';
+  var f = document.createElement('select');
+  header.forEach(function(h){ var o = document.createElement('option'); o.value = h;
+    o.textContent = h + (numericCols[h] ? ' 123' : ' ⓐ'); f.appendChild(o); });
+  f.value = field || header[0];
+  var a = document.createElement('select');
+  Object.keys(AGGS).forEach(function(k){ var o = document.createElement('option'); o.value = k;
+    o.textContent = AGGS[k].label; a.appendChild(o); });
+  a.value = agg || (numericCols[f.value] ? 'sum' : 'count');
+  var rm = document.createElement('button');
+  rm.textContent = '✕'; rm.title = 'Remove this value';
+  rm.onclick = function(){ wrap.remove(); compute(); };
+  f.onchange = function(){ if(!numericCols[f.value] && a.value === 'sum') a.value = 'count'; compute(); };
+  a.onchange = function(){ compute(); };
+  wrap.appendChild(f); wrap.appendChild(a); wrap.appendChild(rm);
+  $('vals').appendChild(wrap);
+  return wrap;
+}
+function valueSpecs(){
+  return Array.prototype.map.call($('vals').querySelectorAll('.val-row'), function(r){
+    var s = r.querySelectorAll('select');
+    return {field:s[0].value, agg:s[1].value};
+  });
+}
+
+/* ══ Filtering ══════════════════════════════════════════════════════ */
+function applyFilter(rows){
+  var col = $('filterCol').value, op = $('filterOp').value, val = $('filterVal').value.trim();
+  if(!col || !val) return rows;
+  var v = val.toLowerCase();
+  return rows.filter(function(r){
+    var cell = (r[col] === undefined ? '' : r[col]);
+    switch(op){
+      case 'contains': return cell.toLowerCase().indexOf(v) !== -1;
+      case 'equals':   return cell.toLowerCase() === v;
+      case 'ne':       return cell.toLowerCase() !== v;
+      case 'gt':       var a = num(cell), b = num(val); return a !== null && b !== null && a > b;
+      case 'lt':       var c = num(cell), d = num(val); return c !== null && d !== null && c < d;
+      default: return true;
+    }
+  });
+}
+
+/* ══ Pivot computation ══════════════════════════════════════════════ */
+var lastPivot = null;
+function compute(){
+  var rowFields = Array.prototype.slice.call($('rows').selectedOptions).map(function(o){ return o.value; });
+  var colFields = Array.prototype.slice.call($('cols').selectedOptions).map(function(o){ return o.value; });
+  var specs = valueSpecs();
+  var rows = applyFilter(data);
+
+  var body = $('tablewrap');
+  if(!rowFields.length || !specs.length){
+    body.innerHTML = '<div class="empty"><b>Pick at least one row field and one value</b>' +
+      'Select fields under Step 2 to build the cross-tab.</div>';
+    lastPivot = null; return;
+  }
+
+  var map = {}, rowKeys = [], colKeys = [], rowSeen = {}, colSeen = {};
+  rows.forEach(function(r){
+    var rk = rowFields.map(function(f){ return r[f]; }).join(' ▸ ');
+    var ck = colFields.length ? colFields.map(function(f){ return r[f]; }).join(' ▸ ') : 'Total';
+    if(!rowSeen[rk]){ rowSeen[rk] = 1; rowKeys.push(rk); }
+    if(!colSeen[ck]){ colSeen[ck] = 1; colKeys.push(ck); }
+    map[rk] = map[rk] || {};
+    var cell = map[rk][ck] = map[rk][ck] || [];
+    cell.push(r);
+  });
+  colKeys.sort(cmpKey);
+  if(!colFields.length) colKeys = ['Total'];
+
+  function cellsFor(rk, ck){
+    var recs = (map[rk] && map[rk][ck]) || [];
+    return specs.map(function(sp){
+      var raw = recs.map(function(r){
+        var v = r[sp.field];
+        if(sp.agg === 'count' || sp.agg === 'countd') return v;
+        var n = num(v);
+        return sp.agg === 'first' || sp.agg === 'last' ? v : n;
+      });
+      return AGGS[sp.agg].fn(raw);
+    });
+  }
+  var colTotals = {}, grand = [];
+  colKeys.forEach(function(ck){ colTotals[ck] = cellsFor(null, ck, true); });
+  function flat(k){ return k; }
+  // aggregate the whole dataset per column key
+  colKeys.forEach(function(ck){
+    var recs = [];
+    rowKeys.forEach(function(rk){ if(map[rk] && map[rk][ck]) recs = recs.concat(map[rk][ck]); });
+    colTotals[ck] = specs.map(function(sp){
+      var raw = recs.map(function(r){
+        var v = r[sp.field];
+        if(sp.agg === 'count' || sp.agg === 'countd') return v;
+        var n = num(v);
+        return (sp.agg === 'first' || sp.agg === 'last') ? v : n;
+      });
+      return AGGS[sp.agg].fn(raw);
+    });
+  });
+  grand = specs.map(function(sp, i){
+    var recs = rows;
+    var raw = recs.map(function(r){
+      var v = r[sp.field];
+      if(sp.agg === 'count' || sp.agg === 'countd') return v;
+      var n = num(v);
+      return (sp.agg === 'first' || sp.agg === 'last') ? v : n;
+    });
+    return AGGS[sp.agg].fn(raw);
+  });
+
+  var rowAgg = {};
+  rowKeys.forEach(function(rk){ rowAgg[rk] = cellsFor(rk, colKeys[0]); });
+  if($('sortRows').checked && specs.length){
+    rowKeys.sort(function(a, b){
+      var va = rowAgg[a][0], vb = rowAgg[b][0];
+      if(va === null) return 1; if(vb === null) return -1;
+      if(typeof va === 'number' && typeof vb === 'number') return vb - va;
+      return String(va).localeCompare(String(vb));
+    });
+  } else {
+    rowKeys.sort(cmpKey);
+  }
+  rowAgg = {};
+  rowKeys.forEach(function(rk){ rowAgg[rk] = cellsFor(rk, colKeys[0]); });
+
+  lastPivot = {
+    rowFields:rowFields, colFields:colFields, specs:specs,
+    rowKeys:rowKeys, colKeys:colKeys,
+    cell:function(rk, ck){ return cellsFor(rk, ck); },
+    rowTotals:function(rk){
+      var recs = [];
+      colKeys.forEach(function(ck){ if(map[rk] && map[rk][ck]) recs = recs.concat(map[rk][ck]); });
+      return specs.map(function(sp){
+        var raw = recs.map(function(r){
+          var v = r[sp.field];
+          if(sp.agg === 'count' || sp.agg === 'countd') return v;
+          var n = num(v); return (sp.agg === 'first' || sp.agg === 'last') ? v : n;
+        });
+        return AGGS[sp.agg].fn(raw);
+      });
+    },
+    colTotals:colTotals, grand:grand, filteredCount:rows.length, totalCount:data.length
+  };
+  render(lastPivot);
+}
+function cmpKey(a, b){
+  var na = num(a), nb = num(b);
+  if(na !== null && nb !== null) return na - nb;
+  return String(a).localeCompare(String(b), undefined, {numeric:true});
+}
+
+/* ══ Render ═════════════════════════════════════════════════════════ */
+function render(P){
+  var showTotals = $('showTotals').checked;
+  var multiSpec = P.specs.length > 1;
+  var h = '<table><thead>';
+  h += '<tr>';
+  h += '<th class="corner">' + esc(P.rowFields.join(' ▸ ')) + '</th>';
+  P.colKeys.forEach(function(ck){
+    P.specs.forEach(function(sp, i){
+      h += '<th>' + (P.colKeys.length > 1 || multiSpec ? esc(ck) + ' ' : '') +
+           (multiSpec ? '<span style="color:var(--muted);font-weight:500">' + AGGS[sp.agg].label.toLowerCase() +
+            ' of </span>' + esc(sp.field) : esc(sp.field) + '<span style="color:var(--muted);font-weight:500"> · ' +
+            AGGS[sp.agg].label.toLowerCase() + '</span>') + '</th>';
+    });
+  });
+  if(showTotals && P.colKeys.length > 1){
+    P.specs.forEach(function(sp){ h += '<th class="total">Total ' + esc(sp.field) + '</th>'; });
+  }
+  h += '</tr></thead><tbody>';
+
+  P.rowKeys.forEach(function(rk){
+    h += '<tr><td class="rowhead" title="' + esc(rk) + '">' + esc(rk) + '</td>';
+    P.colKeys.forEach(function(ck){
+      var vals = P.cell(rk, ck);
+      vals.forEach(function(v){ h += '<td>' + fmt(v) + '</td>'; });
+    });
+    if(showTotals && P.colKeys.length > 1){
+      P.rowTotals(rk).forEach(function(v){ h += '<td class="total">' + fmt(v) + '</td>'; });
+    }
+    h += '</tr>';
+  });
+
+  if(showTotals && P.rowKeys.length > 1){
+    h += '<tr class="total"><td class="rowhead">Grand total</td>';
+    P.colKeys.forEach(function(ck){ P.colTotals[ck].forEach(function(v){ h += '<td>' + fmt(v) + '</td>'; }); });
+    if(P.colKeys.length > 1){ P.grand.forEach(function(v){ h += '<td>' + fmt(v) + '</td>'; }); }
+    h += '</tr>';
+  }
+  h += '</tbody></table>';
+  $('tablewrap').innerHTML = h;
+
+  var n = P.rowKeys.length * P.colKeys.length;
+  $('outStat').textContent = P.rowKeys.length + ' × ' + P.colKeys.length + ' cells · ' +
+    P.filteredCount.toLocaleString() + ' of ' + P.totalCount.toLocaleString() + ' rows aggregated';
+  $('meta').textContent = n + ' pivot cells';
+}
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══ Export ═════════════════════════════════════════════════════════ */
+function toMatrix(P){
+  var head = [P.rowFields.join(' / ')];
+  P.colKeys.forEach(function(ck){
+    P.specs.forEach(function(sp){
+      head.push((P.colKeys.length > 1 ? ck + ' — ' : '') + AGGS[sp.agg].label + ' of ' + sp.field);
+    });
+  });
+  if(P.colKeys.length > 1) P.specs.forEach(function(sp){ head.push('Total ' + sp.field); });
+  var out = [head];
+  P.rowKeys.forEach(function(rk){
+    var r = [rk];
+    P.colKeys.forEach(function(ck){ P.cell(rk, ck).forEach(function(v){ r.push(v === null ? '' : v); }); });
+    if(P.colKeys.length > 1) P.rowTotals(rk).forEach(function(v){ r.push(v === null ? '' : v); });
+    out.push(r);
+  });
+  if(P.rowKeys.length > 1){
+    var t = ['Grand total'];
+    P.colKeys.forEach(function(ck){ P.colTotals[ck].forEach(function(v){ t.push(v === null ? '' : v); }); });
+    if(P.colKeys.length > 1) P.grand.forEach(function(v){ t.push(v === null ? '' : v); });
+    out.push(t);
+  }
+  return out;
+}
+function csvCell(v){
+  var s = String(v === null || v === undefined ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function copyText(text, msg){
+  function done(){ toast(msg); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, fb);
+  } else fb();
+  function fb(){
+    var ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard unavailable'); }
+    document.body.removeChild(ta);
+  }
+}
+function guard(){ if(!lastPivot){ toast('Nothing to export yet'); return false; } return true; }
+
+/* ══ Wiring ═════════════════════════════════════════════════════════ */
+$('parse').onclick = function(){ setData($('src').value); };
+$('clear').onclick = function(){ $('src').value=''; header=[]; data=[]; lastPivot=null;
+  $('fieldsCard').style.display='none'; $('resultCard').style.display='none';
+  $('meta').textContent='no data loaded'; $('srcStat').textContent='Detected: —'; toast('Cleared'); };
+$('file').onchange = function(e){
+  var f = e.target.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){ $('src').value = fr.result; setData(String(fr.result)); };
+  fr.readAsText(f);
+};
+$('sample').onclick = function(){
+  $('src').value =
+'region,product,rep,month,units,unit_price\n' +
+'North,Widget,Ana,Jan,120,9.99\n' +
+'North,Widget,Ana,Feb,98,9.99\n' +
+'North,Gadget,Ben,Jan,45,24.50\n' +
+'South,Widget,Cara,Jan,210,9.99\n' +
+'South,Gadget,Ben,Feb,60,24.50\n' +
+'South,Gizmo,Cara,Feb,33,99.00\n' +
+'East,Widget,Dan,Jan,175,9.99\n' +
+'East,Gizmo,Dan,Feb,12,99.00\n' +
+'East,Gadget,Ana,Feb,88,24.50\n' +
+'West,Widget,Cara,Jan,66,9.99\n' +
+'West,Gizmo,Ben,Feb,25,99.00\n' +
+'West,Gadget,Dan,Jan,140,24.50\n';
+  setData($('src').value);
+};
+$('addVal').onclick = function(){ addValue(header[0], numericCols[header[0]] ? 'sum' : 'count'); compute(); };
+['rows','cols','showTotals','sortRows'].forEach(function(id){ $(id).onchange = compute; });
+['filterCol','filterOp'].forEach(function(id){ $(id).onchange = compute; });
+$('filterVal').oninput = compute;
+$('copyCSV').onclick = function(){
+  if(!guard()) return;
+  copyText(toMatrix(lastPivot).map(function(r){ return r.map(csvCell).join(','); }).join('\n'), 'CSV copied');
+};
+$('copyMD').onclick = function(){
+  if(!guard()) return;
+  var m = toMatrix(lastPivot);
+  var lines = ['| ' + m[0].join(' | ') + ' |', '| ' + m[0].map(function(){ return '---'; }).join(' | ') + ' |'];
+  m.slice(1).forEach(function(r){ lines.push('| ' + r.map(function(c){ return c === '' ? ' ' : c; }).join(' | ') + ' |'); });
+  copyText(lines.join('\n'), 'Markdown table copied');
+};
+$('copyJSON').onclick = function(){
+  if(!guard()) return;
+  var m = toMatrix(lastPivot);
+  var objs = m.slice(1).map(function(r){
+    var o = {}; m[0].forEach(function(h, i){ var v = num(r[i]); o[h] = (v !== null && String(r[i]).trim() !== '') ? v : (r[i] === undefined ? '' : r[i]); });
+    return o;
+  });
+  copyText(JSON.stringify(objs, null, 2), 'JSON copied');
+};
+$('dl').onclick = function(){
+  if(!guard()) return;
+  var csv = toMatrix(lastPivot).map(function(r){ return r.map(csvCell).join(','); }).join('\n');
+  var b = new Blob([csv], {type:'text/csv'}); var a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'pivot-table.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast('Downloaded pivot-table.csv');
+};
+$('src').value = '';
+})();
+</script>
+</body>
+</html>

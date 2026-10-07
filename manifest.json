@@ -138,6 +138,47 @@
     "description": "enforcing macro-to-micro task decomposition and single-focus execution.",
     "category": ["Productivity"],
     "icon": "⚡"
+  },
+  {
+    "title": "Command Palette",
+    "file": "tools/command-palette.html",
+    "description": "VS Code-style Ctrl/Cmd+K launcher — fuzzy-search every tool and run built-in commands.",
+    "category": ["Productivity", "UI"],
+    "icon": "⌘"
+  },
+  {
+    "title": "Pivot Table",
+    "file": "tools/pivot-table.html",
+    "description": "Excel-style pivot tables: paste CSV, group by rows/columns, sum, count or average instantly.",
+    "category": ["Data", "Productivity"],
+    "icon": "🧮"
+  },
+  {
+    "title": "Text Toolkit",
+    "file": "tools/text-toolkit.html",
+    "description": "60+ bulk text transforms plus a live regex find & replace workbench with match preview.",
+    "category": ["Text", "Productivity"],
+    "icon": "🔤"
+  },
+  {
+    "title": "Text Diff",
+    "file": "tools/text-diff.html",
+    "description": "Compare two texts line by line with word-level highlighting — unified, split or inline.",
+    "category": ["Text", "Dev"],
+    "icon": "🔀"
+  },
+  {
+    "title": "Scratchpad",
+    "file": "tools/scratchpad.html",
+    "description": "Markdown notes with autosave, version history, split live preview and export.",
+    "category": ["Text", "Productivity"],
+    "icon": "📝"
+  },
+  {
+    "title": "Color Studio",
+    "file": "tools/color-studio.html",
+    "description": "Palette harmonies, tint/shade scales, WCAG contrast checks and CSS/JSON/Tailwind export.",
+    "category": ["Design", "UI"],
+    "icon": "🎨"
   }
-  
 ]

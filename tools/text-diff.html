@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Text Diff — Utility Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#232327;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.16);
+  --text:#fafafa;--muted:#71717a;--subtle:#3f3f46;
+  --accent:#6366f1;--accent-2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --add:#3fb950;--add-bg:rgba(63,185,80,.12);--del:#f85149;--del-bg:rgba(248,81,73,.12);
+  --radius:10px;--card-radius:14px;--transition:160ms cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;
+  line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(600px 380px at 10% 0%,rgba(99,102,241,.10),transparent 70%),
+             radial-gradient(520px 420px at 95% 5%,rgba(139,92,246,.08),transparent 70%)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:0 20px;height:56px;
+  background:rgba(9,9,11,.86);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+header a{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:600}
+.logo-mark{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+header .spacer{flex:1}
+header .meta{font-size:12px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  padding:3px 10px;border-radius:20px}
+main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:26px 20px 70px}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:16px;margin-bottom:16px}
+.card h2{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .step{width:20px;height:20px;border-radius:6px;background:var(--accent-glow);color:var(--accent-2);
+  display:flex;align-items:center;justify-content:center;font-size:11px}
+.card h2 .right{margin-left:auto;font-size:11px;letter-spacing:0;text-transform:none;color:var(--subtle);font-weight:500}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.split{grid-template-columns:1fr}}
+textarea{width:100%;height:200px;resize:vertical;background:var(--surface-2);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;
+  font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}
+textarea:focus{border-color:rgba(99,102,241,.5)}
+button{font-family:inherit;font-size:13px;font-weight:500;color:var(--text);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:7px 13px;cursor:pointer;transition:all var(--transition)}
+button:hover{border-color:var(--border-hover);background:var(--surface-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#4f46e5;border-color:#4f46e5}
+button.ghost{background:transparent}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.row.mt{margin-top:11px}
+label.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.seg button{border:none;border-radius:0;padding:6px 13px;font-size:12.5px;background:transparent;color:var(--muted)}
+.seg button.on{background:var(--accent-glow);color:var(--accent-2)}
+.seg button+button{border-left:1px solid var(--border)}
+input[type=text]{background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+  border-radius:7px;padding:5px 8px;font:12.5px inherit;font-family:inherit;outline:none;width:48px}
+.tag{font-size:11.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums}
+.tag.add{color:var(--add);border-color:rgba(63,185,80,.32);background:var(--add-bg)}
+.tag.del{color:var(--del);border-color:rgba(248,81,73,.32);background:var(--del-bg)}
+.tag.mod{color:var(--accent-2);border-color:rgba(99,102,241,.32);background:var(--accent-glow)}
+.diff{max-height:62vh;overflow:auto;background:#0d0d0f;border:1px solid var(--border);
+  border-radius:var(--radius);font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
+.diff table{border-collapse:collapse;width:100%;table-layout:fixed}
+.diff td{padding:1px 0;vertical-align:top;white-space:pre-wrap;word-break:break-word}
+.ln{width:52px;min-width:52px;text-align:right;padding:0 9px 0 6px;color:var(--subtle);
+  user-select:none;border-right:1px solid var(--border);background:rgba(255,255,255,.015)}
+.sign{width:16px;min-width:16px;text-align:center;color:var(--subtle);user-select:none}
+.code{padding-right:12px;color:#a1a1aa}
+tr.ins td,td.ins{background:var(--add-bg)}
+tr.ins .code,td.code.ins{color:#aff5b4}
+tr.del td,td.del{background:var(--del-bg)}
+tr.del .code,td.code.del{color:#ffdcd7}
+td.pad{background:rgba(255,255,255,.015)}
+tr.hunk td{background:rgba(99,102,241,.10);color:var(--accent-2);padding:4px 10px}
+mark.w-ins{background:rgba(63,185,80,.45);color:#eaffea;border-radius:2px}
+mark.w-del{background:rgba(248,81,73,.45);color:#ffeceb;border-radius:2px;text-decoration:line-through}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);font-size:13px}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:6px;font-weight:600}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface-3);
+  border:1px solid var(--border-hover);padding:10px 18px;border-radius:var(--radius);font-size:13px;opacity:0;
+  transition:.2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:5px}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html"><span class="logo-mark">🛠</span> Utility Belt</a>
+  <span class="spacer"></span>
+  <span class="meta" id="meta">no comparison yet</span>
+</header>
+
+<main>
+  <h1>Text Diff</h1>
+  <p class="sub">Compare two versions line by line with word-level highlighting — unified, split or inline.
+  Uses a longest-common-subsequence algorithm, the same family Git's diff uses.</p>
+
+  <section class="card">
+    <h2><span class="step">1</span> The two versions
+      <span class="right">paste text, or load files from disk</span></h2>
+    <div class="split">
+      <div>
+        <div class="row" style="margin-bottom:7px">
+          <strong style="font-size:13px">Original (A)</strong>
+          <label class="tag" style="cursor:pointer">📂 file<input type="file" id="fileA" style="display:none"></label>
+          <button class="ghost" id="clearA" style="padding:3px 9px;font-size:11.5px">clear</button>
+        </div>
+        <textarea id="a" spellcheck="false" placeholder="Paste the original text here…"></textarea>
+      </div>
+      <div>
+        <div class="row" style="margin-bottom:7px">
+          <strong style="font-size:13px">Changed (B)</strong>
+          <label class="tag" style="cursor:pointer">📂 file<input type="file" id="fileB" style="display:none"></label>
+          <button class="ghost" id="clearB" style="padding:3px 9px;font-size:11.5px">clear</button>
+        </div>
+        <textarea id="b" spellcheck="false" placeholder="Paste the changed text here…"></textarea>
+      </div>
+    </div>
+    <div class="row mt">
+      <button class="primary" id="compare">⚡ Compare</button>
+      <button id="swap">⇄ Swap A / B</button>
+      <button id="sample">Load sample</button>
+      <button class="ghost" id="clearAll">Clear both</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span> Options</h2>
+    <div class="row">
+      <div class="seg" id="viewSeg">
+        <button data-view="unified" class="on">Unified</button>
+        <button data-view="split">Split</button>
+        <button data-view="inline">Inline</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="optCase"> ignore case</label>
+      <label class="chk"><input type="checkbox" id="optWs"> ignore whitespace</label>
+      <label class="chk"><input type="checkbox" id="optBlank"> ignore blank lines</label>
+      <label class="chk">context <input type="text" id="ctx" value="3"> lines</label>
+    </div>
+  </section>
+
+  <section class="card" id="resultCard" style="display:none">
+    <h2><span class="step">3</span> Differences
+      <span class="right" id="statLine"></span></h2>
+    <div class="row" style="margin-bottom:12px">
+      <span class="tag add" id="tAdd">+0 added</span>
+      <span class="tag del" id="tDel">−0 removed</span>
+      <span class="tag mod" id="tMod">0 modified</span>
+      <span class="tag" id="tSim">100% similar</span>
+      <button id="copyUnified" style="margin-left:auto">📋 Copy unified diff</button>
+      <button id="copyMD">📋 Copy Markdown</button>
+      <button id="dl">💾 Download .diff</button>
+    </div>
+    <div class="diff" id="diff"></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var toastEl = $('toast'), toastT;
+function toast(m){ toastEl.textContent = m; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 1900); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ══ Normalisation (drives the ignore-* options) ═══════════════════ */
+function normalize(line){
+  var s = line;
+  if($('optWs').checked) s = s.replace(/\s+/g,' ').replace(/^\s|\s$/g,'');
+  if($('optCase').checked) s = s.toLowerCase();
+  return s;
+}
+function splitLines(t, dropBlank){
+  var lines = t.replace(/\r\n?/g,'\n').split('\n');
+  if(dropBlank) lines = lines.filter(function(l){ return l.trim() !== ''; });
+  return lines;
+}
+
+/* ══ Line diff: common prefix/suffix trim + LCS dynamic programming ═ */
+function diffLines(A, B){
+  var sa = A.map(normalize), sb = B.map(normalize);
+  var n = sa.length, m = sb.length, ops = [], i = 0;
+
+  while(i < n && i < m && sa[i] === sb[i]){ ops.push({t:'eq', a:i, b:i}); i++; }
+  var endA = n - 1, endB = m - 1, tail = [];
+  while(endA >= i && endB >= i && sa[endA] === sb[endB]){ tail.unshift({t:'eq', a:endA, b:endB}); endA--; endB--; }
+
+  var midA = sa.slice(i, endA + 1), midB = sb.slice(i, endB + 1);
+  var la = midA.length, lb = midB.length;
+
+  if(la && lb){
+    if(la * lb > 4000000){
+      // Huge block: don't allocate a giant table — report it as one replace
+      for(var z1 = 0; z1 < la; z1++) ops.push({t:'del', a:i + z1, b:null});
+      for(var z2 = 0; z2 < lb; z2++) ops.push({t:'ins', a:null, b:i + z2});
+    } else {
+      var w = lb + 1;
+      var dp = new Uint32Array((la + 1) * w);
+      for(var x = la - 1; x >= 0; x--){
+        for(var y = lb - 1; y >= 0; y--){
+          dp[x * w + y] = midA[x] === midB[y]
+            ? dp[(x + 1) * w + (y + 1)] + 1
+            : Math.max(dp[(x + 1) * w + y], dp[x * w + (y + 1)]);
+        }
+      }
+      var x2 = 0, y2 = 0;
+      while(x2 < la && y2 < lb){
+        if(midA[x2] === midB[y2]){ ops.push({t:'eq', a:i + x2, b:i + y2}); x2++; y2++; }
+        else if(dp[(x2 + 1) * w + y2] >= dp[x2 * w + (y2 + 1)]){ ops.push({t:'del', a:i + x2, b:null}); x2++; }
+        else { ops.push({t:'ins', a:null, b:i + y2}); y2++; }
+      }
+      while(x2 < la){ ops.push({t:'del', a:i + x2, b:null}); x2++; }
+      while(y2 < lb){ ops.push({t:'ins', a:null, b:i + y2}); y2++; }
+    }
+  } else {
+    for(var p = 0; p < la; p++) ops.push({t:'del', a:i + p, b:null});
+    for(var q = 0; q < lb; q++) ops.push({t:'ins', a:null, b:i + q});
+  }
+  return ops.concat(tail);
+}
+
+/* ══ Pair nearby deletions/insertions into "modified" lines ════════ */
+function pairBlocks(ops){
+  var out = [], k = 0;
+  while(k < ops.length){
+    if(ops[k].t === 'eq'){ out.push(ops[k]); k++; continue; }
+    var dels = [], inss = [];
+    while(k < ops.length && ops[k].t !== 'eq'){
+      if(ops[k].t === 'del') dels.push(ops[k]); else inss.push(ops[k]);
+      k++;
+    }
+    var pairs = Math.min(dels.length, inss.length);
+    for(var p = 0; p < pairs; p++) out.push({t:'mod', del:dels[p], ins:inss[p]});
+    for(var d = pairs; d < dels.length; d++) out.push({t:'del', a:dels[d].a, b:null});
+    for(var q = pairs; q < inss.length; q++) out.push({t:'ins', a:null, b:inss[q].b});
+  }
+  return out;
+}
+
+/* ══ Word-level diff inside a modified pair ════════════════════════ */
+function tokenize(s){ return s.match(/\s+|[A-Za-z0-9_']+|[^\sA-Za-z0-9_']/g) || []; }
+function wordDiff(oldLine, newLine){
+  var a = tokenize(oldLine), b = tokenize(newLine);
+  var n = a.length, m = b.length;
+  if(n * m > 250000) return {del:esc(oldLine), ins:esc(newLine)};
+  var w = m + 1, dp = new Uint32Array((n + 1) * w);
+  for(var x = n - 1; x >= 0; x--){
+    for(var y = m - 1; y >= 0; y--){
+      dp[x * w + y] = a[x] === b[y] ? dp[(x + 1) * w + (y + 1)] + 1
+        : Math.max(dp[(x + 1) * w + y], dp[x * w + (y + 1)]);
+    }
+  }
+  var x2 = 0, y2 = 0, delHTML = '', insHTML = '';
+  while(x2 < n && y2 < m){
+    if(a[x2] === b[y2]){ delHTML += esc(a[x2]); insHTML += esc(b[y2]); x2++; y2++; }
+    else if(dp[(x2 + 1) * w + y2] >= dp[x2 * w + (y2 + 1)]){ delHTML += '<mark class="w-del">' + esc(a[x2]) + '</mark>'; x2++; }
+    else { insHTML += '<mark class="w-ins">' + esc(b[y2]) + '</mark>'; y2++; }
+  }
+  while(x2 < n){ delHTML += '<mark class="w-del">' + esc(a[x2]) + '</mark>'; x2++; }
+  while(y2 < m){ insHTML += '<mark class="w-ins">' + esc(b[y2]) + '</mark>'; y2++; }
+  return {del:delHTML, ins:insHTML};
+}
+
+/* ══ Hunk building with configurable context ═══════════════════════ */
+function buildHunks(ops, ctx){
+  var hunks = [], cur = null, pending = [];
+  ops.forEach(function(o){
+    if(o.t === 'eq'){ pending.push(o); return; }
+    if(cur && pending.length > ctx * 2){
+      cur.rows = cur.rows.slice(0, cur.rows.length - (pending.length - ctx));
+      hunks.push(finalize(cur)); cur = null;
+    }
+    if(!cur){
+      cur = {rows: pending.slice(Math.max(0, pending.length - ctx))};
+    } else {
+      cur.rows = cur.rows.concat(pending);
+    }
+    pending = [];
+    cur.rows.push(o);
+  });
+  if(cur){
+    if(pending.length) cur.rows = cur.rows.concat(pending.slice(0, ctx));
+    hunks.push(finalize(cur));
+  }
+  return hunks;
+
+  function finalize(h){
+    var aStart = 1, bStart = 1, aCount = 0, bCount = 0, hasA = false, hasB = false;
+    h.rows.forEach(function(o){
+      if(o.t === 'eq'){
+        if(!hasA){ aStart = o.a + 1; hasA = true; }
+        if(!hasB){ bStart = o.b + 1; hasB = true; }
+        aCount++; bCount++;
+      } else if(o.t === 'del'){
+        if(!hasA){ aStart = o.a + 1; hasA = true; }
+        aCount++;
+      } else if(o.t === 'ins'){
+        if(!hasB){ bStart = o.b + 1; hasB = true; }
+        bCount++;
+      } else {
+        if(!hasA){ aStart = o.del.a + 1; hasA = true; }
+        if(!hasB){ bStart = o.ins.b + 1; hasB = true; }
+        aCount++; bCount++;
+      }
+    });
+    h.aStart = aStart; h.bStart = bStart; h.aCount = aCount; h.bCount = bCount;
+    return h;
+  }
+}
+
+/* ══ Compute + render ══════════════════════════════════════════════ */
+var A = [], B = [], last = null;
+function currentView(){
+  var b = document.querySelector('#viewSeg button.on');
+  return b ? b.getAttribute('data-view') : 'unified';
+}
+function compute(){
+  A = splitLines($('a').value, $('optBlank').checked);
+  B = splitLines($('b').value, $('optBlank').checked);
+  if(!A.length && !B.length){ $('resultCard').style.display = 'none'; last = null;
+    $('meta').textContent = 'no comparison yet'; return null; }
+
+  var ops = pairBlocks(diffLines(A, B));
+  var adds = 0, dels = 0, mods = 0, eqs = 0;
+  ops.forEach(function(o){
+    if(o.t === 'ins') adds++; else if(o.t === 'del') dels++;
+    else if(o.t === 'mod') mods++; else eqs++;
+  });
+  var ctx = Math.max(0, Math.min(50, parseInt($('ctx').value, 10) || 0));
+  var hunks = buildHunks(ops, ctx);
+  var changed = adds + dels + mods;
+  var sim = (ops.length + eqs) === 0 ? 100 : Math.round((2 * eqs * 100) / (ops.length + eqs));
+
+  last = {ops:ops, hunks:hunks, A:A, B:B, adds:adds, dels:dels, mods:mods, eqs:eqs, sim:sim};
+
+  $('tAdd').textContent = '+' + adds + ' added';
+  $('tDel').textContent = '−' + dels + ' removed';
+  $('tMod').textContent = mods + ' modified';
+  $('tSim').textContent = sim + '% similar';
+  $('statLine').textContent = A.length + ' → ' + B.length + ' lines across ' + hunks.length + ' hunk' + (hunks.length === 1 ? '' : 's');
+  $('meta').textContent = changed + ' changed line' + (changed === 1 ? '' : 's');
+  $('resultCard').style.display = 'block';
+  render();
+  return last;
+}
+function render(){
+  if(!last) return;
+  var v = currentView();
+  $('diff').innerHTML = !last.hunks.length
+    ? '<div class="empty"><b>No differences</b>The two versions match under the current options.</div>'
+    : (v === 'split' ? renderSplit(last) : v === 'inline' ? renderInline(last) : renderUnified(last));
+}
+function hunkRow(h){
+  return '<tr class="hunk"><td colspan="4">@@ −' + h.aStart + ',' + h.aCount + ' +' + h.bStart + ',' + h.bCount + ' @@</td></tr>';
+}
+function renderUnified(P){
+  return '<table>' + P.hunks.map(function(h){
+    return hunkRow(h) + h.rows.map(function(o){
+      if(o.t === 'eq')  return uRow('eq',  o.a, o.b, '',  esc(P.A[o.a]));
+      if(o.t === 'del') return uRow('del', o.a, null, '−', esc(P.A[o.a]));
+      if(o.t === 'ins') return uRow('ins', null, o.b, '+', esc(P.B[o.b]));
+      var wd = wordDiff(P.A[o.del.a], P.B[o.ins.b]);
+      return uRow('del', o.del.a, null, '−', wd.del) + uRow('ins', null, o.ins.b, '+', wd.ins);
+    }).join('');
+  }).join('') + '</table>';
+  function uRow(cls, aNo, bNo, sign, html){
+    return '<tr class="' + cls + '">' +
+      '<td class="ln">' + (aNo === null ? '' : aNo + 1) + '</td>' +
+      '<td class="ln">' + (bNo === null ? '' : bNo + 1) + '</td>' +
+      '<td class="sign">' + sign + '</td>' +
+      '<td class="code">' + html + '</td></tr>';
+  }
+}
+function renderSplit(P){
+  var cols = '<colgroup><col style="width:52px"><col><col style="width:52px"><col></colgroup>';
+  return '<table>' + cols + P.hunks.map(function(h){
+    return hunkRow(h) + h.rows.map(function(o){
+      if(o.t === 'eq')  return sRow('eq', o.a, esc(P.A[o.a]), o.b, esc(P.B[o.b]));
+      if(o.t === 'del') return sRow('del', o.a, esc(P.A[o.a]), null, '');
+      if(o.t === 'ins') return sRow('ins', null, '', o.b, esc(P.B[o.b]));
+      var wd = wordDiff(P.A[o.del.a], P.B[o.ins.b]);
+      return sRow('mod', o.del.a, wd.del, o.ins.b, wd.ins);
+    }).join('');
+  }).join('') + '</table>';
+  function sRow(kind, aNo, aHTML, bNo, bHTML){
+    var left = kind === 'ins' ? 'pad' : (kind === 'mod' ? 'del' : kind);
+    var right = kind === 'del' ? 'pad' : (kind === 'mod' ? 'ins' : kind);
+    return '<tr>' +
+      '<td class="ln">' + (aNo === null ? '' : aNo + 1) + '</td>' +
+      '<td class="code ' + left + '">' + aHTML + '</td>' +
+      '<td class="ln">' + (bNo === null ? '' : bNo + 1) + '</td>' +
+      '<td class="code ' + right + '">' + bHTML + '</td></tr>';
+  }
+}
+function renderInline(P){
+  return '<table>' + P.ops.map(function(o){
+    if(o.t === 'eq')  return '<tr class="eq"><td class="ln">' + (o.a + 1) + '</td><td class="code">' + esc(P.A[o.a]) + '</td></tr>';
+    if(o.t === 'del') return '<tr class="del"><td class="ln">' + (o.a + 1) + '</td><td class="code">' + esc(P.A[o.a]) + '</td></tr>';
+    if(o.t === 'ins') return '<tr class="ins"><td class="ln">' + (o.b + 1) + '</td><td class="code">' + esc(P.B[o.b]) + '</td></tr>';
+    var wd = wordDiff(P.A[o.del.a], P.B[o.ins.b]);
+    return '<tr class="del"><td class="ln">' + (o.del.a + 1) + '</td><td class="code">' + wd.del + '</td></tr>' +
+           '<tr class="ins"><td class="ln">' + (o.ins.b + 1) + '</td><td class="code">' + wd.ins + '</td></tr>';
+  }).join('') + '</table>';
+}
+
+/* ══ Exports ═══════════════════════════════════════════════════════ */
+function unifiedText(P){
+  var out = ['--- a', '+++ b'];
+  P.hunks.forEach(function(h){
+    out.push('@@ -' + h.aStart + ',' + h.aCount + ' +' + h.bStart + ',' + h.bCount + ' @@');
+    h.rows.forEach(function(o){
+      if(o.t === 'eq')  out.push(' ' + P.A[o.a]);
+      else if(o.t === 'ins') out.push('+' + P.B[o.b]);
+      else if(o.t === 'del') out.push('-' + P.A[o.a]);
+      else { out.push('-' + P.A[o.del.a]); out.push('+' + P.B[o.ins.b]); }
+    });
+  });
+  return out.join('\n');
+}
+function copyText(t, msg){
+  function done(){ toast(msg); }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+  function fb(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard unavailable'); }
+    document.body.removeChild(ta); }
+}
+$('copyUnified').onclick = function(){ if(!last){ toast('Nothing to copy'); return; }
+  copyText(unifiedText(last), 'Unified diff copied'); };
+$('copyMD').onclick = function(){ if(!last){ toast('Nothing to copy'); return; }
+  var P = last;
+  copyText(['## Diff summary', '',
+    '- Lines: **' + P.A.length + ' → ' + P.B.length + '**',
+    '- Added: **' + P.adds + '**  ·  Removed: **' + P.dels + '**  ·  Modified: **' + P.mods + '**',
+    '- Similarity: **' + P.sim + '%**', '',
+    '```diff', unifiedText(P), '```'].join('\n'), 'Markdown report copied'); };
+$('dl').onclick = function(){ if(!last){ toast('Nothing to download'); return; }
+  var b = new Blob([unifiedText(last) + '\n'], {type:'text/plain'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'changes.diff';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000); toast('Downloaded changes.diff'); };
+
+/* ══ Wiring ════════════════════════════════════════════════════════ */
+$('compare').onclick = function(){
+  if(!$('a').value && !$('b').value){ toast('Paste some text into A and B first'); return; }
+  var p = compute();
+  if(p) toast('Compared: ' + (p.adds + p.mods + p.dels) + ' changed line' + ((p.adds + p.mods + p.dels) === 1 ? '' : 's'));
+};
+$('swap').onclick = function(){ var t = $('a').value; $('a').value = $('b').value; $('b').value = t; compute(); };
+$('clearA').onclick = function(){ $('a').value = ''; compute(); };
+$('clearB').onclick = function(){ $('b').value = ''; compute(); };
+$('clearAll').onclick = function(){ $('a').value = ''; $('b').value = '';
+  $('resultCard').style.display = 'none'; last = null; $('meta').textContent = 'no comparison yet'; toast('Cleared'); };
+$('sample').onclick = function(){
+  $('a').value = [
+'function greet(name) {',
+'  const time = new Date().getHours();',
+'  if (time < 12) {',
+'    return `Good morning, ${name}!`;',
+'  }',
+'  return `Hello, ${name}!`;',
+'}',
+'',
+'const users = ["ana", "ben", "cara"];',
+'users.forEach(u => console.log(greet(u)));',
+'// TODO: add locale support'
+  ].join('\n');
+  $('b').value = [
+'function greet(name, locale = "en") {',
+'  const time = new Date().getHours();',
+'  const hour = time;',
+'  if (hour < 12) {',
+'    return `Good morning, ${name}!`;',
+'  } else if (hour < 18) {',
+'    return `Good afternoon, ${name}!`;',
+'  }',
+'  return `Hello, ${name}!`;',
+'}',
+'',
+'const users = ["ana", "ben", "cara", "dave"];',
+'users.forEach(u => console.log(greet(u)));'
+  ].join('\n');
+  compute(); toast('Sample loaded — press Compare');
+};
+document.querySelectorAll('#viewSeg button').forEach(function(b){
+  b.onclick = function(){
+    document.querySelectorAll('#viewSeg button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on'); render();
+  };
+});
+['optCase','optWs','optBlank'].forEach(function(id){ $(id).onchange = compute; });
+$('ctx').oninput = compute;
+function bindFile(inputId, target){
+  $(inputId).onchange = function(e){
+    var f = e.target.files[0]; if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){ $(target).value = String(fr.result); compute(); toast('Loaded ' + f.name); };
+    fr.readAsText(f);
+  };
+}
+bindFile('fileA','a'); bindFile('fileB','b');
+$('a').addEventListener('input', function(){ if(last) compute(); });
+$('b').addEventListener('input', function(){ if(last) compute(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Studio — Utility Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#232327;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.16);
+  --text:#fafafa;--muted:#71717a;--subtle:#3f3f46;
+  --accent:#6366f1;--accent-2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --good:#34d399;--warn:#fbbf24;--bad:#f87171;
+  --radius:10px;--card-radius:14px;--transition:160ms cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;
+  line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(600px 380px at 12% 0%,rgba(99,102,241,.10),transparent 70%),
+             radial-gradient(520px 420px at 95% 6%,rgba(139,92,246,.08),transparent 70%)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:0 20px;height:56px;
+  background:rgba(9,9,11,.86);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+header a{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:600}
+.logo-mark{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;
+  background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+header .spacer{flex:1}
+header .meta{font-size:12px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  padding:3px 10px;border-radius:20px}
+main{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 20px 70px}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:16px;margin-bottom:16px}
+.card h2{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .step{width:20px;height:20px;border-radius:6px;background:var(--accent-glow);color:var(--accent-2);
+  display:flex;align-items:center;justify-content:center;font-size:11px}
+.card h2 .right{margin-left:auto;font-size:11px;letter-spacing:0;text-transform:none;color:var(--subtle);font-weight:500}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.row.mt{margin-top:11px}
+button{font-family:inherit;font-size:13px;font-weight:500;color:var(--text);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:7px 13px;cursor:pointer;transition:all var(--transition)}
+button:hover{border-color:var(--border-hover);background:var(--surface-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#4f46e5;border-color:#4f46e5}
+button.ghost{background:transparent}
+button.on{background:var(--accent-glow);border-color:rgba(99,102,241,.4);color:var(--accent-2)}
+input[type=text]{background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px;font:13px ui-monospace,Menlo,monospace;outline:none;width:120px;text-transform:uppercase}
+input[type=color]{width:46px;height:38px;padding:2px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:9px;cursor:pointer}
+input[type=range]{accent-color:var(--accent);width:100%}
+label.chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer}
+.swatch{border-radius:12px;padding:14px;background:var(--surface-2);border:1px solid var(--border);cursor:pointer;
+  transition:all var(--transition);position:relative;overflow:hidden}
+.swatch:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.swatch .chip{height:74px;border-radius:9px;margin-bottom:9px;display:flex;align-items:flex-end;justify-content:flex-end;
+  padding:6px 8px;font-size:10.5px;font-weight:600;border:1px solid rgba(0,0,0,.15)}
+.swatch .name{font-size:12px;font-weight:600}
+.swatch .hex{font-size:11px;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.grid5{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:11px}
+.ramp{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.ramp div{flex:1;height:56px;cursor:pointer;position:relative;display:flex;align-items:flex-end;justify-content:center;
+  font-size:9.5px;font-weight:600;padding-bottom:4px}
+.ramp div:hover{outline:2px solid var(--accent-2);outline-offset:-2px;z-index:2}
+.preview-box{border-radius:12px;padding:18px;border:1px solid var(--border);line-height:1.55}
+.preview-box .big{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.preview-box .mid{font-size:15px}
+.preview-box .small{font-size:12.5px}
+.badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--muted)}
+.badge.pass{color:var(--good);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.10)}
+.badge.fail{color:var(--bad);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.10)}
+.ratio{font-size:30px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.kv{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.kv b{color:var(--text);font-weight:600;font-family:ui-monospace,Menlo,monospace}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface-3);
+  border:1px solid var(--border-hover);padding:10px 18px;border-radius:var(--radius);font-size:13px;opacity:0;
+  transition:.2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%)}
+pre.export{background:#0d0d0f;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;
+  font:12.5px/1.7 ui-monospace,Menlo,monospace;overflow:auto;max-height:230px;color:#d4d4d8;white-space:pre}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:5px}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html"><span class="logo-mark">🛠</span> Utility Belt</a>
+  <span class="spacer"></span>
+  <span class="meta" id="meta">—</span>
+</header>
+
+<main>
+  <h1>Color Studio</h1>
+  <p class="sub">Build a color system in seconds: harmonies, tint/shade ramps, WCAG contrast checks and
+  developer-ready export (CSS variables, JSON, Tailwind).</p>
+
+  <section class="card">
+    <h2><span class="step">1</span> Base color</h2>
+    <div class="row">
+      <input type="color" id="picker" value="#6366f1">
+      <input type="text" id="hex" value="#6366F1" maxlength="7" spellcheck="false">
+      <button id="random">🎲 Random</button>
+      <button class="ghost" id="preset">Load preset palette</button>
+      <span style="font-size:12.5px;color:var(--muted);margin-left:6px">Harmony:</span>
+      <select id="harmony" style="background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+        border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px">
+        <option value="analogous">Analogous</option>
+        <option value="complementary">Complementary</option>
+        <option value="split">Split complementary</option>
+        <option value="triadic">Triadic</option>
+        <option value="tetradic">Tetradic (square)</option>
+        <option value="mono">Monochromatic</option>
+        <option value="shades">Tints &amp; shades</option>
+      </select>
+    </div>
+    <div class="row mt">
+      <span style="font-size:12.5px;color:var(--muted);width:74px">Hue <b id="hVal" style="color:var(--text);font-family:ui-monospace,Menlo,monospace"></b></span>
+      <input type="range" id="hue" min="0" max="360" style="flex:2;min-width:160px">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span style="font-size:12.5px;color:var(--muted);width:74px">Saturation <b id="sVal" style="color:var(--text);font-family:ui-monospace,Menlo,monospace"></b></span>
+      <input type="range" id="sat" min="0" max="100" style="flex:2;min-width:160px">
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span style="font-size:12.5px;color:var(--muted);width:74px">Lightness <b id="lVal" style="color:var(--text);font-family:ui-monospace,Menlo,monospace"></b></span>
+      <input type="range" id="lig" min="0" max="100" style="flex:2;min-width:160px">
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span> Palette
+      <span class="right" id="palKind">analogous</span></h2>
+    <div class="grid5" id="palette"></div>
+    <div class="row mt">
+      <button id="copyHexes">📋 Copy hex list</button>
+      <button id="copyCSS">📋 Copy CSS variables</button>
+      <button id="copyJSON">📋 Copy JSON</button>
+      <button id="copyTW">📋 Copy Tailwind config</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span> Scale — tints &amp; shades
+      <span class="right">click any step to copy</span></h2>
+    <div class="ramp" id="ramp"></div>
+    <div class="row mt" style="font-size:12.5px;color:var(--muted)">
+      <span>50 → 950 scale generated in HSL space, ready to paste into a design system.</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span> Contrast checker (WCAG 2.1)
+      <span class="right" id="swapHint">click a swatch above to set text color</span></h2>
+    <div class="row">
+      <label class="chk">Text <input type="color" id="fgPick" value="#ffffff">
+        <input type="text" id="fgHex" value="#FFFFFF" maxlength="7" spellcheck="false"></label>
+      <label class="chk">Background <input type="color" id="bgPick" value="#6366f1">
+        <input type="text" id="bgHex" value="#6366F1" maxlength="7" spellcheck="false"></label>
+      <button id="swapColors">⇄ Swap</button>
+      <button id="autoText">✨ Best text color</button>
+    </div>
+    <div class="row mt" style="align-items:flex-start;gap:20px">
+      <div style="min-width:190px">
+        <div class="ratio" id="ratio">—</div>
+        <div class="badges" id="badges"></div>
+      </div>
+      <div class="preview-box" id="previewBox" style="flex:1;min-width:240px">
+        <div class="big">Large heading text</div>
+        <div class="mid">Body copy at regular size — the quick brown fox jumps over the lazy dog.</div>
+        <div class="small">Fine print at 12.5px that still needs to be readable.</div>
+      </div>
+    </div>
+    <div class="kv mt" id="kv" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">5</span> Export</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button class="on" data-format="css">CSS</button>
+      <button data-format="json">JSON</button>
+      <button data-format="tailwind">Tailwind</button>
+      <button data-format="scss">SCSS</button>
+      <button class="ghost" id="copyExport" style="margin-left:auto">📋 Copy</button>
+      <button class="ghost" id="dlExport">💾 Download</button>
+    </div>
+    <pre class="export" id="exportBox"></pre>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+
+/* ══ Color math ════════════════════════════════════════════════════ */
+function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+function hexToRgb(hex){
+  var h = String(hex).trim().replace(/^#/, '');
+  if(h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if(!/^[0-9a-f]{6}$/i.test(h)) return null;
+  return {r:parseInt(h.slice(0,2),16), g:parseInt(h.slice(2,4),16), b:parseInt(h.slice(4,6),16)};
+}
+function rgbToHex(r, g, b){
+  var f = function(v){ var s = clamp(Math.round(v), 0, 255).toString(16).toUpperCase(); return s.length < 2 ? '0' + s : s; };
+  return '#' + f(r) + f(g) + f(b);
+}
+function rgbToHsl(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  var max = Math.max(r, g, b), min = Math.min(r, g, b), h = 0, s = 0, l = (max + min) / 2, d = max - min;
+  if(d){
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if(max === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if(max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return {h:Math.round(h), s:Math.round(s * 100), l:Math.round(l * 100)};
+}
+function hslToRgb(h, s, l){
+  h = ((h % 360) + 360) % 360; s = clamp(s, 0, 100) / 100; l = clamp(l, 0, 100) / 100;
+  var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  var rgb;
+  if(h < 60) rgb = [c, x, 0]; else if(h < 120) rgb = [x, c, 0]; else if(h < 180) rgb = [0, c, x];
+  else if(h < 240) rgb = [0, x, c]; else if(h < 300) rgb = [x, 0, c]; else rgb = [c, 0, x];
+  return {r:Math.round((rgb[0] + m) * 255), g:Math.round((rgb[1] + m) * 255), b:Math.round((rgb[2] + m) * 255)};
+}
+function hslToHex(h, s, l){ var c = hslToRgb(h, s, l); return rgbToHex(c.r, c.g, c.b); }
+function luminance(rgb){
+  var a = [rgb.r, rgb.g, rgb.b].map(function(v){
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+}
+function contrast(a, b){
+  var l1 = luminance(a), l2 = luminance(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+function normalizeHex(input){ var rgb = hexToRgb(input); return rgb ? rgbToHex(rgb.r, rgb.g, rgb.b) : null; }
+
+/* ══ Palette generation ════════════════════════════════════════════ */
+function harmonyColors(h, s, l, kind){
+  var set = [];
+  function push(hh, ss, ll){ set.push({hex:hslToHex(hh, ss, ll), h:hh, s:ss, l:ll}); }
+  switch(kind){
+    case 'analogous':
+      push(h - 30, s, l); push(h - 15, s, l); push(h, s, l); push(h + 15, s, l); push(h + 30, s, l);
+      break;
+    case 'complementary':
+      push(h, s, l); push(h, s, clamp(l + 18, 4, 96)); push(h, s, clamp(l - 18, 4, 96));
+      push(h + 180, s, l); push(h + 180, s, clamp(l + 14, 4, 96));
+      break;
+    case 'split':
+      push(h, s, l); push(h, s, clamp(l - 16, 4, 96));
+      push(h + 150, s, l); push(h + 210, s, l); push(h + 180, s, clamp(l + 16, 4, 96));
+      break;
+    case 'triadic':
+      push(h, s, l); push(h + 120, s, l); push(h + 240, s, l);
+      push(h, s, clamp(l - 20, 4, 96)); push(h + 120, s, clamp(l + 16, 4, 96));
+      break;
+    case 'tetradic':
+      push(h, s, l); push(h + 90, s, l); push(h + 180, s, l); push(h + 270, s, l);
+      push(h + 45, s, clamp(l + 18, 4, 96));
+      break;
+    case 'mono':
+      [0, 1, 2, 3, 4].forEach(function(i){ push(h, s, clamp(l - 32 + i * 16, 4, 96)); });
+      break;
+    case 'shades':
+    default:
+      [-3, -2, -1, 0, 1, 2, 3].forEach(function(i){ push(h, clamp(s - Math.abs(i) * 4, 10, 100), clamp(l + i * 11, 4, 96)); });
+      break;
+  }
+  return set;
+}
+function scaleSteps(h, s, l){
+  // Anchor the base color in a 50→950 scale, interpolating lightness around it
+  var targets = [96, 90, 82, 72, 62, 52, 43, 35, 28, 21, 14];
+  var names = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+  var baseIdx = 5;
+  // pick the closest step to the base lightness as the anchor
+  var best = 0, bestDiff = 999;
+  targets.forEach(function(t, i){ var d = Math.abs(t - l); if(d < bestDiff){ bestDiff = d; best = i; } });
+  baseIdx = best;
+  var baseTarget = targets[baseIdx];
+  var satAdj = clamp(s + (l > 70 ? 6 : 0), 8, 100);
+  return names.map(function(name, i){
+    var t = targets[i];
+    var shift = t - baseTarget;                     // keep the base color exactly at its anchor
+    var light = clamp(l + shift * (baseTarget > 50 ? 0.92 : 0.95), 3, 98);
+    if(i === baseIdx) light = l;
+    var sat = i === baseIdx ? s : clamp(satAdj - Math.abs(i - baseIdx) * (i < baseIdx ? 5 : 3), 8, 100);
+    return {step:name, hex:hslToHex(h, sat, light), h:h, s:sat, l:light};
+  });
+}
+
+/* ══ State + render ════════════════════════════════════════════════ */
+var state = {h:239, s:84, l:67, palette:[]};
+function currentHex(){ return hslToHex(state.h, state.s, state.l); }
+
+function renderPalette(){
+  var kind = $('harmony').value;
+  state.palette = harmonyColors(state.h, state.s, state.l, kind);
+  $('palKind').textContent = kind;
+  $('palette').innerHTML = state.palette.map(function(c, i){
+    var txt = luminance(hexToRgb(c.hex)) > 0.45 ? '#111111' : '#FFFFFF';
+    return '<div class="swatch" data-hex="' + c.hex + '" data-i="' + i + '">' +
+      '<div class="chip" style="background:' + c.hex + ';color:' + txt + '">' + c.hex + '</div>' +
+      '<div class="name">Step ' + (i + 1) + '</div>' +
+      '<div class="hex">hsl(' + c.h + ' ' + c.s + '% ' + c.l + '%)</div></div>';
+  }).join('');
+}
+function renderRamp(){
+  var steps = scaleSteps(state.h, state.s, state.l);
+  $('ramp').innerHTML = steps.map(function(s){
+    var txt = luminance(hexToRgb(s.hex)) > 0.45 ? '#1a1a1a' : '#ffffff';
+    return '<div style="background:' + s.hex + ';color:' + txt + '" data-hex="' + s.hex + '" ' +
+      'data-step="' + s.step + '" title="' + s.step + ' · ' + s.hex + '">' + s.step + '</div>';
+  }).join('');
+  return steps;
+}
+function renderSliders(){
+  $('hue').value = state.h; $('sat').value = state.s; $('lig').value = state.l;
+  $('hVal').textContent = state.h + '°'; $('sVal').textContent = state.s + '%'; $('lVal').textContent = state.l + '%';
+  var hex = currentHex();
+  $('picker').value = hex; $('hex').value = hex;
+  $('meta').textContent = hex + ' · hsl(' + state.h + ' ' + state.s + '% ' + state.l + '%)';
+}
+function renderAll(){ renderSliders(); renderPalette(); renderRamp(); renderExport(); }
+
+/* ══ Contrast panel ════════════════════════════════════════════════ */
+function renderContrast(){
+  var fg = hexToRgb($('fgHex').value) || {r:255,g:255,b:255};
+  var bg = hexToRgb($('bgHex').value) || {r:0,g:0,b:0};
+  var fgH = rgbToHex(fg.r, fg.g, fg.b), bgH = rgbToHex(bg.r, bg.g, bg.b);
+  $('fgHex').value = fgH; $('bgHex').value = bgH;
+  $('fgPick').value = fgH; $('bgPick').value = bgH;
+  $('previewBox').style.background = bgH;
+  $('previewBox').style.color = fgH;
+  var r = contrast(fg, bg);
+  $('ratio').textContent = r.toFixed(2) + ' : 1';
+  $('ratio').style.color = r >= 4.5 ? 'var(--good)' : (r >= 3 ? 'var(--warn)' : 'var(--bad)');
+  var checks = [
+    ['AA normal (4.5:1)', r >= 4.5],
+    ['AAA normal (7:1)', r >= 7],
+    ['AA large (3:1)', r >= 3],
+    ['AAA large (4.5:1)', r >= 4.5],
+    ['UI components (3:1)', r >= 3]
+  ];
+  $('badges').innerHTML = checks.map(function(c){
+    return '<span class="badge ' + (c[1] ? 'pass' : 'fail') + '">' + (c[1] ? '✓ ' : '✕ ') + c[0] + '</span>';
+  }).join('');
+  var fgL = luminance(fg), bgL = luminance(bg);
+  $('kv').innerHTML = [
+    ['text luminance', fgL.toFixed(4)],
+    ['background luminance', bgL.toFixed(4)],
+    ['text', rgbToHex(fg.r, fg.g, fg.b)],
+    ['background', rgbToHex(bg.r, bg.g, bg.b)],
+    ['suggested body size', r >= 4.5 ? 'any size' : (r >= 3 ? '≥ 18.66px bold or 24px' : 'decorative only')]
+  ].map(function(p){ return '<span>' + p[0] + ': <b>' + p[1] + '</b></span>'; }).join('');
+}
+function bestTextColor(bg){
+  var onWhite = contrast({r:255,g:255,b:255}, bg), onBlack = contrast({r:0,g:0,b:0}, bg);
+  // Pure max-ratio pick: white/black always bracket every possible text color's contrast,
+  // so the better of the two is the best achievable (WCAG relative-luminance maths).
+  return onWhite >= onBlack ? '#FFFFFF' : '#111111';
+}
+
+/* ══ Export formats ════════════════════════════════════════════════ */
+function stepsList(){ return scaleSteps(state.h, state.s, state.l); }
+function exportText(format){
+  var steps = stepsList(), pal = state.palette;
+  if(format === 'css'){
+    return ':root {\n' + steps.map(function(s){ return '  --color-' + s.step + ': ' + s.hex + ';'; }).join('\n') +
+      '\n\n  /* palette */\n' + pal.map(function(c, i){ return '  --palette-' + (i + 1) + ': ' + c.hex + ';'; }).join('\n') + '\n}';
+  }
+  if(format === 'json'){
+    return JSON.stringify({
+      base:currentHex(),
+      hsl:'hsl(' + state.h + ' ' + state.s + '% ' + state.l + '%)',
+      harmony:$('harmony').value,
+      palette:pal.map(function(c){ return c.hex; }),
+      scale:steps.reduce(function(o, s){ o[s.step] = s.hex; return o; }, {})
+    }, null, 2);
+  }
+  if(format === 'tailwind'){
+    return "module.exports = {\n  theme: {\n    extend: {\n      colors: {\n        brand: {\n" +
+      steps.map(function(s){ return "          '" + s.step + "': '" + s.hex + "',"; }).join('\n') +
+      '\n        },\n      },\n    },\n  },\n};';
+  }
+  return steps.map(function(s){ return '$color-' + s.step + ': ' + s.hex + ';'; }).join('\n') +
+    '\n\n$palette: (' + pal.map(function(c){ return c.hex; }).join(', ') + ');';
+}
+function renderExport(){
+  var fmt = document.querySelector('[data-format].on');
+  $('exportBox').textContent = exportText(fmt ? fmt.getAttribute('data-format') : 'css');
+}
+
+/* ══ Clipboard + toast ═════════════════════════════════════════════ */
+var toastEl = $('toast'), toastT;
+function toast(m){ toastEl.textContent = m; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 1900); }
+function copyText(t, msg){
+  function done(){ toast(msg); }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+  function fb(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard unavailable'); }
+    document.body.removeChild(ta); }
+}
+
+/* ══ Wiring ════════════════════════════════════════════════════════ */
+function setHsl(h, s, l){ state.h = clamp(Math.round(h), 0, 360); state.s = clamp(Math.round(s), 0, 100);
+  state.l = clamp(Math.round(l), 0, 100); renderAll(); }
+function setHex(hex, quiet){
+  var rgb = hexToRgb(hex);
+  if(!rgb){ if(!quiet) toast('Enter a hex like #6366F1'); return false; }
+  var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  setHsl(hsl.h, hsl.s, hsl.l);
+  return true;
+}
+$('picker').oninput = function(){ setHex(this.value, true); };
+$('hex').oninput = function(){ if(setHex(this.value, true)); };
+$('hex').onblur = function(){ setHex(this.value); };
+$('hue').oninput = function(){ setHsl(+this.value, state.s, state.l); };
+$('sat').oninput = function(){ setHsl(state.h, +this.value, state.l); };
+$('lig').oninput = function(){ setHsl(state.h, state.s, +this.value); };
+$('harmony').onchange = function(){ renderPalette(); renderExport(); };
+
+$('random').onclick = function(){
+  setHsl(Math.floor(Math.random() * 360), 45 + Math.floor(Math.random() * 50), 38 + Math.floor(Math.random() * 28));
+  toast('Random base color');
+};
+$('preset').onclick = function(){
+  var presets = ['#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#14B8A6'];
+  setHex(presets[Math.floor(Math.random() * presets.length)], true);
+  toast('Preset applied — adjust with the sliders');
+};
+$('palette').addEventListener('click', function(e){
+  var sw = e.target.closest ? e.target.closest('.swatch') : null;
+  if(!sw) return;
+  var hex = sw.getAttribute('data-hex');
+  copyText(hex, hex + ' copied — also set as text color for contrast');
+  $('fgHex').value = hex; renderContrast();
+});
+$('ramp').addEventListener('click', function(e){
+  var d = e.target.closest ? e.target.closest('[data-hex]') : null;
+  if(!d) return;
+  var hex = d.getAttribute('data-hex');
+  copyText(hex, 'Step ' + d.getAttribute('data-step') + ' · ' + hex + ' copied');
+  $('fgHex').value = hex; renderContrast();
+});
+$('copyHexes').onclick = function(){ copyText(state.palette.map(function(c){ return c.hex; }).join('\n'), 'Hex list copied'); };
+$('copyCSS').onclick = function(){ copyText(exportText('css'), 'CSS variables copied'); };
+$('copyJSON').onclick = function(){ copyText(exportText('json'), 'JSON copied'); };
+$('copyTW').onclick = function(){ copyText(exportText('tailwind'), 'Tailwind config copied'); };
+document.querySelectorAll('[data-format]').forEach(function(b){
+  b.onclick = function(){
+    document.querySelectorAll('[data-format]').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on'); renderExport();
+  };
+});
+$('copyExport').onclick = function(){ copyText($('exportBox').textContent, 'Export copied'); };
+$('dlExport').onclick = function(){
+  var fmt = document.querySelector('[data-format].on'), f = fmt ? fmt.getAttribute('data-format') : 'css';
+  var ext = f === 'css' ? 'css' : (f === 'json' ? 'json' : (f === 'tailwind' ? 'js' : 'scss'));
+  var b = new Blob([$('exportBox').textContent], {type:'text/plain'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'color-system.' + ext;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  toast('Downloaded color-system.' + ext);
+};
+
+$('fgPick').oninput = function(){ $('fgHex').value = this.value.toUpperCase(); renderContrast(); };
+$('bgPick').oninput = function(){ $('bgHex').value = this.value.toUpperCase(); renderContrast(); };
+$('fgHex').oninput = function(){ if(hexToRgb(this.value)) renderContrast(); };
+$('bgHex').oninput = function(){ if(hexToRgb(this.value)) renderContrast(); };
+$('fgHex').onblur = function(){ this.value = normalizeHex(this.value) || '#FFFFFF'; renderContrast(); };
+$('bgHex').onblur = function(){ this.value = normalizeHex(this.value) || '#000000'; renderContrast(); };
+$('swapColors').onclick = function(){
+  var t = $('fgHex').value; $('fgHex').value = $('bgHex').value; $('bgHex').value = t; renderContrast();
+};
+$('autoText').onclick = function(){
+  var bg = hexToRgb($('bgHex').value) || {r:0,g:0,b:0};
+  $('fgHex').value = bestTextColor(bg); renderContrast();
+  toast('Best text color applied');
+};
+
+/* keyboard: spacebar randomizes like a color tool should, when not typing */
+document.addEventListener('keydown', function(e){
+  var t = e.target.tagName;
+  if(e.code === 'Space' && t !== 'INPUT' && t !== 'SELECT' && t !== 'TEXTAREA'){
+    e.preventDefault(); $('random').click();
+  }
+});
+
+/* ══ Init ══════════════════════════════════════════════════════════ */
+setHex('#6366F1', true);
+$('fgHex').value = '#FFFFFF';
+$('bgHex').value = '#6366F1';
+$('fgPick').value = '#ffffff';
+$('bgPick').value = '#6366f1';
+renderContrast();
+})();
+</script>
+</body>
+</html>

@@ -60,6 +60,9 @@ utility-belt/
 │   ├── markdown-editor.html
 │   └── ...
 │
+├── docs/
+│   └── useful-features.md   ← research: features from the world's most-used software
+│
 ├── assets/
 │   ├── css/
 │   ├── js/
