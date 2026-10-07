@@ -187,5 +187,12 @@
     "description": "24 enterprise workflows x 12 frontier models — four-pillar, model-tuned prompt templates with copy, download and direct chat launch.",
     "category": ["AI", "Productivity"],
     "icon": "🏛"
+  },
+  {
+    "title": "Everyday Prompt Studio",
+    "file": "tools/everyday-prompt-studio.html",
+    "description": "12 everyday living workflows x 12 models — meals, budget, calendar, repairs, health, travel, taxes, hiring — driven by a saved household context, with copy, print and direct chat launch.",
+    "category": ["AI", "Productivity"],
+    "icon": "🏠"
   }
 ]
