@@ -135,7 +135,7 @@
   {
     "title": "Atomic Task Runner",
     "file": "tools/atomic-task-runner.html",
-    "description": "enforcing macro-to-micro task decomposition and single-focus execution.",
+    "description": "Enforces macro-to-micro task decomposition and single-focus execution.",
     "category": ["Productivity"],
     "icon": "⚡"
   },

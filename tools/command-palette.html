@@ -137,11 +137,14 @@ body::before{
   var resultsEl = document.getElementById('results');
   var statEl = document.getElementById('stat');
 
-  /* ── Fuzzy subsequence matcher (fzf/VS Code style scoring) ───────── */
+  /* ── Fuzzy subsequence matcher (fzf/VS Code style scoring) ─────────
+     Kept byte-identical in index.html and
+     tools/command-palette.html so the site search and the palette rank the same
+     way (enforced by tests/index.test.mjs). */
   function fuzzy(query, text){
-    if(!query) return {score:0, marks:[]};
-    var q = query.toLowerCase(), t = text.toLowerCase();
-    var qi = 0, score = 0, streak = 0, last = -2, marks = [];
+    if(!query) return { score:0, marks:[] };
+    var q = query.toLowerCase(), t = String(text).toLowerCase();
+    var qi = 0, score = 0, streak = 0, last = -2, marks = [], gaps = 0;
     for(var i = 0; i < t.length && qi < q.length; i++){
       if(t.charAt(i) === q.charAt(qi)){
         var s = 1;
@@ -149,12 +152,15 @@ body::before{
         if(i > 0 && /[\s\-_/.>]/.test(t.charAt(i-1))) s += 7;
         if(i === last + 1){ streak++; s += streak * 4; } else { streak = 0; }
         score += s;
+        if(marks.length) gaps += i - last - 1;             // characters skipped to reach this hit
         marks.push(i); qi++; last = i;
       }
     }
     if(qi < q.length) return null;
-    score -= Math.floor(t.length / 12);            // prefer shorter targets on ties
-    return {score:score, marks:marks};
+    score -= gaps;                                         // tighter matches win
+    score += Math.max(0, 8 - marks[0]);                    // earlier matches win
+    score -= Math.floor(t.length / 12);                    // prefer shorter targets on ties
+    return { score:score, marks:marks };
   }
   function highlight(text, marks){
     if(!marks || !marks.length) return esc(text);
