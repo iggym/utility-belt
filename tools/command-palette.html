@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Command Palette — Utility Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#1f1f23;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.16);
+  --text:#fafafa;--muted:#71717a;--subtle:#3f3f46;
+  --accent:#6366f1;--accent-2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --radius:10px;--card-radius:14px;--transition:160ms cubic-bezier(.4,0,.2,1);
+}
+body{
+  font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  font-size:15px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;
+  display:flex;align-items:flex-start;justify-content:center;padding:48px 20px;
+}
+body.light{
+  --bg:#fafafa;--surface:#ffffff;--surface-2:#f4f4f5;--surface-3:#ececef;
+  --border:rgba(0,0,0,.10);--border-hover:rgba(0,0,0,.20);
+  --text:#18181b;--muted:#71717a;--subtle:#a1a1aa;--accent-glow:rgba(99,102,241,.10);
+}
+body.light::before{background:radial-gradient(600px 400px at 20% 0%,rgba(99,102,241,.10),transparent 70%),
+             radial-gradient(500px 400px at 90% 100%,rgba(139,92,246,.07),transparent 70%)}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(600px 400px at 20% 0%,rgba(99,102,241,.10),transparent 70%),
+             radial-gradient(500px 400px at 90% 100%,rgba(139,92,246,.08),transparent 70%);
+}
+.wrap{position:relative;z-index:1;width:100%;max-width:640px}
+.brand{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.brand a{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;
+  color:var(--text);text-decoration:none;letter-spacing:-.01em}
+.logo-mark{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+.hint{font-size:12px;color:var(--muted)}
+.hint kbd{font:inherit;font-size:11px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:4px;padding:1px 5px;color:var(--text)}
+
+.palette{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);
+  overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);display:none;
+}
+.palette.open{display:block;animation:pop 140ms cubic-bezier(.4,0,.2,1)}
+@keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.99)}to{opacity:1;transform:none}}
+.shell{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);
+  padding:14px;display:flex;align-items:center;gap:12px;cursor:text;
+}
+.shell:hover{border-color:var(--border-hover)}
+.shell .label{flex:1;color:var(--muted);font-size:14px}
+.shell .go{font-size:11px;font-weight:600;color:var(--accent-2);background:var(--accent-glow);
+  border:1px solid rgba(99,102,241,.25);padding:3px 10px;border-radius:20px;white-space:nowrap}
+
+.input-row{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  border-bottom:1px solid var(--border)}
+.input-row svg{width:16px;height:16px;color:var(--muted);flex:none}
+#q{flex:1;background:transparent;border:none;outline:none;color:var(--text);
+  font-family:inherit;font-size:15px}
+#q::placeholder{color:var(--subtle)}
+.kbd{font-size:10px;font-weight:600;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:4px;padding:2px 6px;letter-spacing:.04em}
+
+.results{max-height:min(56vh,420px);overflow-y:auto;padding:6px}
+.group{padding:10px 12px 6px;font-size:11px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--subtle)}
+.item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;
+  cursor:pointer;border:1px solid transparent}
+.item.active{background:var(--accent-glow);border-color:rgba(99,102,241,.25)}
+.item .ic{width:26px;height:26px;border-radius:7px;background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.item .body{flex:1;min-width:0}
+.item .t{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .d{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .tag{font-size:10px;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:20px;padding:2px 8px;white-space:nowrap}
+.item mark{background:transparent;color:var(--accent-2);font-weight:600}
+.footer{display:flex;gap:14px;align-items:center;padding:9px 16px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);flex-wrap:wrap}
+.footer span{display:flex;align-items:center;gap:5px}
+.empty{padding:34px 16px;text-align:center;color:var(--muted);font-size:13px}
+.empty b{display:block;color:var(--text);font-size:14px;margin-bottom:4px;font-weight:600}
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface-2);border:1px solid var(--border-hover);color:var(--text);
+  padding:10px 16px;border-radius:var(--radius);font-size:13px;opacity:0;
+  transition:opacity .2s,transform .2s;pointer-events:none;z-index:50;
+}
+.toast.show{opacity:1;transform:translateX(-50%)}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <a href="../index.html"><span class="logo-mark">🛠</span> Utility Belt</a>
+    <span class="hint">Press <kbd>⌘/Ctrl</kbd> + <kbd>K</kbd> to toggle</span>
+  </div>
+
+  <div class="shell" id="shell">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+    <span class="label">Search commands and tools…</span>
+    <span class="go">⌘K</span>
+  </div>
+
+  <div class="palette" id="palette" role="dialog" aria-label="Command palette">
+    <div class="input-row">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>
+      <input id="q" placeholder="Type a command or search tools…" autocomplete="off" spellcheck="false">
+      <span class="kbd">ESC</span>
+    </div>
+    <div class="results" id="results"></div>
+    <div class="footer">
+      <span><span class="kbd">↑↓</span> navigate</span>
+      <span><span class="kbd">↵</span> run</span>
+      <span><span class="kbd">ESC</span> close</span>
+      <span style="margin-left:auto" id="stat"></span>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var palette = document.getElementById('palette');
+  var shell   = document.getElementById('shell');
+  var qInput  = document.getElementById('q');
+  var resultsEl = document.getElementById('results');
+  var statEl = document.getElementById('stat');
+
+  /* ── Fuzzy subsequence matcher (fzf/VS Code style scoring) ───────── */
+  function fuzzy(query, text){
+    if(!query) return {score:0, marks:[]};
+    var q = query.toLowerCase(), t = text.toLowerCase();
+    var qi = 0, score = 0, streak = 0, last = -2, marks = [];
+    for(var i = 0; i < t.length && qi < q.length; i++){
+      if(t.charAt(i) === q.charAt(qi)){
+        var s = 1;
+        if(i === 0) s += 5;
+        if(i > 0 && /[\s\-_/.>]/.test(t.charAt(i-1))) s += 7;
+        if(i === last + 1){ streak++; s += streak * 4; } else { streak = 0; }
+        score += s;
+        marks.push(i); qi++; last = i;
+      }
+    }
+    if(qi < q.length) return null;
+    score -= Math.floor(t.length / 12);            // prefer shorter targets on ties
+    return {score:score, marks:marks};
+  }
+  function highlight(text, marks){
+    if(!marks || !marks.length) return esc(text);
+    var set = {}, out = '';
+    for(var i = 0; i < marks.length; i++) set[marks[i]] = true;
+    for(var j = 0; j < text.length; j++){
+      out += set[j] ? '<mark>' + esc(text.charAt(j)) + '</mark>' : esc(text.charAt(j));
+    }
+    return out;
+  }
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Storage: recently used commands ─────────────────────────────── */
+  var RECENT_KEY = 'ub.palette.recent';
+  function recents(){
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch(e){ return []; }
+  }
+  function remember(id){
+    var list = recents().filter(function(x){ return x !== id; });
+    list.unshift(id);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 6))); } catch(e){}
+  }
+
+  /* ── Built-in actions (the "command" half of a command palette) ──── */
+  var actions = [
+    {id:'nav.home',   title:'Go to Utility Belt home', desc:'Open the catalog of all tools', icon:'🏠',
+     run:function(){ location.href = '../index.html'; }},
+    {id:'nav.top',    title:'Scroll to top', desc:'Jump back to the first result', icon:'⬆️',
+     run:function(){ window.scrollTo({top:0,behavior:'smooth'}); }},
+    {id:'copy.url',   title:'Copy current page URL', desc:'Put this address on the clipboard', icon:'🔗',
+     run:function(){ copy(location.href, 'URL copied'); }},
+    {id:'t.clip',     title:'Copy "Utility Belt" as Markdown link', desc:'Markdown formatted link', icon:'📝',
+     run:function(){ copy('[Utility Belt](' + location.origin + location.pathname.replace(/tools\/.*$/,'') + ')', 'Markdown link copied'); }},
+    {id:'t.txt',      title:'Download this page as .html', desc:'Save a local copy of the tool', icon:'💾',
+     run:function(){ download('utility-belt-page.html', document.documentElement.outerHTML); }},
+    {id:'t.theme',    title:'Toggle light / dark surface', desc:'Switch the palette appearance', icon:'🌗',
+     run:function(){ toggleTheme(); }},
+    {id:'t.clear',    title:'Clear recently-used history', desc:'Forget the commands you ran', icon:'🧹',
+     run:function(){ localStorage.removeItem(RECENT_KEY); toast('Recent commands cleared'); load(''); }},
+    {id:'t.fullscreen', title:'Toggle fullscreen', desc:'Distraction-free full screen mode', icon:'⛶',
+     run:function(){ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }}
+  ];
+
+  var tools = [];     // loaded from manifest.json
+  var items = [];     // currently rendered, in order
+  var active = 0;
+
+  /* ── Load the catalog (falls back to built-ins if unfetchable) ───── */
+  function loadManifest(cb){
+    if(typeof fetch !== 'function'){ cb(); return; }        // fall back to built-in commands only
+    fetch('../manifest.json')
+      .then(function(r){ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function(data){
+        tools = (data || []).filter(function(t){ return t && t.file; }).map(function(t){
+          var cat = Array.isArray(t.category) ? t.category[0] : (t.category || 'Tool');
+          return { id:'tool:' + t.file, title:t.title || t.file, desc:t.description || '',
+                   icon:t.icon || '🔧', tag:cat, url:'../' + t.file };
+        });
+        cb();
+      })
+      .catch(function(){ tools = []; cb(); });
+  }
+
+  /* ── Build the result list for a query ───────────────────────────── */
+  function load(query){
+    var q = query.trim();
+    var pool = actions.concat(tools);
+    var scored = [];
+
+    if(!q){
+      // Empty query → recent commands first, then everything in source order
+      var rec = recents();
+      var rank = {};
+      for(var r = 0; r < rec.length; r++) rank[rec[r]] = r;
+      pool.slice().sort(function(a, b){
+        var ra = rank[a.id] === undefined ? 99 : rank[a.id];
+        var rb = rank[b.id] === undefined ? 99 : rank[b.id];
+        return ra - rb;
+      }).forEach(function(it){
+        scored.push({ it:it, marks:[], marksT:[], score:0, heading:rank[it.id] === undefined ? 'All commands & tools' : 'Recent' });
+      });
+    } else {
+      pool.forEach(function(it){
+        var mT = fuzzy(q, it.title);
+        var mD = fuzzy(q, it.desc || '');
+        if(!mT && !mD) return;
+        var score = (mT ? mT.score * 2 : 0) + (mD ? mD.score : 0);
+        scored.push({ it:it, marksT:mT ? mT.marks : [], marksD:mD ? mD.marks : [], score:score });
+      });
+      scored.sort(function(a, b){ return b.score - a.score; });
+      scored = scored.slice(0, 60);
+      if(scored.length) scored[0].heading = scored.length + ' result' + (scored.length === 1 ? '' : 's');
+    }
+
+    items = scored.map(function(s){
+      return { it:s.it, marksT:s.marksT, marksD:s.marksD, heading:s.heading };
+    });
+    active = 0;
+    render();
+  }
+
+  function render(){
+    if(!items.length){
+      resultsEl.innerHTML = '<div class="empty"><b>No matching command</b>Try a shorter term, or check the spelling.</div>';
+      statEl.textContent = '0 results';
+      return;
+    }
+    var html = '', heading = '';
+    items.forEach(function(row, i){
+      if(row.heading && row.heading !== heading){
+        heading = row.heading;
+        html += '<div class="group">' + esc(heading) + '</div>';
+      }
+      var it = row.it;
+      html += '<div class="item' + (i === active ? ' active' : '') + '" data-i="' + i + '">' +
+        '<div class="ic">' + esc(it.icon || '🔧') + '</div>' +
+        '<div class="body"><div class="t">' + highlight(it.title, row.marksT) + '</div>' +
+        (it.desc ? '<div class="d">' + highlight(it.desc, row.marksD) + '</div>' : '') + '</div>' +
+        (it.tag ? '<div class="tag">' + esc(it.tag) + '</div>' : '') +
+        '</div>';
+    });
+    resultsEl.innerHTML = html;
+    statEl.textContent = items.length + ' result' + (items.length === 1 ? '' : 's');
+    var el = resultsEl.querySelector('.item.active');
+    if(el) el.scrollIntoView({block:'nearest'});
+  }
+
+  function run(index){
+    var row = items[index];
+    if(!row) return;
+    var it = row.it;
+    remember(it.id);
+    close();
+    if(it.run) it.run();
+    else if(it.url) window.open(it.url, '_blank', 'noopener');
+  }
+
+  /* ── Helpers ─────────────────────────────────────────────────────── */
+  function copy(text, msg){
+    function done(){ toast(msg || 'Copied'); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard unavailable'); }
+      document.body.removeChild(ta);
+    }
+  }
+  function download(name, text){
+    var b = new Blob([text], {type:'text/plain'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    toast('Downloaded ' + name);
+  }
+  var toastEl = document.getElementById('toast'), toastT;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 2200);
+  }
+  function toggleTheme(){
+    var light = document.body.classList.toggle('light');
+    localStorage.setItem('ub.palette.light', light ? '1' : '0');
+    toast(light ? 'Light surface on' : 'Dark surface on');
+  }
+  try {
+    if(localStorage.getItem('ub.palette.light') === '1') document.body.classList.add('light');
+  } catch(e){}
+
+  /* ── Open / close / keyboard-first navigation ────────────────────── */
+  function open(){
+    palette.classList.add('open');
+    shell.style.display = 'none';
+    qInput.value = '';
+    qInput.focus();
+    load('');
+  }
+  function close(){
+    palette.classList.remove('open');
+    shell.style.display = 'flex';
+    qInput.blur();
+  }
+  function isOpen(){ return palette.classList.contains('open'); }
+
+  shell.addEventListener('click', open);
+
+  document.addEventListener('keydown', function(e){
+    var mod = e.metaKey || e.ctrlKey;
+    if(mod && (e.key === 'k' || e.key === 'K')){ e.preventDefault(); isOpen() ? close() : open(); return; }
+    if(!isOpen()){ if(e.key === '/'){ e.preventDefault(); open(); } return; }
+    if(e.key === 'Escape'){ e.preventDefault(); close(); return; }
+    if(e.key === 'ArrowDown'){ e.preventDefault(); active = Math.min(active + 1, items.length - 1); render(); return; }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); active = Math.max(active - 1, 0); render(); return; }
+    if(e.key === 'Home'){ e.preventDefault(); active = 0; render(); return; }
+    if(e.key === 'End'){ e.preventDefault(); active = items.length - 1; render(); return; }
+    if(e.key === 'Enter'){ e.preventDefault(); run(active); }
+  });
+
+  qInput.addEventListener('input', function(){ load(qInput.value); });
+
+  resultsEl.addEventListener('mousemove', function(e){
+    var el = e.target.closest ? e.target.closest('.item') : null;
+    if(!el) return;
+    var i = parseInt(el.getAttribute('data-i'), 10);
+    if(i !== active){ active = i; render(); }
+  });
+  resultsEl.addEventListener('click', function(e){
+    var el = e.target.closest ? e.target.closest('.item') : null;
+    if(!el) return;
+    run(parseInt(el.getAttribute('data-i'), 10));
+  });
+
+  loadManifest(function(){ /* ready; palette opens on demand */ });
+})();
+</script>
+</body>
+</html>

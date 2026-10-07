@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Text Toolkit — Utility Belt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#232327;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.16);
+  --text:#fafafa;--muted:#71717a;--subtle:#3f3f46;
+  --accent:#6366f1;--accent-2:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --good:#34d399;--bad:#f87171;
+  --radius:10px;--card-radius:14px;--transition:160ms cubic-bezier(.4,0,.2,1);
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(600px 380px at 12% 0%,rgba(99,102,241,.10),transparent 70%),
+             radial-gradient(520px 420px at 95% 6%,rgba(139,92,246,.08),transparent 70%)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:0 20px;
+  height:56px;background:rgba(9,9,11,.86);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+header a{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:600}
+.logo-mark{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+header .spacer{flex:1}
+header .meta{font-size:12px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  padding:3px 10px;border-radius:20px}
+main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:26px 20px 70px}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:16px;margin-bottom:16px}
+.card h2{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .step{width:20px;height:20px;border-radius:6px;background:var(--accent-glow);color:var(--accent-2);
+  display:flex;align-items:center;justify-content:center;font-size:11px}
+.card h2 .right{margin-left:auto;font-size:11px;letter-spacing:0;text-transform:none;color:var(--subtle);font-weight:500}
+textarea{width:100%;height:280px;resize:vertical;background:var(--surface-2);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--radius);padding:12px 13px;
+  font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}
+textarea:focus{border-color:rgba(99,102,241,.5)}
+textarea[readonly]{color:#d4d4d8}
+input[type=text],select{background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;font:13px inherit;font-family:inherit;outline:none;min-width:0}
+input[type=text]:focus,select:focus{border-color:rgba(99,102,241,.5)}
+input.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+button{font-family:inherit;font-size:13px;font-weight:500;color:var(--text);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:7px 13px;cursor:pointer;transition:all var(--transition)}
+button:hover{border-color:var(--border-hover);background:var(--surface-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#4f46e5;border-color:#4f46e5}
+button.ghost{background:transparent}
+button.on{background:var(--accent-glow);border-color:rgba(99,102,241,.4);color:var(--accent-2)}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.row.mt{margin-top:11px}
+.group{margin-bottom:14px}
+.group h3{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle);margin-bottom:7px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.btns button{padding:6px 11px;font-size:12.5px}
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.stats b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.preview{max-height:170px;overflow:auto;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:11px 13px;font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;
+  white-space:pre-wrap;word-break:break-word}
+.preview mark{background:rgba(99,102,241,.35);color:#fff;border-radius:3px;padding:0 2px}
+.preview .none{color:var(--subtle)}
+.tag{font-size:11px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:20px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.tag.ok{color:var(--good);border-color:rgba(52,211,153,.3)}
+.tag.err{color:var(--bad);border-color:rgba(248,113,113,.3)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface-3);border:1px solid var(--border-hover);padding:10px 18px;border-radius:var(--radius);
+  font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.undo{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  display:flex;align-items:center;gap:12px;background:var(--surface-3);border:1px solid var(--border-hover);
+  border-radius:var(--radius);padding:9px 12px 9px 16px;font-size:13px;opacity:0;pointer-events:none;
+  transition:.2s;z-index:61}
+.undo.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.undo button{padding:4px 11px;font-size:12px}
+.undo .bar{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);border-radius:0 0 0 var(--radius)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:5px}
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html"><span class="logo-mark">🛠</span> Utility Belt</a>
+  <span class="spacer"></span>
+  <span class="meta" id="meta">ready</span>
+</header>
+
+<main>
+  <h1>Text Toolkit</h1>
+  <p class="sub">One-click bulk transforms and a regex workbench. Everything runs locally — nothing is uploaded.</p>
+
+  <div class="split">
+    <section class="card">
+      <h2><span class="step">1</span> Input
+        <span class="right" id="inStats">0 lines</span></h2>
+      <textarea id="input" spellcheck="false" placeholder="Paste text, CSV, logs or a list here…"></textarea>
+      <div class="row mt">
+        <button class="ghost" id="pasteBtn">📋 Paste</button>
+        <button class="ghost" id="sampleBtn">Load sample</button>
+        <button class="ghost" id="clearBtn">Clear</button>
+        <label class="tag" style="cursor:pointer;padding:6px 11px;border-radius:8px">
+          📂 File<input type="file" id="fileInput" style="display:none">
+        </label>
+        <button class="ghost" id="undoBtn" title="Restore the previous input">↩︎ Undo</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span> Output
+        <span class="right"><button class="ghost" id="useBtn" style="padding:3px 9px;font-size:11.5px">↑ Use as input</button></span></h2>
+      <textarea id="output" readonly spellcheck="false" placeholder="Result appears here…"></textarea>
+      <div class="row mt">
+        <button class="primary" id="copyBtn">📋 Copy result</button>
+        <button class="ghost" id="dlBtn">💾 Download .txt</button>
+        <span class="tag" id="outStats">0 chars</span>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2><span class="step">3</span> Bulk transforms
+      <span class="right"><label style="display:flex;gap:6px;align-items:center;cursor:pointer">
+        <input type="checkbox" id="inPlace"> apply directly to input</label></span></h2>
+
+    <div class="group"><h3>Case</h3><div class="btns" data-ops="case"></div></div>
+    <div class="group"><h3>Whitespace &amp; lines</h3><div class="btns" data-ops="lines"></div></div>
+    <div class="group"><h3>Sort, dedupe &amp; number</h3><div class="btns" data-ops="sort"></div></div>
+    <div class="group"><h3>Encode &amp; clean</h3><div class="btns" data-ops="encode"></div></div>
+    <div class="group"><h3>Extract</h3><div class="btns" data-ops="extract"></div></div>
+    <div class="group"><h3>Structure (JSON / CSV / Markdown)</h3><div class="btns" data-ops="data"></div></div>
+
+    <div class="row mt">
+      <span style="font-size:12.5px;color:var(--muted)">Filter / remove lines&nbsp;containing:</span>
+      <input type="text" id="needle" placeholder="text or /regex/" class="mono" style="flex:1;min-width:180px">
+      <button id="keepLines">Keep matching</button>
+      <button id="dropLines">Remove matching</button>
+      <button id="prefixLines">Add prefix</button>
+      <button id="suffixLines">Add suffix</button>
+      <input type="text" id="affix" placeholder="prefix / suffix text" class="mono" style="width:180px">
+    </div>
+    <div class="row mt">
+      <span style="font-size:12.5px;color:var(--muted)">Wrap width</span>
+      <input type="text" id="wrapWidth" value="80" style="width:70px">
+      <button id="wrapBtn">Wrap paragraphs</button>
+      <span style="font-size:12.5px;color:var(--muted)">Repeat</span>
+      <input type="text" id="repeatN" value="3" style="width:60px">
+      <button id="repeatBtn">Repeat input</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span> Regex find &amp; replace
+      <span class="right"><span class="tag" id="rxCount">—</span></span></h2>
+    <div class="row">
+      <input type="text" id="rx" class="mono" placeholder="pattern, e.g. (\w+)@(\w+)\.com" style="flex:1;min-width:200px">
+      <input type="text" id="rxFlags" class="mono" value="gi" style="width:78px" title="flags: g i m s u y">
+      <input type="text" id="rxRep" class="mono" placeholder="replacement, $1 for groups" style="flex:1;min-width:170px">
+    </div>
+    <div class="row mt">
+      <button class="primary" id="rxReplace">Replace all</button>
+      <button id="rxRemove">Remove matches</button>
+      <button id="rxExtract">Extract matches (one per line)</button>
+      <button id="rxCountBtn">Count only</button>
+      <button class="ghost" id="rxTest">Insert test pattern</button>
+    </div>
+    <div class="preview mt" id="rxPreview"><span class="none">Live match preview appears here…</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Statistics</h2>
+    <div class="stats" id="stats"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="undo" id="undoBar"><span id="undoMsg">Applied</span>
+  <button id="undoGo">Undo</button>
+  <div class="bar" id="undoBarFill"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var input = $('input'), output = $('output');
+var history = [], undoState = null, undoTimer = null, undoTick = null;
+
+/* ══ Feedback ══════════════════════════════════════════════════════ */
+var toastEl = $('toast'), toastT;
+function toast(msg){
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, 1900);
+}
+function pushHistory(){
+  history.push(input.value);
+  if(history.length > 40) history.shift();
+}
+/* Gmail-style undo: apply, then hold the change for a countdown window */
+function offerUndo(label, prev){
+  var bar = $('undoBar');
+  $('undoMsg').textContent = label;
+  bar.classList.add('show');
+  clearTimeout(undoTimer);
+  var total = 8000, left = total;
+  $('undoBarFill').style.width = '100%';
+  clearInterval(undoTick);
+  undoState = prev;
+  undoTick = setInterval(function(){
+    left -= 100;
+    $('undoBarFill').style.width = Math.max(0, (left / total) * 100) + '%';
+    if(left <= 0) closeUndo();
+  }, 100);
+  undoTimer = setTimeout(closeUndo, total);
+}
+function closeUndo(){
+  clearInterval(undoTick); clearTimeout(undoTimer);
+  $('undoBar').classList.remove('show');
+  undoState = null;
+}
+$('undoGo').onclick = function(){
+  if(undoState === null) return;
+  input.value = undoState; output.value = '';
+  closeUndo(); refresh(); toast('Change undone');
+};
+
+/* ══ Transform library ═════════════════════════════════════════════ */
+function titleCase(s){ return s.replace(/\w\S*/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }); }
+function sentenceCase(s){ return s.toLowerCase().replace(/(^\s*\w|[.!?]\s+\w)/g, function(c){ return c.toUpperCase(); }); }
+function words(s){ return s.trim().split(/[^A-Za-z0-9]+/).filter(Boolean); }
+function camel(s){ var w = words(s); return w.map(function(x,i){ x = x.toLowerCase();
+  return i ? x.charAt(0).toUpperCase() + x.slice(1) : x; }).join(''); }
+function pascal(s){ var w = words(s); return w.map(function(x){ x = x.toLowerCase();
+  return x.charAt(0).toUpperCase() + x.slice(1); }).join(''); }
+function snake(s){ return words(s).map(function(x){ return x.toLowerCase(); }).join('_'); }
+function kebab(s){ return words(s).map(function(x){ return x.toLowerCase(); }).join('-'); }
+function constantCase(s){ return words(s).map(function(x){ return x.toUpperCase(); }).join('_'); }
+function dotCase(s){ return words(s).map(function(x){ return x.toLowerCase(); }).join('.'); }
+function slug(s){ return s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^a-z0-9\s-]/g,'').trim().replace(/[\s-]+/g,'-').replace(/^-+|-+$/g,''); }
+
+var OPS = {
+case:[
+  ['UPPERCASE',        function(t){ return t.toUpperCase(); }],
+  ['lowercase',        function(t){ return t.toLowerCase(); }],
+  ['Title Case',       function(t){ return titleCase(t); }],
+  ['Sentence case',    function(t){ return sentenceCase(t); }],
+  ['tOGGLE cASE',      function(t){ return t.replace(/[a-z]/gi, function(c){ return c === c.toLowerCase() ? c.toUpperCase() : c.toLowerCase(); }); }],
+  ['camelCase',        camel],
+  ['PascalCase',       pascal],
+  ['snake_case',       snake],
+  ['kebab-case',       kebab],
+  ['CONSTANT_CASE',    constantCase],
+  ['dot.case',         dotCase],
+  ['slug-format',      slug]
+],
+lines:[
+  ['Trim each line',        function(t){ return t.split('\n').map(function(l){ return l.trim(); }).join('\n'); }],
+  ['Remove blank lines',    function(t){ return t.split('\n').filter(function(l){ return l.trim() !== ''; }).join('\n'); }],
+  ['Collapse extra spaces', function(t){ return t.replace(/[ \t]{2,}/g,' ').replace(/[ \t]+$/gm,''); }],
+  ['Join lines (space)',    function(t){ return t.split(/\s*\n\s*/).filter(Boolean).join(' '); }],
+  ['Join lines (comma)',    function(t){ return t.split(/\s*\n\s*/).filter(Boolean).join(', '); }],
+  ['Split sentences→lines', function(t){ return t.replace(/([.!?])\s+/g, '$1\n').trim(); }],
+  ['Reverse lines',         function(t){ return t.split('\n').reverse().join('\n'); }],
+  ['Reverse all text',      function(t){ return t.split('').reverse().join(''); }],
+  ['Indent 4 spaces',       function(t){ return t.split('\n').map(function(l){ return l ? '    ' + l : l; }).join('\n'); }],
+  ['Outdent',               function(t){ return t.split('\n').map(function(l){ return l.replace(/^(\t| {1,4})/,''); }).join('\n'); }],
+  ['Strip empty edges',     function(t){ return t.replace(/^\s+|\s+$/g,''); }]
+],
+sort:[
+  ['Sort A → Z',            function(t){ return t.split('\n').sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}); }).join('\n'); }],
+  ['Sort Z → A',            function(t){ return t.split('\n').sort(function(a,b){ return b.localeCompare(a, undefined, {numeric:true, sensitivity:'base'}); }).join('\n'); }],
+  ['Sort by length',        function(t){ return t.split('\n').sort(function(a,b){ return a.length - b.length; }).join('\n'); }],
+  ['Sort by last word',     function(t){ return t.split('\n').sort(function(a,b){
+      var w = function(s){ return (s.trim().split(/\s+/).pop() || '').toLowerCase(); };
+      return w(a).localeCompare(w(b)); }).join('\n'); }],
+  ['Remove duplicates',     function(t){ var seen = {}; return t.split('\n').filter(function(l){ var k = l.trim(); if(seen[k]) return false; seen[k] = 1; return true; }).join('\n'); }],
+  ['Keep only duplicates',  function(t){ var c = {}; t.split('\n').forEach(function(l){ var k = l.trim(); c[k] = (c[k]||0)+1; });
+      return t.split('\n').filter(function(l){ return c[l.trim()] > 1; }).join('\n'); }],
+  ['Unique + sort',         function(t){ var seen = {}; return t.split('\n').filter(function(l){ var k = l.trim(); if(seen[k]) return false; seen[k] = 1; return true; })
+      .sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true}); }).join('\n'); }],
+  ['Number the lines',      function(t){ var w = String(t.split('\n').length).length;
+      return t.split('\n').map(function(l,i){ return String(i+1).padStart(w,' ') + '. ' + l; }).join('\n'); }],
+  ['Bullet list',           function(t){ return t.split('\n').filter(function(l){return l.trim()!=='';}).map(function(l){ return '- ' + l.trim(); }).join('\n'); }],
+  ['Checkbox list',         function(t){ return t.split('\n').filter(function(l){return l.trim()!=='';}).map(function(l){ return '- [ ] ' + l.trim(); }).join('\n'); }],
+  ['Shuffle lines',         function(t){ var a = t.split('\n'); for(var i=a.length-1;i>0;i--){ var j = Math.floor(Math.random()*(i+1)); var x=a[i]; a[i]=a[j]; a[j]=x; } return a.join('\n'); }],
+  ['Alternate chunk merge', function(t){ var a = t.split('\n'); var out = [], h = Math.ceil(a.length/2);
+      for(var i=0;i<h;i++){ out.push(a[i]); if(a[i+h] !== undefined) out.push(a[i+h]); } return out.join('\n'); }]
+],
+encode:[
+  ['URL encode',           function(t){ return encodeURIComponent(t); }],
+  ['URL decode',           function(t){ try { return decodeURIComponent(t); } catch(e){ return t; } }],
+  ['Base64 encode',        function(t){ try { return btoa(unescape(encodeURIComponent(t))); } catch(e){ return t; } }],
+  ['Base64 decode',        function(t){ try { return decodeURIComponent(escape(atob(t.trim()))); } catch(e){ return t; } }],
+  ['HTML escape',          function(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }],
+  ['HTML unescape',        function(t){ var d = document.createElement('textarea'); d.innerHTML = t; return d.value; }],
+  ['Strip HTML tags',      function(t){ return t.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'')
+      .replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/[ \t]{2,}/g,' '); }],
+  ['Normalize Unicode',    function(t){ return t.normalize('NFC'); }],
+  ['Strip accents',        function(t){ return t.normalize('NFKD').replace(/[\u0300-\u036f]/g,''); }],
+  ['Escape regex chars',   function(t){ return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }],
+  ['CSV escape',           function(t){ return t.split('\n').map(function(l){
+      return l.split(',').map(function(c){ c = c.replace(/^"|"$/g,'').replace(/""/g,'"');
+        return /[",\n]/.test(c) ? '"' + c.replace(/"/g,'""') + '"' : c; }).join(','); }).join('\n'); }],
+  ['Smart quotes → straight', function(t){ return t.replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"')
+      .replace(/[\u2013\u2014]/g,'-').replace(/\u2026/g,'...').replace(/\u00a0/g,' '); }]
+],
+extract:[
+  ['Extract emails',       function(t){ return uniq(t.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g)); }],
+  ['Extract URLs',         function(t){ return uniq(t.match(/https?:\/\/[^\s<>"')]+/g)); }],
+  ['Extract numbers',      function(t){ return uniq(t.match(/-?\d+(?:\.\d+)?/g)); }],
+  ['Extract hashtags',     function(t){ return uniq(t.match(/#[\w-]+/g)); }],
+  ['Extract @mentions',    function(t){ return uniq(t.match(/@[\w.-]+/g)); }],
+  ['Extract ISO dates',    function(t){ return uniq(t.match(/\d{4}-\d{2}-\d{2}/g)); }],
+  ['Extract quoted text',  function(t){ return uniq(t.match(/"([^"\n]*)"/g)); }],
+  ['Extract words (unique)', function(t){ return uniq((t.toLowerCase().match(/[a-z][a-z'-]{2,}/g) || [])); }],
+  ['Extract top words',    function(t){ var f = {}; (t.toLowerCase().match(/[a-z][a-z'-]{2,}/g) || []).forEach(function(w){ f[w] = (f[w]||0)+1; });
+      return Object.keys(f).sort(function(a,b){ return f[b]-f[a]; }).slice(0,50).map(function(w){ return f[w] + '\t' + w; }).join('\n'); }]
+],
+data:[
+  ['JSON prettify',        function(t){ try { return JSON.stringify(JSON.parse(t), null, 2); } catch(e){ return t; } }],
+  ['JSON minify',          function(t){ try { return JSON.stringify(JSON.parse(t)); } catch(e){ return t; } }],
+  ['JSON → CSV',           function(t){ try { var d = JSON.parse(t); if(!Array.isArray(d) || !d.length) return t;
+      var cols = Object.keys(d[0]);
+      var rows = [cols.join(',')].concat(d.map(function(o){ return cols.map(function(c){
+        var v = o[c] === undefined || o[c] === null ? '' : o[c];
+        if(typeof v === 'object') v = JSON.stringify(v);
+        v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }).join(','); }));
+      return rows.join('\n'); } catch(e){ return t; } }],
+  ['JSON → Markdown table',function(t){ try { var d = JSON.parse(t); if(!Array.isArray(d) || !d.length) return t;
+      var cols = Object.keys(d[0]);
+      var out = ['| ' + cols.join(' | ') + ' |', '| ' + cols.map(function(){ return '---'; }).join(' | ') + ' |'];
+      d.forEach(function(o){ out.push('| ' + cols.map(function(c){
+        var v = o[c]; if(v === null || v === undefined) return ' ';
+        return String(typeof v === 'object' ? JSON.stringify(v) : v).replace(/\|/g,'\\|'); }).join(' | ') + ' |'); });
+      return out.join('\n'); } catch(e){ return t; } }],
+  ['CSV → JSON',           function(t){ try {
+      var rows = parseCSV(t, sniffDelim(t)); if(rows.length < 2) return t;
+      var head = rows[0].map(function(h){ return h.trim(); });
+      var out = rows.slice(1).map(function(r){ var o = {}; head.forEach(function(h,i){
+        var v = r[i] === undefined ? '' : r[i]; var n = v === '' ? NaN : Number(v);
+        o[h] = isNaN(n) ? v : n; }); return o; });
+      return JSON.stringify(out, null, 2); } catch(e){ return t; } }],
+  ['CSV → Markdown table', function(t){ var rows = parseCSV(t, sniffDelim(t)); if(rows.length < 2) return t;
+      var out = ['| ' + rows[0].join(' | ') + ' |', '| ' + rows[0].map(function(){ return '---'; }).join(' | ') + ' |'];
+      rows.slice(1).forEach(function(r){ out.push('| ' + r.map(function(c){ return c === '' ? ' ' : c.replace(/\|/g,'\\|'); }).join(' | ') + ' |'); });
+      return out.join('\n'); }],
+  ['CSV → TSV',            function(t){ return parseCSV(t, sniffDelim(t)).map(function(r){ return r.join('\t'); }).join('\n'); }],
+  ['Markdown → plain text',function(t){ return t.replace(/^#{1,6}\s+/gm,'').replace(/\*\*([^*]+)\*\*/g,'$1')
+      .replace(/\*([^*]+)\*/g,'$1').replace(/`([^`]+)`/g,'$1').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
+      .replace(/^\s*[-*+]\s+/gm,'').replace(/^\s*\d+\.\s+/gm,'').replace(/^\s*>\s?/gm,'')
+      .replace(/^-{3,}$/gm,'').replace(/\n{3,}/g,'\n\n').trim(); }],
+  ['Table → Markdown',     function(t){ return t.split('\n').map(function(l){ return l.trim(); }).filter(Boolean)
+      .map(function(l){ return '| ' + l.split(/\s{2,}|\t|\s\|\s/).map(function(c){ return c.trim(); }).join(' | ') + ' |'; })
+      .join('\n'); }],
+  ['Make SQL IN list',     function(t){ return 'IN (' + t.split('\n').map(function(l){ return l.trim(); }).filter(Boolean)
+      .map(function(l){ return "'" + l.replace(/'/g,"''") + "'"; }).join(', ') + ')'; }],
+  ['Make JS/Python array', function(t){ return '[' + t.split('\n').map(function(l){ return l.trim(); }).filter(Boolean)
+      .map(function(l){ return '"' + l.replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"'; }).join(', ') + ']'; }]
+]
+};
+function uniq(a){ a = a || []; var s = {}, o = []; a.forEach(function(x){ if(!s[x]){ s[x] = 1; o.push(x); } }); return o.join('\n'); }
+function sniffDelim(t){ var l = (t.split(/\r?\n/)[0] || '');
+  if((l.match(/\t/g)||[]).length) return '\t';
+  if((l.match(/;/g)||[]).length > (l.match(/,/g)||[]).length) return ';';
+  if((l.match(/\|/g)||[]).length > 1) return '|';
+  return ','; }
+function parseCSV(text, delim){
+  var rows = [], row = [], f = '', inQ = false;
+  for(var i=0;i<text.length;i++){
+    var c = text[i];
+    if(inQ){ if(c === '"'){ if(text[i+1] === '"'){ f += '"'; i++; } else inQ = false; } else f += c; }
+    else if(c === '"') inQ = true;
+    else if(c === delim){ row.push(f); f = ''; }
+    else if(c === '\n'){ row.push(f); rows.push(row); row = []; f = ''; }
+    else if(c !== '\r') f += c;
+  }
+  if(f.length || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(v){ return String(v).trim() !== ''; }); });
+}
+
+/* Render transform buttons */
+Object.keys(OPS).forEach(function(group){
+  var host = document.querySelector('[data-ops="' + group + '"]');
+  if(!host) return;
+  OPS[group].forEach(function(pair){
+    var b = document.createElement('button');
+    b.textContent = pair[0];
+    b.onclick = function(){ apply(pair[1], pair[0]); };
+    host.appendChild(b);
+  });
+});
+
+/* ══ Apply / render ════════════════════════════════════════════════ */
+var lastInput = '';
+function apply(fn, label){
+  var src = input.value;
+  if(!src){ toast('Enter some text first'); return; }
+  pushHistory(); lastInput = src;
+  var result;
+  try { result = fn(src); }
+  catch(e){ toast('Could not apply: ' + e.message); return; }
+  setResult(result, label);
+}
+function setResult(result, label){
+  if($('inPlace').checked){ input.value = result; output.value = ''; }
+  else output.value = result;
+  refresh();
+  offerUndo((label || 'Transform') + ' applied', lastInput);
+}
+$('inPlace').onchange = function(){ refresh(); };
+
+/* ══ Stats ═════════════════════════════════════════════════════════ */
+function refresh(){
+  var t = input.value, o = output.value;
+  var words = t.trim() ? t.trim().split(/\s+/).length : 0;
+  var lines = t ? t.split('\n').length : 0;
+  var sents = (t.match(/[.!?]+(\s|$)/g) || []).length;
+  $('inStats').textContent = lines + ' lines · ' + t.length.toLocaleString() + ' chars';
+  $('outStats').textContent = o.length.toLocaleString() + ' chars';
+  $('stats').innerHTML = [
+    ['characters', t.length.toLocaleString()],
+    ['words', words.toLocaleString()],
+    ['lines', lines.toLocaleString()],
+    ['paragraphs', (t.trim() ? t.trim().split(/\n\s*\n/).length : 0).toLocaleString()],
+    ['sentences', sents.toLocaleString()],
+    ['avg word length', words ? (t.replace(/\s/g,'').length / words).toFixed(1) : '0'],
+    ['reading time', Math.max(1, Math.round(words / 220)) + ' min'],
+    ['bytes (UTF-8)', new Blob([t]).size.toLocaleString()]
+  ].map(function(p){ return '<span>' + p[0] + ': <b>' + p[1] + '</b></span>'; }).join('');
+  $('meta').textContent = words.toLocaleString() + ' words';
+}
+
+/* ══ Regex workbench ═══════════════════════════════════════════════ */
+function buildRegex(){
+  var p = $('rx').value, f = $('rxFlags').value;
+  if(!p) return null;
+  try { return new RegExp(p, f.replace(/[^gimsuy]/g,'')); }
+  catch(e){ return {error:e.message}; }
+}
+function rxPreview(){
+  var text = input.value, re = buildRegex();
+  if(!re){ $('rxCount').textContent = '—'; $('rxPreview').innerHTML = '<span class="none">Live match preview appears here…</span>'; return null; }
+  if(re.error){ $('rxCount').textContent = 'invalid pattern'; $('rxCount').className = 'tag err';
+    $('rxPreview').innerHTML = '<span class="none">' + esc(re.error) + '</span>'; return null; }
+  $('rxCount').className = 'tag';
+  var flags = re.flags.indexOf('g') === -1 ? re.flags + 'g' : re.flags;
+  var gr = new RegExp(re.source, flags);
+  var m, out = '', last = 0, count = 0;
+  var limit = 400;
+  while((m = gr.exec(text)) !== null && count < limit){
+    count++;
+    out += esc(text.slice(last, m.index));
+    out += '<mark>' + esc(m[0] === '' ? '·zero-width·' : m[0]) + '</mark>';
+    last = m.index + m[0].length;
+    if(m[0] === '') gr.lastIndex++;
+  }
+  out += esc(text.slice(last));
+  $('rxCount').textContent = count + (count === limit ? '+' : '') + ' match' + (count === 1 ? '' : 'es');
+  $('rxPreview').innerHTML = out || '<span class="none">No match</span>';
+  return re;
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ══ Wiring ════════════════════════════════════════════════════════ */
+input.addEventListener('input', function(){ refresh(); rxPreview(); });
+['rx','rxFlags','rxRep'].forEach(function(id){ $(id).addEventListener('input', rxPreview); });
+
+$('pasteBtn').onclick = function(){
+  if(navigator.clipboard && navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){ if(t){ pushHistory(); input.value = t; refresh(); rxPreview(); toast('Pasted from clipboard'); } },
+      function(){ input.focus(); toast('Press Ctrl/Cmd+V to paste'); });
+  } else { input.focus(); toast('Press Ctrl/Cmd+V to paste'); }
+};
+$('sampleBtn').onclick = function(){
+  pushHistory();
+  input.value = '  alice@example.com ,  (555) 010-2233\nBob Jones <bob@work.co>\n' +
+    'carol@example.com\nskip me  \ncarol@example.com\nSite: https://example.com/docs?ref=abc\n' +
+    'Date: 2024-03-11  ·  Amount: $1,250.75\nskip me\n';
+  refresh(); rxPreview();
+};
+$('clearBtn').onclick = function(){ pushHistory(); input.value = ''; output.value = ''; refresh(); rxPreview(); };
+$('undoBtn').onclick = function(){
+  if(!history.length){ toast('Nothing to undo'); return; }
+  input.value = history.pop(); refresh(); rxPreview(); toast('Input restored');
+};
+$('fileInput').onchange = function(e){
+  var f = e.target.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){ pushHistory(); input.value = String(fr.result); refresh(); rxPreview(); toast('Loaded ' + f.name); };
+  fr.readAsText(f);
+};
+$('useBtn').onclick = function(){
+  if(!output.value){ toast('Output is empty'); return; }
+  pushHistory(); input.value = output.value; output.value = ''; refresh(); rxPreview(); toast('Output moved to input');
+};
+$('copyBtn').onclick = function(){
+  var t = output.value || input.value;
+  if(!t){ toast('Nothing to copy'); return; }
+  function done(){ toast('Copied ' + t.length.toLocaleString() + ' characters'); }
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+  function fb(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard unavailable'); }
+    document.body.removeChild(ta); }
+};
+$('dlBtn').onclick = function(){
+  var t = output.value || input.value; if(!t){ toast('Nothing to download'); return; }
+  var b = new Blob([t], {type:'text/plain'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'text-toolkit.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000); toast('Downloaded text-toolkit.txt');
+};
+
+/* Line filters */
+function needleTest(l){
+  var n = $('needle').value;
+  if(!n) return false;
+  var m = n.match(/^\/(.*)\/([gimsuy]*)$/);
+  if(m){ try { return new RegExp(m[1], m[2].replace('g','')).test(l); } catch(e){ return l.indexOf(n) !== -1; } }
+  return l.toLowerCase().indexOf(n.toLowerCase()) !== -1;
+}
+$('keepLines').onclick = function(){ apply(function(t){ return t.split('\n').filter(needleTest).join('\n'); }, 'Kept matching lines'); };
+$('dropLines').onclick = function(){ apply(function(t){ return t.split('\n').filter(function(l){ return !needleTest(l); }).join('\n'); }, 'Removed matching lines'); };
+$('prefixLines').onclick = function(){ var p = $('affix').value;
+  apply(function(t){ return t.split('\n').map(function(l){ return l ? p + l : l; }).join('\n'); }, 'Prefixed lines'); };
+$('suffixLines').onclick = function(){ var s = $('affix').value;
+  apply(function(t){ return t.split('\n').map(function(l){ return l ? l + s : l; }).join('\n'); }, 'Suffixed lines'); };
+$('wrapBtn').onclick = function(){ var w = parseInt($('wrapWidth').value, 10) || 80;
+  apply(function(t){ return t.split(/\n\s*\n/).map(function(p){
+    var words = p.split(/\s+/).filter(Boolean), lines = [], cur = '';
+    words.forEach(function(word){ if((cur + ' ' + word).trim().length > w){ lines.push(cur.trim()); cur = word; } else cur += ' ' + word; });
+    if(cur.trim()) lines.push(cur.trim());
+    return lines.join('\n'); }).join('\n\n'); }, 'Wrapped to ' + w + ' columns'); };
+$('repeatBtn').onclick = function(){ var n = Math.min(50, Math.max(1, parseInt($('repeatN').value, 10) || 2));
+  apply(function(t){ return Array(n + 1).join(t + '\n').replace(/\n$/, ''); }, 'Repeated ×' + n); };
+
+/* Regex actions */
+$('rxReplace').onclick = function(){
+  var re = buildRegex(); if(!re || re.error){ toast(re && re.error ? 'Invalid pattern' : 'Enter a pattern'); return; }
+  var rep = $('rxRep').value;
+  apply(function(t){ return t.replace(new RegExp(re.source, re.flags.indexOf('g') === -1 ? re.flags + 'g' : re.flags), rep); }, 'Replaced matches');
+};
+$('rxRemove').onclick = function(){
+  var re = buildRegex(); if(!re || re.error){ toast('Enter a valid pattern'); return; }
+  apply(function(t){ return t.replace(new RegExp(re.source, 'g' + re.flags.replace('g','')), ''); }, 'Removed matches');
+};
+$('rxExtract').onclick = function(){
+  var re = buildRegex(); if(!re || re.error){ toast('Enter a valid pattern'); return; }
+  var g = /\(/.test(re.source) ? 1 : 0;
+  apply(function(t){
+    var gr = new RegExp(re.source, 'g' + re.flags.replace('g','')), m, out = [];
+    while((m = gr.exec(t)) !== null){ out.push(m[g] !== undefined ? m[g] : m[0]); if(m[0] === '') gr.lastIndex++; }
+    return out.join('\n');
+  }, 'Extracted matches (' + (g ? 'group 1' : 'full match') + ')');
+};
+$('rxCountBtn').onclick = function(){
+  var re = buildRegex(); if(!re || re.error){ toast('Enter a valid pattern'); return; }
+  var n = 0;
+  apply(function(t){ var gr = new RegExp(re.source, 'g' + re.flags.replace('g','')), m;
+    while((m = gr.exec(t)) !== null){ n++; if(m[0] === '') gr.lastIndex++; }
+    return String(n); }, n + ' matches');
+};
+$('rxTest').onclick = function(){
+  $('rx').value = '([\\w.+-]+)@([\\w-]+\\.[\\w.]+)';
+  $('rxFlags').value = 'gi';
+  $('rxRep').value = '$1 [at] $2';
+  rxPreview(); toast('Pattern ready — try Replace all');
+};
+
+/* Init */
+$('input').value = '';
+refresh(); rxPreview();
+})();
+</script>
+</body>
+</html>
