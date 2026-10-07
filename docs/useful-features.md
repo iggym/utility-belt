@@ -26,6 +26,7 @@ and communication/design tools (Slack, Notion, Figma, Photoshop, Zoom).
 | 10 | Contrast/accessibility checks | Figma, Chrome DevTools, Photoshop | Ship readable UI for everyone |
 | 11 | Palette & shade/tint generators | Photoshop, Figma, Coolors | Consistent color systems fast |
 | 12 | Keyboard-first navigation | Slack, Gmail, Notion, Excel | Speed users never leave the keyboard |
+| 13 | Model-native prompt structuring | ChatGPT, Claude, Gemini, open-weight chat tiers | Reusable prompt assets instead of one-off phrasing |
 
 ---
 
@@ -159,6 +160,34 @@ and communication/design tools (Slack, Notion, Figma, Photoshop, Zoom).
 - **Utility Belt implementation:** `tools/command-palette.html` (↑/↓/Enter/Esc, Ctrl/Cmd+K to
   open, `/` to focus search); every new tool supports Enter-to-run and Esc-to-close where relevant.
 
+### 2.13 Model-Native Prompt Structuring (Prompt Templates as Durable Assets)
+
+- **Software / practice:** ChatGPT (custom instructions, prompt library), Claude (Projects, XML-tagged
+  internal system prompts), Gemini (saved prompts, Canvas), plus the open-weight tiers (GLM, DeepSeek,
+  Kimi, Qwen, MiniMax, Mistral) reachable through their own chat surfaces. Alongside the tools, the
+  published prompt-design guidance from Google (Gemini API docs) and the 2026 model-specific technique
+  write-ups describe the same underlying shape.
+- **What it actually does:** A production prompt is not a sentence — it is a small document with four
+  structural parts: a **role assignment**, a **context-and-constraints block** (objective, hard rules,
+  edge cases, quality gates), an **execution methodology** (numbered phases), and an **output schema**
+  (exact sections, table columns, JSON keys, code-block languages). Each engine then wants that
+  document delivered its own way: XML tags for Claude, clean Markdown plus structured output for
+  GPT-class models, one consistent delimiter style, data-first and question-last for Gemini, and
+  schema-first instruction lists for function-calling-oriented open-weight models.
+- **Why it's useful:** The 2023-style prompt habits — "you are a 15-year veteran", "think step by
+  step", "take a deep breath" — are at best neutral and at worst counterproductive on current frontier
+  reasoning models, which allocate their own thinking budget and respond to *constraints and schemas*
+  rather than encouragement. Meanwhile the failure mode that remains expensive is under-specification:
+  no output shape, no edge-case policy, no statement of what the model must refuse. Writing that
+  document once per workflow and reusing it turns prompt quality from a craft into an asset.
+- **Utility Belt implementation:** `tools/prompt-architect.html` — 24 enterprise workflows × 12
+  frontier engines (6 closed-weight, 6 open-weight). Picking a task and a model assembles the
+  four-pillar template with model-specific operating rules (delimiter convention, reasoning-effort and
+  verbosity handling, known quirks), injects your variables and a marked input block, and offers
+  one-click copy, Markdown/JSON export, and direct launch of the target model's chat endpoint. Optional
+  enforcement blocks add a quality-gate self-check, an uncertainty register, framework traceability,
+  adversarial red-teaming, a few-shot anchor, and an agent/tool-call protocol.
+
 ---
 
 ## 3. From Features to Utilities
@@ -173,6 +202,7 @@ Each researched feature was turned into a shippable, dependency-free tool. Mappi
 | `tools/text-diff.html` | Diff view (unified + split), ignore-whitespace, copy/export |
 | `tools/scratchpad.html` | Autosave, version history, split-pane live preview, undo toast |
 | `tools/color-studio.html` | Contrast checks, palette + shade/tint generation, copy as CSS/JSON |
+| `tools/prompt-architect.html` | Prompt structuring across models, model-native delimiter/envelope conventions, output schema enforcement, copy/export + launch-in-model |
 
 Design rules kept from the researched software (and applied to all six tools):
 
@@ -185,6 +215,12 @@ Design rules kept from the researched software (and applied to all six tools):
 ---
 
 ## 4. Sources
+
+- Google, *Prompt design strategies* (Gemini API docs, updated 2026): be precise and direct, use consistent delimiters, prefer few-shot examples, put data before the question, Plan → Execute → Validate → Format — https://ai.google.dev/gemini-api/docs/prompting-strategies
+- SurePrompts, *Advanced Prompt Engineering in 2026 — Claude 4.6, GPT-5.4, Gemini Deep Think*: independent reasoning-effort and verbosity dials; drop "think step by step" and persona stacking on reasoning models; XML tags for content, not for thinking instructions — https://sureprompts.com/blog/advanced-prompt-engineering-2026-claude-gpt5-gemini
+- Fireworks AI, *Best Open Source LLMs in 2026*: GLM-5.2 (743B MoE, 1,040k context, MIT) and DeepSeek-V4-Pro (1.6T, 1,040k context) long-context/agentic positioning; MiniMax M3 native image+video — https://fireworks.ai/blog/best-open-source-llms
+- Spectrum AI Lab, *Best Open-Source AI Models 2026*: Kimi K2.6 agent-swarm capability with a 256K context window; MiniMax M3 open-weight multimodal claims — https://spectrumailab.com/blog/best-open-source-ai-models-ranked-2026
+- Meta Newsroom, *Introducing Muse Spark* (Apr 2026): Muse Spark powers the Meta AI assistant in the Meta AI app and meta.ai — https://about.fb.com/news/2026/04/introducing-muse-spark-meta-superintelligence-labs/
 
 - StatCounter / ElectroIQ, *Operating Systems Statistics* (Aug 2025): Windows ≈ 70% desktop share — https://electroiq.com/stats/operating-systems-statistics/
 - MSPoweruser, *Most Used Software* (2025): Excel ≈ 750M users; Excel pivot tables & formulas as key features — https://mspoweruser.com/most-used-software/
