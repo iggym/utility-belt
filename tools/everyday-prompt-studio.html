@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Everyday Prompt Studio — 12 Life Workflows × 12 Models — Utility Belt</title>
+<meta name="description" content="Generate production-grade, model-tuned prompts for 12 everyday living workflows — meals, budget, calendar, repairs, health, travel, taxes, hiring — across 6 closed-weight and 6 open-weight models.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--surface:#111113;--surface-2:#18181b;--surface-3:#232327;
+  --border:rgba(255,255,255,.08);--border-hover:rgba(255,255,255,.18);
+  --text:#fafafa;--muted:#8b8b95;--subtle:#52525b;
+  --accent:#6366f1;--accent-2:#a5b4fc;--accent-glow:rgba(99,102,241,.15);
+  --good:#34d399;--warn:#fbbf24;--bad:#f87171;--cyan:#22d3ee;--violet:#c084fc;--rose:#fb7185;
+  --radius:10px;--card-radius:14px;--transition:150ms cubic-bezier(.4,0,.2,1);
+  --sans:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(620px 380px at 8% 0%,rgba(99,102,241,.11),transparent 70%),
+             radial-gradient(560px 420px at 96% 4%,rgba(34,211,238,.07),transparent 70%)}
+a{color:inherit}
+button,select,input,textarea{font-family:inherit;font-size:13px;color:var(--text)}
+button{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;
+  cursor:pointer;transition:all var(--transition);font-weight:500;display:inline-flex;align-items:center;gap:6px}
+button:hover{border-color:var(--border-hover);background:var(--surface-3)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#4f46e5;border-color:#4f46e5}
+button.go{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.4);color:#6ee7b7}
+button.go:hover{background:rgba(52,211,153,.22);border-color:rgba(52,211,153,.6)}
+button.ghost{background:transparent}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.sm{padding:5px 9px;font-size:12px}
+select,input[type=text],textarea{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px;outline:none;transition:border-color var(--transition);width:100%}
+select:focus,input:focus,textarea:focus{border-color:rgba(99,102,241,.55)}
+
+/* ── Header ─────────────────────────────────────────── */
+header{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;padding:0 18px;height:56px;
+  background:rgba(9,9,11,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border)}
+header .brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:600;font-size:14px}
+.logo-mark{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;background:linear-gradient(135deg,var(--accent),#06b6d4)}
+header .sep{color:var(--subtle)}
+header .title{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .spacer{flex:1}
+.pill{font-size:11.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);
+  padding:3px 10px;border-radius:20px;white-space:nowrap}
+.pill b{color:var(--accent-2);font-weight:600}
+
+/* ── Shell ──────────────────────────────────────────── */
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:290px minmax(0,1fr);gap:18px;
+  max-width:1520px;margin:0 auto;padding:18px 18px 64px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:15px}
+.card+.card{margin-top:14px}
+.card h2{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.card h2 .step{width:19px;height:19px;border-radius:6px;background:var(--accent-glow);color:var(--accent-2);
+  display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;letter-spacing:0}
+.card h2 .right{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--subtle);font-size:11px;
+  display:flex;gap:6px;align-items:center}
+
+/* ── Sidebar ────────────────────────────────────────── */
+.sidebar{position:sticky;top:74px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--card-radius);padding:12px;max-height:calc(100vh - 92px);display:flex;flex-direction:column;gap:10px}
+.sidebar .search{position:relative}
+.sidebar .search input{padding-left:30px}
+.sidebar .search span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--subtle);font-size:12px}
+.cats{display:flex;flex-wrap:wrap;gap:5px}
+.cats button{padding:3px 9px;font-size:11px;border-radius:20px;background:transparent;color:var(--muted)}
+.cats button.on{background:var(--accent-glow);border-color:rgba(99,102,241,.4);color:var(--accent-2)}
+.tasklist{overflow-y:auto;display:flex;flex-direction:column;gap:3px;padding-right:4px;flex:1;min-height:140px}
+.tasklist button{display:flex;gap:9px;align-items:flex-start;text-align:left;background:transparent;border:1px solid transparent;
+  border-radius:9px;padding:7px 8px;line-height:1.35;width:100%}
+.tasklist button:hover{background:var(--surface-2);border-color:var(--border)}
+.tasklist button.on{background:var(--accent-glow);border-color:rgba(99,102,241,.42)}
+.tasklist .num{font-family:var(--mono);font-size:10.5px;color:var(--subtle);min-width:17px;padding-top:2px}
+.tasklist button.on .num{color:var(--accent-2)}
+.tasklist .ico{font-size:13px}
+.tasklist .txt{flex:1;min-width:0}
+.tasklist .tt{font-size:12.4px;font-weight:500;display:block}
+.tasklist .cc{font-size:10.5px;color:var(--subtle)}
+.sidebar .foot{font-size:11px;color:var(--subtle);border-top:1px solid var(--border);padding-top:9px;display:flex;
+  justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ── Main ───────────────────────────────────────────── */
+main{min-width:0}
+.hero h1{font-size:23px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hero p{color:var(--muted);font-size:13px;margin:5px 0 0;max-width:88ch}
+.hero p b{color:var(--text);font-weight:600}
+.model-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.model-slot{transition:opacity var(--transition)}
+.model-slot.dim{opacity:.45}
+.model-slot.dim select{cursor:not-allowed}
+.model-slot .lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.tag{font-size:10px;padding:1px 7px;border-radius:20px;border:1px solid var(--border);font-weight:600;letter-spacing:.02em}
+.tag.closed{color:var(--violet);border-color:rgba(192,132,252,.35);background:rgba(192,132,252,.1)}
+.tag.open{color:var(--good);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.1)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.chips .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--subtle);font-weight:600;
+  width:100%;margin-bottom:-2px}
+.chip{font-size:11.5px;padding:4px 10px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);
+  color:var(--muted);cursor:pointer;transition:all var(--transition)}
+.chip:hover{color:var(--text);border-color:var(--border-hover)}
+.chip.on{background:var(--accent-glow);border-color:rgba(99,102,241,.45);color:var(--accent-2)}
+.chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.chip.closed .dot{background:var(--violet)}.chip.open .dot{background:var(--good)}
+.model-info{margin-top:12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2);padding:11px 12px}
+.model-info .top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+.model-info .name{font-size:14px;font-weight:600}
+.model-info .vendor{font-size:11.5px;color:var(--muted)}
+.model-info .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:9px}
+.fact{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 9px}
+.fact .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle);font-weight:600}
+.fact .v{font-size:12px;overflow-wrap:anywhere}
+.model-info ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+.model-info li{font-size:12.2px;color:var(--muted);display:flex;gap:7px;align-items:flex-start}
+.model-info li::before{content:'▸';color:var(--accent-2);font-size:11px;line-height:1.5}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(162px,1fr));gap:11px}
+.ctrl .k,.inputs .k{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:5px;display:block}
+.toggles{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.toggle{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:20px;padding:5px 11px;cursor:pointer;transition:all var(--transition);
+  user-select:none}
+.toggle:hover{border-color:var(--border-hover)}
+.toggle.on{color:var(--accent-2);border-color:rgba(99,102,241,.4);background:var(--accent-glow)}
+.toggle .sw{width:9px;height:9px;border-radius:50%;background:var(--subtle);flex:none}
+.toggle.on .sw{background:var(--accent-2);box-shadow:0 0 0 3px rgba(165,180,252,.18)}
+.inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:11px}
+.slots{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.slots .head{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;
+  margin-bottom:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.slots .head .right{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--subtle)}
+.profile-note{font-size:11.5px;color:var(--subtle);margin-top:10px;display:flex;gap:7px;align-items:flex-start;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.profile-note b{color:var(--muted);font-weight:600}
+
+/* ── Preview ────────────────────────────────────────── */
+.preview-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.preview-head .who{font-size:13px;font-weight:600}
+.preview-head .who small{display:block;font-weight:500;color:var(--muted);font-size:11.5px}
+.meter{display:flex;gap:6px;align-items:center;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:20px;padding:4px 11px;font-size:11.5px;color:var(--muted)}
+.meter .bar{width:74px;height:5px;border-radius:4px;background:var(--subtle);overflow:hidden}
+.meter .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .3s}
+pre#out{background:#0b0b0d;border:1px solid var(--border);border-radius:11px;padding:15px 16px;overflow:auto;
+  max-height:640px;font-family:var(--mono);font-size:12.4px;line-height:1.75;color:#d4d4d8;white-space:pre-wrap;
+  word-break:break-word;tab-size:2}
+pre#out .h{color:#a5b4fc;font-weight:500}
+pre#out .t{color:#67e8f9}
+pre#out .v{color:#fcd34d}
+pre#out .c{color:#71717a;font-style:italic}
+pre#out .f{color:#86efac}
+pre#out .s{color:#fda4af}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--subtle);margin-top:10px}
+.stats b{color:var(--muted);font-weight:600;font-family:var(--mono)}
+.anatomy{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:11px}
+.pillar{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px}
+.pillar .n{font-family:var(--mono);font-size:10.5px;color:var(--accent-2);font-weight:600}
+.pillar .t{font-size:12.6px;font-weight:600;margin:3px 0 4px}
+.pillar .d{font-size:11.6px;color:var(--muted);line-height:1.5}
+details.tips{margin-top:12px;border-top:1px solid var(--border);padding-top:11px}
+details.tips summary{cursor:pointer;font-size:12.4px;color:var(--accent-2);font-weight:500}
+details.tips ul{margin:9px 0 0 4px;list-style:none;display:flex;flex-direction:column;gap:6px}
+details.tips li{font-size:12.2px;color:var(--muted);display:flex;gap:8px}
+details.tips li::before{content:'●';font-size:7px;color:var(--subtle);line-height:2}
+.hidden{display:none!important}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(18px);background:var(--surface-3);
+  border:1px solid var(--border-hover);padding:10px 18px;border-radius:var(--radius);font-size:13px;opacity:0;
+  transition:.2s;pointer-events:none;z-index:80;display:flex;gap:9px;align-items:center;max-width:92vw}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast .ok{color:var(--good)}
+.toast.bad .ok{color:var(--warn)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+kbd{font-family:var(--mono);font-size:10.5px;background:var(--surface-3);border:1px solid var(--border);
+  border-radius:5px;padding:1px 5px;color:var(--muted)}
+
+/* ── Mobile ─────────────────────────────────────────── */
+@media (max-width:1000px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:static;max-height:none}
+  .tasklist{max-height:300px}
+  .model-grid{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  header .title,.pill.optional{display:none}
+  .hero h1{font-size:19px}
+  pre#out{font-size:11.6px;padding:12px}
+  .shell{padding:14px 12px 60px}
+  .actions button{flex:1 1 auto;justify-content:center}
+}
+@media print{
+  body::before,.sidebar,header,.actions,.anatomy,details.tips,.meter,.chips{display:none!important}
+  body{background:#fff;color:#000}
+  pre#out{max-height:none;border-color:#ccc;color:#111;background:#fff}
+  .shell{display:block;padding:0}
+  .card{border-color:#ccc;background:#fff}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="../index.html"><span class="logo-mark">🛠</span> Utility Belt</a>
+  <span class="sep">/</span>
+  <span class="title">Everyday Prompt Studio — 12 Life Workflows × 12 Models</span>
+  <span class="spacer"></span>
+  <span class="pill optional">4-pillar architecture · <b>everyday living</b></span>
+  <span class="pill" id="hdrModel">—</span>
+</header>
+
+<div class="shell">
+  <!-- ══ SIDEBAR: the 12 everyday workflows ══ -->
+  <aside class="sidebar">
+    <div class="search">
+      <span>⌕</span>
+      <input type="text" id="taskSearch" placeholder="Search 12 life workflows…" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="cats" id="cats"></div>
+    <div class="tasklist" id="taskList"></div>
+    <div class="foot">
+      <span id="taskCount">12 workflows</span>
+      <span><kbd>/</kbd> search · <kbd>⌥↑↓</kbd> move · <kbd>⌘↵</kbd> copy</span>
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <h1>Everyday Prompt Studio <span class="pill">v1.0</span></h1>
+      <p>Production-grade prompts for the <b>12 things that actually eat your week</b> — meals, money, calendar,
+      messages, repairs, health, travel, taxes, learning, hiring — tuned per engine across <b>6 closed-weight</b>
+      and <b>6 open-weight</b> models. Every template ships the four-pillar architecture:
+      <b>Role · Constraints · Methodology · Output Schema</b>, with a household context engine that carries your
+      real budget, diet, schedule and limits into all twelve.</p>
+    </div>
+
+    <!-- ══ 1. Model selectors ══ -->
+    <section class="card" style="margin-top:16px">
+      <h2><span class="step">1</span> Target model <span class="right" id="modelCount"></span></h2>
+      <div class="model-grid">
+        <div class="model-slot" id="slotClosed">
+          <span class="lbl"><span class="tag closed">CLOSED</span> Closed-weight tier</span>
+          <select id="selClosed" aria-label="Closed-weight models"></select>
+        </div>
+        <div class="model-slot" id="slotOpen">
+          <span class="lbl"><span class="tag open">OPEN</span> Open-weight tier</span>
+          <select id="selOpen" aria-label="Open-weight models"></select>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="model-info" id="modelInfo"></div>
+    </section>
+
+    <!-- ══ 2. Household context ══ -->
+    <section class="card profile-card">
+      <h2><span class="step">2</span> Living context — your household engine
+        <span class="right"><button class="sm ghost" id="btnProfileExample" type="button">✨ Load example</button><button class="sm ghost" id="btnProfileClear" type="button">Clear</button></span>
+      </h2>
+      <div class="inputs">
+        <div><span class="k">Household</span>
+          <input type="text" id="pHousehold" placeholder="e.g. 2 adults, 1 kid (7), 1 dog; both adults work" spellcheck="false"></div>
+        <div><span class="k">Money ceiling &amp; currency</span>
+          <input type="text" id="pBudget" placeholder="e.g. $180/week groceries, $2,400/mo take-home" spellcheck="false"></div>
+        <div><span class="k">Diet, allergies &amp; health limits</span>
+          <input type="text" id="pDiet" placeholder="e.g. nut allergy (child), vegetarian Mon–Wed, low-sodium" spellcheck="false"></div>
+        <div><span class="k">Time reality &amp; fixed commitments</span>
+          <input type="text" id="pSchedule" placeholder="e.g. work 8:30–18:00, 40-min commute, football Tue/Thu 18:30" spellcheck="false"></div>
+        <div><span class="k">Home, location &amp; units</span>
+          <input type="text" id="pLocation" placeholder="e.g. 2-bed rented flat, Leeds UK, metric, gas boiler" spellcheck="false"></div>
+        <div><span class="k">Skills, tools &amp; risk appetite</span>
+          <input type="text" id="pSkills" placeholder="e.g. basic DIY, no gas work, own drill; happy to cook from scratch" spellcheck="false"></div>
+        <div><span class="k">Anything else binding</span>
+          <input type="text" id="pExtra" placeholder="e.g. no car, halal only, deadline is Friday, avoid subscription traps" spellcheck="false"></div>
+      </div>
+      <div class="profile-note"><b>⚙</b><span>These seven fields are injected into <b>Pillar 2</b> of <b>every</b> workflow and
+      saved in this browser only. Leave a field blank and it renders as a <code>⟨slot⟩</code> the model must ask you about
+      instead of guessing.</span></div>
+    </section>
+
+    <!-- ══ 3. Prompt controls ══ -->
+    <section class="card controls-card">
+      <h2><span class="step">3</span> Prompt controls <span class="right">applied to every section below</span></h2>
+      <div class="controls">
+        <div class="ctrl">
+          <span class="k">Answer depth</span>
+          <select id="ctlDepth">
+            <option value="quick">Quick — one screen, decision only</option>
+            <option value="standard" selected>Standard — full plan + tables</option>
+            <option value="deep">Deep — options, tradeoffs, follow-through</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="k">Envelope format</span>
+          <select id="ctlFormat">
+            <option value="auto" selected>Auto — native to model</option>
+            <option value="markdown">Markdown headings</option>
+            <option value="xml">XML tags</option>
+            <option value="hybrid">Hybrid — XML blocks + MD tables</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="k">Units &amp; locale</span>
+          <select id="ctlUnits">
+            <option value="profile" selected>Follow living context</option>
+            <option value="metric">Metric (kg, km, °C, L)</option>
+            <option value="us">US customary (lb, mi, °F, cup)</option>
+            <option value="both">Dual — metric + US in brackets</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="k">Missing information</span>
+          <select id="ctlAsk">
+            <option value="assume" selected>Assume &amp; label — never stall</option>
+            <option value="ask3">Ask up to 3 questions first</option>
+            <option value="branch">Branch — plan both readings</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <span class="k">Voice</span>
+          <select id="ctlVoice">
+            <option value="plain" selected>Plain and practical</option>
+            <option value="warm">Warm, encouraging coach</option>
+            <option value="blunt">Blunt, no comfort padding</option>
+          </select>
+        </div>
+      </div>
+      <div class="toggles" id="toggles"></div>
+    </section>
+
+    <!-- ══ 4. Task inputs ══ -->
+    <section class="card inputs-card">
+      <h2><span class="step">4</span> Task inputs <span class="right" id="varHint">blanks render as ⟨slots⟩</span></h2>
+      <div class="inputs">
+        <div><span class="k">What you actually want out of it</span>
+          <input type="text" id="vGoal" placeholder="e.g. a week of dinners we will really cook" spellcheck="false"></div>
+        <div><span class="k">Who has to act on the answer</span>
+          <input type="text" id="vWho" placeholder="e.g. me cooking on weeknights, partner on weekends" spellcheck="false"></div>
+        <div><span class="k">Hard limits from you</span>
+          <input type="text" id="vLimits" placeholder="e.g. no oven before 19:00, nothing over $12 per dinner" spellcheck="false"></div>
+      </div>
+      <div class="slots">
+        <div class="head">Workflow-specific slots <span class="right" id="slotTask">—</span>
+          <button class="sm ghost" id="btnExample" type="button">✨ Load example</button>
+          <button class="sm ghost" id="btnClear" type="button">Clear</button></div>
+        <div class="inputs" id="slotFields"></div>
+      </div>
+    </section>
+
+    <!-- ══ 5. Preview + actions ══ -->
+    <section class="card preview-card">
+      <div class="preview-head">
+        <div class="who" id="whoTitle">—<small id="whoSub">—</small></div>
+        <span class="spacer" style="flex:1"></span>
+        <span class="meter" title="Structural completeness of the generated prompt">
+          <span>Prompt strength</span><span class="bar"><i id="meterBar" style="width:0%"></i></span><b id="meterVal">0%</b>
+        </span>
+        <span class="pill" id="tokenEst">—</span>
+      </div>
+      <div class="actions">
+        <button class="primary" id="btnCopy">📋 Copy prompt</button>
+        <button class="go" id="btnCopyOpen">🚀 Copy &amp; open <span id="btnModelName">model</span></button>
+        <button class="ghost" id="btnOpen">↗ Open chat only</button>
+        <button class="ghost" id="btnDownload">⬇ .md</button>
+        <button class="ghost" id="btnDownloadJson">⬇ .json</button>
+        <button class="ghost" id="btnPrint">🖨 Print</button>
+        <button class="ghost" id="btnReset">↺ Reset all</button>
+      </div>
+      <pre id="out"></pre>
+      <div class="stats">
+        <span>chars <b id="sChars">0</b></span><span>words <b id="sWords">0</b></span>
+        <span>≈tokens <b id="sTokens">0</b></span><span>sections <b id="sSections">0</b></span>
+        <span>task <b id="sTask">—</b></span><span>model <b id="sModel">—</b></span>
+      </div>
+      <div class="anatomy" style="margin-top:14px">
+        <div class="pillar"><div class="n">PILLAR 01</div><div class="t">System Persona &amp; Role</div>
+          <div class="d">A practical, empathetic domain expert — cook, coach, tradesperson, planner — with an explicit refusal boundary so it never bluffs a price, a dose or a repair.</div></div>
+        <div class="pillar"><div class="n">PILLAR 02</div><div class="t">Context &amp; Constraints Engine</div>
+          <div class="d">Your household, budget ceiling, diet, schedule boundaries and risk appetite as binding rules — plus stop conditions and quality gates.</div></div>
+        <div class="pillar"><div class="n">PILLAR 03</div><div class="t">Execution Methodology</div>
+          <div class="d">Numbered intake → assess → decide → sequence phases, so the model plans against your real week instead of a hypothetical one.</div></div>
+        <div class="pillar"><div class="n">PILLAR 04</div><div class="t">Output Schema</div>
+          <div class="d">Markdown tables, shopping lists, time blocks, packing grids and printable checklists — conversational filler is structurally excluded.</div></div>
+      </div>
+      <details class="tips">
+        <summary>How to use these prompts (30-second guide)</summary>
+        <ul>
+          <li><b>Fill the living context once.</b> Those seven fields carry into all 12 workflows, so a meal plan, a budget and a repair plan all respect the same household.</li>
+          <li><b>Paste as one message.</b> Whole template — role through schema — in a single turn, with your real material in the marked input block at the end.</li>
+          <li><b>Match depth to stakes.</b> Quick for “what’s for dinner”, Deep for taxes, a hire, or anything touching gas, wiring or your body.</li>
+          <li><b>Keep the safety block on.</b> Repairs, health and money templates carry stop conditions; the model must escalate instead of guessing.</li>
+          <li><b>Ask for the follow-up.</b> These templates end with a NEXT 7 DAYS section — treat it as tomorrow’s prompt, not as reading.</li>
+          <li><b>Engines differ.</b> Switch the model chip and re-copy: delimiter style, reasoning directive and quirk list are re-tuned automatically.</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="ok">✓</span><span id="toastMsg"></span></div>
+
+<script>
+(function(){
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   MODEL REGISTRY — 6 closed-weight + 6 open-weight frontier engines,
+   each mapped to its public web chat endpoint.
+   style: delimiter convention the engine parses most reliably.
+   rules: model-specific operating rules injected into Pillar 02.
+   ═══════════════════════════════════════════════════════════════════ */
+const MODELS = [
+  /* ── CLOSED WEIGHT ─────────────────────────────────────────────── */
+  {
+    id:`gpt54`, name:`GPT-5.4`, vendor:`OpenAI`, group:`closed`, style:`markdown`,
+    endpoint:`https://chatgpt.com/`, ctx:`1M tokens`, reasoning:`Reasoning effort dial (none → xhigh) + independent verbosity dial`,
+    picks:[`Weekly planning & budgets`,`Structured checklists`,`Multi-constraint tradeoffs`],
+    effortNote:`Reasoning effort is an interface/API setting, not prompt text — pick it in the model picker. Use high only for money, hiring or anything safety-relevant.`,
+    verbosityNote:`Verbosity is independent of reasoning: high reasoning with low verbosity gives you the decision tables without the coaching prose.`,
+    rules:[
+      `Open with a one-sentence statement of what you need, then the structured context. No persona stacking beyond the role block supplied here.`,
+      `Delimit blocks with Markdown headings and fenced code blocks tagged by language; never mix XML and Markdown in one prompt.`,
+      `When a table is requested, emit Markdown only — no prose before or after the table, no closing commentary.`,
+      `Place your material (statements, receipts, pantry list, calendar dump) before the question and repeat the exact deliverable in the final line.`
+    ],
+    directive:`Work the numbered phases silently. Emit only the artefacts each phase names; do not narrate deliberation and do not restate the household context back.`
+  },
+  {
+    id:`opus46`, name:`Claude Opus 4.6`, vendor:`Anthropic`, group:`closed`, style:`xml`,
+    endpoint:`https://claude.ai/new`, ctx:`1M tokens`, reasoning:`Adaptive thinking with effort levels (low / medium / high / max)`,
+    picks:[`Conflict messaging`,`Health & routine design`,`Nuanced family tradeoffs`],
+    effortNote:`Set effort in the interface (thinking toggle). Wrap your material and constraints in XML tags — do not wrap the thinking instruction itself in tags.`,
+    verbosityNote:`Give length targets per section (“≤12 rows”, “3–5 sentences”) rather than a global word count.`,
+    rules:[
+      `XML tags are the native structuring primitive: wrap each block in a tag whose name states its purpose (<household>, <budget>, <constraints>, <material>, <deliverable>).`,
+      `Instructions are followed literally — anything unstated is omitted. State every required section, exclusion and length bound.`,
+      `Reference tagged content by name inside instructions (“using only <material>”) so every recommendation is grounded in what you supplied.`,
+      `Pair every role with a constraint: a role with no matching constraint produces generic lifestyle-blog advice.`
+    ],
+    directive:`Think first, answer second. In the visible response include only the schema sections and the assumption register; keep exploratory reasoning out of the output.`
+  },
+  {
+    id:`gemini31`, name:`Gemini 3.1 Pro`, vendor:`Google DeepMind`, group:`closed`, style:`hybrid`,
+    endpoint:`https://gemini.google.com/app`, ctx:`1M tokens`, reasoning:`Thinking mode (on/off) with parallel hypothesis exploration`,
+    picks:[`Photos of rooms, food, labels`,`Statement & receipt parsing`,`Itinerary + maps-style planning`],
+    effortNote:`Enable Thinking mode for budget reconciliation and travel logistics; leave it off for simple recipe scaling and list generation.`,
+    verbosityNote:`Be precise and direct — this family rewards precision over persuasion. Define output length by row counts, not adjectives.`,
+    rules:[
+      `State the goal in one line, then use one consistent delimiter style (Markdown headings or XML tags — not both).`,
+      `Give 2–3 few-shot anchors when an exact format matters: example formatting controls the response shape more than any instruction.`,
+      `Place data and photos first, the specific question last. For images, say exactly what to read from each one.`,
+      `Markdown tables are the default container — the strongest native output shape of this family.`
+    ],
+    directive:`Plan, execute, validate, format — in that internal order. Open the visible answer with the requested schema, not with a preamble.`
+  },
+  {
+    id:`sonnet46`, name:`Claude Sonnet 4.6`, vendor:`Anthropic`, group:`closed`, style:`xml`,
+    endpoint:`https://claude.ai/new`, ctx:`1M tokens`, reasoning:`Adaptive thinking with effort levels (low → max)`,
+    picks:[`Daily task triage`,`Fast drafting at volume`,`Repeatable weekly routines`],
+    effortNote:`Optimised for throughput: reserve max effort for genuinely hard steps (tax categorisation, contractor vetting) and run daily triage at low/medium.`,
+    verbosityNote:`Ask for terse section bodies — verbose prose is the main cost driver when you run this every morning.`,
+    rules:[
+      `Same XML discipline as the Opus tier — tag names describe content, every requirement stated explicitly.`,
+      `State the depth bar expected (“usable tonight, not a research paper”); this tier optimises for the stated bar, not an implicit one.`,
+      `For chained daily use, emit only what the next step consumes — no greeting, no recap, no sign-off.`,
+      `Keep the schema fixed across days so consecutive outputs can be compared line by line.`
+    ],
+    directive:`Reason internally, then produce the deliverable. Reserve visible reasoning for a short ASSUMPTIONS block when a decision depends on an unstated fact.`
+  },
+  {
+    id:`grok4`, name:`Grok 4`, vendor:`xAI`, group:`closed`, style:`markdown`,
+    endpoint:`https://grok.com/`, ctx:`256K tokens`, reasoning:`Reasoning model with live search and code execution`,
+    picks:[`Live prices & availability`,`Local/real-time checks`,`Stress-testing a decision`],
+    effortNote:`Use the Think/DeepSearch controls in the composer; state explicitly whether live search is allowed, because grounding changes prices and availability materially.`,
+    verbosityNote:`This family answers plainly and briefly by default — request the full trail explicitly when you need it.`,
+    rules:[
+      `Declare the grounding policy in the prompt: live search permitted, or internal knowledge only.`,
+      `Require an inline source and a date stamp for every price, regulation, opening hour or travel restriction.`,
+      `Ask for adversarial self-review (a steel-manned counter-position) before you commit money to a contractor, a trip or a purchase.`,
+      `Use explicit Markdown tables and fenced blocks; answer shaping matters more here than tag engineering.`
+    ],
+    directive:`State the conclusion first, then the quantitative support. Where live search is permitted, prefer current sources and date-stamp every external figure.`
+  },
+  {
+    id:`musespark`, name:`Muse Spark`, vendor:`Meta`, group:`closed`, style:`markdown`,
+    endpoint:`https://www.meta.ai/`, ctx:`Long-context, multimodal (text / image / audio in)`, reasoning:`Modes: Instant, Thinking, Contemplating`,
+    picks:[`Snap the fridge or shelf`,`Read a warning label or error code`,`Voice-note capture`],
+    effortNote:`Pick the mode deliberately: Instant for “what can I cook tonight”, Thinking for the weekly plan, Contemplating for health and money decisions.`,
+    verbosityNote:`Consumer surface defaults to conversational — pin the output shape and length bounds or you will get chatty answers.`,
+    rules:[
+      `Select the mode in the UI and state inside the prompt which mode the request assumes.`,
+      `When photos, scans or audio are in scope, say exactly what to read from each artefact and forbid speculation about anything not visible.`,
+      `Assume no API layer exists: write the prompt as a single self-contained chat turn with all context embedded.`,
+      `Pin the envelope (headings, table columns, list format) tightly — this surface drifts to conversational prose.`
+    ],
+    directive:`Read the supplied artefacts first, list what is observable versus inferred, then build the plan from the observable set only.`
+  },
+
+  /* ── OPEN WEIGHT ───────────────────────────────────────────────── */
+  {
+    id:`glm52`, name:`GLM-5.2`, vendor:`Z.ai`, group:`open`, style:`markdown`,
+    endpoint:`https://chat.z.ai/`, ctx:`1M tokens (MIT licensed)`, reasoning:`Selectable reasoning effort; long-horizon agentic tool use`,
+    picks:[`Paste a whole month of statements`,`Long document organisation`,`Multi-week plans`],
+    effortNote:`Two reasoning-effort levels are exposed — pick the deeper level for budgeting, taxes and vetting, the fast level for list generation.`,
+    verbosityNote:`Give a firm per-section ceiling; long-context engines will happily restate your input unless told not to.`,
+    rules:[
+      `Feed the whole artefact (full statement, every receipt line, the entire manual extract) in one context and require row-level anchors.`,
+      `Ban input restatement explicitly: “do not summarise my material unless a phase asks for it”.`,
+      `For multi-week plans, state the horizon, the review cadence and the stop condition.`,
+      `Use Markdown headings plus fenced blocks; keep one instruction per line.`
+    ],
+    directive:`Work phase by phase over the full context. Anchor every finding to a visible reference (transaction, line item, page, receipt) before reasoning from it.`
+  },
+  {
+    id:`deepseekv4`, name:`DeepSeek-V4-Pro`, vendor:`DeepSeek`, group:`open`, style:`markdown`,
+    endpoint:`https://chat.deepseek.com/`, ctx:`1M tokens`, reasoning:`Thinking / non-thinking modes; sparse-attention long context`,
+    picks:[`Arithmetic-heavy budgets`,`Diagnosis trees`,`Cost-efficient long context`],
+    effortNote:`Enable thinking (deep-think) mode for cash-flow maths and fault diagnosis; non-thinking for formatting passes. State which mode the prompt assumes.`,
+    verbosityNote:`This family is thorough by nature — cap output per section or you will receive unrequested tutorial prose about basic concepts.`,
+    rules:[
+      `Skip elaborate role-play: a precise task statement, the material and the output schema outperform persona theatre.`,
+      `Show the expected reasoning structure (symptom → hypothesis → test → verdict) instead of asking it to “think step by step”.`,
+      `For any calculation, require the formula, the substituted numbers and the result on separate lines so you can check the maths.`,
+      `State the audience and depth ceiling explicitly; otherwise expect textbook-level explanation of well-known ideas.`
+    ],
+    directive:`Reason to a verdict, not to a survey: every claim must terminate in a decision, a number or a physical next action.`
+  },
+  {
+    id:`kimik26`, name:`Kimi K2.6`, vendor:`Moonshot AI`, group:`open`, style:`markdown`,
+    endpoint:`https://www.kimi.com/`, ctx:`256K tokens (text / image / video in)`, reasoning:`Thinking + non-thinking; multi-agent orchestration`,
+    picks:[`Multi-step logistics`,`Screenshot-to-plan`,`Parallel option comparison`],
+    effortNote:`Use Thinking mode for design work; for multi-workstream plans, budget the number of branches and the output ceiling in the prompt.`,
+    verbosityNote:`Ask for a compact contract between branches (columns, not prose) so parallel options can be compared mechanically.`,
+    rules:[
+      `Structure the task as branches with interfaces: each option states its inputs, outputs and the columns it must fill.`,
+      `For screenshots and photos, name the artefacts to read and the exact fields to extract from each.`,
+      `Demand a merge plan: how the branches combine into one recommendation, and which one wins on conflict.`,
+      `Keep the 256K ceiling in mind — summarise oversized statements before pasting, and say where you truncated.`
+    ],
+    directive:`Decompose first, then execute. Produce a comparison table before any recommendation so the branches are independently checkable.`
+  },
+  {
+    id:`qwen35`, name:`Qwen3.5-397B`, vendor:`Alibaba`, group:`open`, style:`markdown`,
+    endpoint:`https://chat.qwen.ai/`, ctx:`262K tokens open-weight (1M hosted)`, reasoning:`Hybrid thinking mode toggle; strong multilingual coverage`,
+    picks:[`Bilingual household plans`,`Local-language contractor comms`,`Regional units & measures`],
+    effortNote:`Hybrid thinking toggle — enable it for planning and analysis, disable it for translation and formatting passes where latency dominates.`,
+    verbosityNote:`State the output language(s) and script; state whether transliteration or original script is required.`,
+    rules:[
+      `Declare the output locale(s) explicitly and require locale-tagged sections (en-GB, es-MX, zh-CN …) when more than one is in play.`,
+      `Ask for register decisions (formal/informal, T-V distinction, honorific level) rather than literal translation — this matters when messaging a contractor or a landlord.`,
+      `Schema-first: define table columns and JSON keys in English, then require the values in the target locale.`,
+      `Convert units deliberately: state which system governs, and give the conversion where both are shown.`
+    ],
+    directive:`Negotiate meaning before wording: surface the ambiguity, pick the register explicitly, then produce the deliverable against that decision.`
+  },
+  {
+    id:`minimaxm3`, name:`MiniMax M3`, vendor:`MiniMax`, group:`open`, style:`markdown`,
+    endpoint:`https://agent.minimax.io/`, ctx:`1M tokens, native text / image / video`, reasoning:`Thinking mode; sparse attention; computer-use capable`,
+    picks:[`Video walkthroughs of a problem`,`Document + photo workflows`,`Room / appliance inspection`],
+    effortNote:`Enable Thinking for reasoning-heavy work; long-context passes are cheap here, so prefer full manuals and full statements over excerpts.`,
+    verbosityNote:`Ask for timestamp- or page-referenced evidence lines rather than narrative description of media.`,
+    rules:[
+      `For media inputs, anchor every observation as (asset, timestamp | page | photo) so the diagnosis stays auditable.`,
+      `Separate observed facts from inference into two distinct blocks; never blend them — this matters for fault-finding.`,
+      `For step-by-step physical work, specify the granularity of each step and the verification check after it.`,
+      `Feed whole long documents rather than excerpts — the sparse-attention architecture is designed for it.`
+    ],
+    directive:`Ground every statement in a targeted artefact reference. If a claim cannot be anchored, mark it INFERENCE and state the confidence basis.`
+  },
+  {
+    id:`mistral3`, name:`Mistral Large 3`, vendor:`Mistral AI`, group:`open`, style:`markdown`,
+    endpoint:`https://chat.mistral.ai/chat`, ctx:`Long-context tier, EU-hosted options`, reasoning:`Instruction-tuned; strong function calling and EU languages`,
+    picks:[`Fast high-volume drafting`,`EU-language household admin`,`Strict list schemas`],
+    effortNote:`Not a reasoning-budget family: gains come from sharper instructions, explicit schemas and examples, not from effort dials.`,
+    verbosityNote:`Direct, imperative, flat lists. This family answers quickly and literally — vague brevity requests produce vague brevity.`,
+    rules:[
+      `Write flat, imperative bullet instructions in the second person; avoid nested clause structures and heavy XML.`,
+      `For anything machine-readable (shopping lists, expense rows), give the exact column names and one worked example row.`,
+      `Supply 2–5 short input/output examples for anything format-sensitive.`,
+      `Assume a speed-optimised engine: split very large tasks (a whole year of expenses) into staged prompts.`
+    ],
+    directive:`Execute the instruction list in order. Where an instruction is ambiguous, choose the literal reading and note the ambiguity in one line.`
+  }
+];
+
+/* ═══════════════════════════════════════════════════════════════════
+   WORKFLOW LIBRARY — the 12 everyday living task definitions.
+   Each entry supplies the raw material for the four pillars.
+   ═══════════════════════════════════════════════════════════════════ */
+const TASKS = [
+{
+  id:`meal-plan`, n:1, title:`Weekly Meal Planning & Budget Grocery List`, icon:`🥘`, cat:`Food`,
+  blurb:`A seven-day plan your household will actually cook, consolidated into one aisle-ordered shopping list that lands under the budget.`,
+  kw:`meal plan, dinner ideas, weekly menu, grocery list, food budget, batch cook, leftovers, shopping list`,
+  role:`registered dietitian and household food-cost analyst who plans real family weeks — two adults, picky children, one batch-cook evening — not magazine spreads`,
+  stance:`You optimise for adherence over novelty. A plan abandoned on Wednesday is a failed plan, so you repeat core recipes, share ingredients across meals, batch what batch-cooks well, and treat leftovers as a designed component rather than an accident. Nutrition targets are guidance; the budget and the cooking capacity are hard.`,
+  refuse:`You do not prescribe medical diets, do not give allergen substitutions without flagging cross-contact risk, and do not state prices as fact unless the requester supplied them or live pricing is explicitly permitted — otherwise you label every price ESTIMATE with its basis.`,
+  mission:`Produce a seven-day meal plan with a consolidated, aisle-organised shopping list, cost estimate, prep schedule and waste-reduction rules that fits the stated budget, dietary limits and weeknight cooking capacity.`,
+  constraints:[
+    `Every dinner must be cookable inside the stated weeknight time ceiling; if a dish exceeds it, either give the make-ahead variant or move it to a weekend slot.`,
+    `Consolidate ingredients: at least 60% of perishable items must appear in two or more meals. Any single-use perishable must be justified in one clause.`,
+    `Allergies and medical restrictions in the living context are hard exclusions, not preferences. Where a substitution shares a facility or family (e.g. tree nut → other nut, wheat → oat), flag CROSS-CONTACT RISK explicitly.`,
+    `Quantities must match the stated household size and appetite; show the portion basis (per person, per meal) so quantities can be re-scaled.`,
+    `Cost every line item and roll it up. If the total exceeds the budget ceiling, present a compliant reduced-cost version and state exactly what was cut — never silently shrink portions.`,
+    `Respect equipment limits stated in the living context (no oven before 19:00, single hob, no freezer space, rented kitchen).`,
+    `Never invent nutrition claims, therapeutic effects or “superfood” language; report macro balance only as approximate and label it APPROXIMATE.`
+  ],
+  edge:[
+    `Budget is below what the plan costs: deliver the plan anyway, then a second table showing the cheapest compliant variant and the nutritional cost of each cut.`,
+    `Conflicting diets in one household (vegetarian + meat-eater, allergies + preferences): build one base dish with modular add-ons rather than two separate meals, and cost both.`,
+    `No stated cooking capacity: assume 30 minutes on weeknights, 90 on one weekend session, state the assumption as ASSUMPTION-001, and mark the plan ADJUSTABLE.`,
+    `Leftover fatigue or food-safety limits: apply the cooked-food rules (2 hours at room temperature, 3–4 days refrigerated, label-and-date freezing) and mark any dish that cannot safely become a leftover.`
+  ],
+  safety:[
+    `Allergen handling: state cross-contact controls for the household member with the allergy (separate utensils, check “may contain” labels, no bulk-bin products).`,
+    `Food safety: give the refrigeration window for every cooked dish, the reheat temperature target (74 °C / 165 °F through), and which dishes must not be re-heated twice.`,
+    `Any plan for pregnancy, diabetes, kidney disease, infant weaning or an eating disorder: stop and refer to a clinician or registered dietitian; provide general structure only, never a prescription.`
+  ],
+  gates:[
+    `Every dinner has a stated cook time, a cost and a leftover disposition; nothing in the plan is unaccounted for.`,
+    `The shopping list total is stated, compared to the budget ceiling, and reconciled to the cent against the line items.`,
+    `Zero single-use perishables without a stated justification.`,
+    `Every hard dietary exclusion from the living context appears as an explicit exclusion rule, and every substitution carries its risk note.`,
+    `The plan is executable by the person named as the cook without a second planning session.`
+  ],
+  anti:[
+    `Seven novel recipes that require 40 unique ingredients and three trips to the shop.`,
+    `Vague quantities (“some”, “a handful”, “1 pack”) that make the cost roll-up unverifiable.`,
+    `Silent portion shrinking or ingredient downgrades to hit the budget without telling the reader.`
+  ],
+  phases:[
+    `Intake: restate the household size, budget ceiling, dietary exclusions, weeknight time ceiling, equipment limits and anything already on hand. List missing inputs under BLOCKING INPUTS if any are material.`,
+    `Capacity audit: fix the shape of the week — how many cooked dinners, how many leftovers, how many batch slots, how many zero-effort meals — before choosing a single recipe.`,
+    `Recipe selection: choose a repeating core set, then map shared ingredients across meals and compute the ingredient reuse rate.`,
+    `Cost model: price each line item, roll up to a total, compare to the ceiling, and produce the compliant reduced-cost variant if needed.`,
+    `Prep sequencing: build the batch-cook session and the per-day 10-minute prep steps, ordered by what must happen first.`,
+    `Waste control: assign a disposition to every perishable (meal 2, freezer, stock, spoil-risk) and set the fridge position rules.`,
+    `Verification: check the plan against every quality gate, confirm the arithmetic, and close with the next-week adjustment trigger.`
+  ],
+  schema:`## 1. WEEK SHAPE
+- Household, budget ceiling, cook-time ceiling, exclusions applied, assumption list.
+
+## 2. WEEK AT A GLANCE
+| Day | Breakfast | Lunch | Dinner | Leftover source | Cook min | Est. cost |
+
+## 3. SHOPPING LIST  (aisle-ordered)
+| Aisle | Item | Qty + unit | Est. cost | Used in (day/meal) | Substitute if out |
+
+## 4. COST ROLL-UP
+| Group | Est. cost | % of budget |
+- Total vs budget ceiling, headroom, and what changed if a reduced-cost variant was required.
+
+## 5. BATCH-COOK SESSION
+| Step | Task | Duration | What it enables later in the week |
+
+## 6. WASTE & LEFTOVER RULES
+| Item / dish | Disposition | Fridge / freezer window | Reheat rule |
+
+## 7. NUTRITION SNAPSHOT  (APPROXIMATE)
+- Protein / fibre / vegetable coverage per day, gaps, and the cheapest fix for each gap.
+
+## 8. NEXT 7 DAYS
+- Three concrete adjustments to make next week based on what this plan assumes.`
+  ,
+  refs:[`USDA MyPlate / national dietary plate models`,`Food-safety cooked-leftover rules (2h / 3–4 days / 74 °C reheat)`,`Batch-cooking and ingredient-reuse practice`],
+  slots:[
+    {k:`BUDGET`,label:`Budget ceiling for the week`,ph:`$150 groceries, already spent $20`},
+    {k:`CAPACITY`,label:`Cooking capacity this week`,ph:`4 weeknight dinners max 30 min, one 90-min Sunday session`},
+    {k:`ONHAND`,label:`What you already have`,ph:`rice, lentils, frozen peas, half a chicken, eggs, onions`},
+    {k:`PREFS`,label:`Likes, dislikes, repeat offenders`,ph:`kid refuses mushrooms; everyone loves chilli; no fish on Mondays`}
+  ],
+  ex:{BUDGET:`$150 for the week; $20 already spent`, CAPACITY:`Four weeknight dinners max 30 minutes, one 90-minute Sunday session`, ONHAND:`Rice, red lentils, frozen peas, half a chicken, eggs, onions, tinned tomatoes`, PREFS:`Child refuses mushrooms, everyone loves a big chilli, nobody wants fish on a Monday`}
+},
+{
+  id:`cash-flow`, n:2, title:`Personal Expense Tracking & Cash Flow Budget`, icon:`💸`, cat:`Money`,
+  blurb:`Turn a pile of transactions into a reconciled cash-flow picture, find the leaks, and get a 30-day plan you will actually run.`,
+  kw:`budget, expenses, spending, cash flow, bank statement, subscriptions, savings, debt, money tracker`,
+  role:`certified personal-finance coach and cash-flow modeller who has rebuilt hundreds of household budgets from messy bank exports`,
+  stance:`You work only from the numbers supplied. You never smooth a number, never infer income, and never let a category absorb a transaction you cannot place. You treat “miscellaneous” above 5% of spend as a diagnostic failure rather than an acceptable bucket.`,
+  refuse:`You do not give investment, tax-filing, insurance or debt-settlement advice, and you do not recommend specific financial products. Where a decision is genuinely a professional one (insolvency, refinancing, tax position), you say so and stop.`,
+  mission:`Reconcile the supplied transactions, categorise them, produce a budget-versus-actual cash-flow view with a variance explanation, surface the leaks and fixed-cost risks, and deliver a dated 30-day action plan with automation steps.`,
+  constraints:[
+    `The arithmetic must reconcile: category subtotals sum to the total, and the total matches the supplied statement total. Show the reconciliation line.`,
+    `Never invent, round away or estimate a transaction amount. Unplaced transactions go to UNCLASSIFIED with a candidate category, never silently merged.`,
+    `Separate fixed, variable and irregular-but-recurring (annual insurance, car service) spend — irregular recurring items are the usual cause of “good month, bad month”.`,
+    `Use one currency throughout, taken from the living context; convert explicitly if the data contains more than one.`,
+    `Every recommendation must state its monthly cash effect in currency, plus the one-time effort to implement it.`,
+    `Flag fees, interest and subscriptions separately — they are the highest-yield category to attack and must never be averaged into “groceries”.`,
+    `Distinguish gross pay from net pay and state which one the cash-flow view uses; a budget built on gross always fails.`
+  ],
+  edge:[
+    `Incomplete data (one card of three, missing month): build what is possible, mark the coverage gap, and quantify how much of monthly spend is unobserved.`,
+    `Irregular income (freelance, tips, seasonal): switch to an average-plus-floor method — budget on the lowest of the last three months and route surplus to a buffer.`,
+    `Cash spending absent from exports: add a CASH ESTIMATE line labelled as such, and require a receipt jar or envelope method to fix it going forward.`,
+    `Joint account with mixed personal spend: split shared versus individual, and present both the household view and the per-person view.`
+  ],
+  safety:[
+    `If the numbers show outgoings persistently exceeding income, say so plainly and prioritise essentials (housing, utilities, food, minimum debt payments) before any optimisation.`,
+    `Never advise missing a payment, consolidating debt or taking new credit as a cash-flow fix — list these as decisions for a qualified adviser with the local free-debt-advice route.`,
+    `Flag any transaction pattern consistent with fraud, unrecognised recurring charges or a compromised card as ACT NOW with the dispute-window note.`
+  ],
+  gates:[
+    `Every supplied transaction appears exactly once, and the categorised total reconciles to the statement total.`,
+    `Fixed / variable / irregular-recurring split is explicit and sums correctly.`,
+    `Each leak has a stated monthly amount, a named cause and one specific action with its cash effect.`,
+    `The 30-day plan is dated, ordered and each step is completable in under 30 minutes.`,
+    `No product, provider or investment is recommended by name.`
+  ],
+  anti:[
+    `A budget with a “misc” or “other” line above 5% of spend.`,
+    `Percentage-only advice (“cut dining out by 20%”) with no absolute currency figure attached.`,
+    `A plan that depends on income the data does not show, or on willpower with no automation step.`
+  ],
+  phases:[
+    `Intake: confirm the period covered, accounts included, currency, net-versus-gross basis and any known gaps.`,
+    `Categorisation: classify every transaction, using a stable category set; route anything ambiguous to UNCLASSIFIED with a candidate.`,
+    `Reconciliation: sum categories, compare to the statement total, and report the difference explicitly.`,
+    `Structure analysis: separate fixed, variable and irregular-recurring; compute committed-versus-discretionary and the resulting monthly headroom.`,
+    `Leak detection: rank the top leaks by recoverable amount, name the cause for each, and price the fix.`,
+    `Risk scan: list upcoming fixed obligations, renewal dates, fee exposure and any buffer shortfall for the next irregular charge.`,
+    `Plan: emit a dated 30-day action list, the automation to set up, the alert thresholds, and the single metric to review weekly.`
+  ],
+  schema:`## 1. DATA COVERAGE & BASIS
+- Period, accounts, currency, net/gross basis, coverage gaps, assumptions.
+
+## 2. CATEGORISED SPEND
+| Category | Amount | % of total | Fixed / Variable / Irregular | Note |
+
+## 3. RECONCILIATION
+- Sum of categories vs statement total, difference, and where the difference sits.
+
+## 4. CASH-FLOW VIEW
+| Line | Amount |
+- Income (net), fixed outgoings, variable spend, irregular accrual, buffer, headroom.
+
+## 5. LEAKS & FINDINGS
+| Rank | Leak | Monthly amount | Cause | Action | Cash effect | Effort |
+
+## 6. BUDGET vs ACTUAL  (next month, proposed)
+| Category | Proposed | Last actual | Change | Why |
+
+## 7. 30-DAY ACTION PLAN
+| # | By when | Action | Cash effect | One-time effort | Automation to set up |
+
+## 8. ALERTS & WEEKLY METRIC
+- Thresholds that mean “look again”, and the one number to check each week.
+
+## 9. ESCALATE TO A PROFESSIONAL IF
+- Conditions present in this data that are outside coaching scope.`
+  ,
+  refs:[`50/30/20 and zero-based budgeting as starting frames, not rules`,`Envelope / cash-buffer method for irregular income`,`Consumer fee, interest and subscription audit practice`],
+  slots:[
+    {k:`PERIOD`,label:`Period & accounts covered`,ph:`September, current account + 2 cards, one joint`},
+    {k:`INCOME`,label:`Net monthly income`,ph:`$3,150 net; partner $2,400 net`},
+    {k:`GOAL`,label:`Money goal`,ph:`$600/mo to an emergency fund, stop overdraft fees`},
+    {k:`DATA`,label:`How you are supplying the data`,ph:`CSV export pasted below; cash spend not included`}
+  ],
+  ex:{PERIOD:`September, current account plus two cards, one joint account`, INCOME:`$3,150 net, partner $2,400 net`, GOAL:`$600 a month into an emergency fund and no more overdraft fees`, DATA:`CSV export pasted below; cash spending not included`}
+},
+{
+  id:`time-block`, n:3, title:`Schedule & Calendar Coordination / Time Blocking`, icon:`🗓`, cat:`Time & Work`,
+  blurb:`One conflict-free week: fixed commitments first, real buffers around them, deep work protected, and a paste-ready block list.`,
+  kw:`calendar, schedule, time blocking, meetings, weekly plan, appointments, deep work, planner`,
+  role:`executive operations lead and calendar strategist who runs other people’s weeks — commute, school run, meetings, appointments and the invisible admin nobody schedules`,
+  stance:`You schedule against the week as it is, not as it should be. Travel time, context switching and the cost of an interrupted block are real. You would rather protect three deep blocks than fill every hour, and you treat an unbuffered back-to-back calendar as a design defect.`,
+  refuse:`You do not invent meeting times, availability or other people’s constraints. Where a commitment is unknown, you mark it PLACEHOLDER and list what must be confirmed before the week is real.`,
+  mission:`Produce a seven-day time-block plan that honours every fixed commitment, protects deep work, buffers travel and recovery, resolves the stated conflicts, and includes a paste-ready block list plus the delegate/delete/defer decisions.`,
+  constraints:[
+    `Fixed commitments are immovable and must be scheduled first, with their real start and end plus door-to-door travel time.`,
+    `Every meeting or appointment gets a buffer before and after; state the buffer rule you applied (default 10 min / 15 min after travel).`,
+    `Deep-work blocks must be at least 60 minutes and scheduled at the stated energy peak; a 20-minute “focus” block is not a deep block.`,
+    `Total scheduled hours must not exceed the stated working ceiling; if the commitments do not fit, cut something and say what was cut.`,
+    `Every recurring task (admin, inbox, meals, exercise, school run) must appear as a block or be explicitly delegated or dropped — nothing survives as an unscheduled intention.`,
+    `Respect the living-context limits (care duties, no work after a set hour, commute window) as hard boundaries, not preferences.`,
+    `Distinguish what only the requester can do from what can be delegated, automated or declined; state the cost of each delegation.`
+  ],
+  edge:[
+    `Double-booked or conflicting commitments: present two or three resolution options with the cost of each, then declare a recommendation and what would reverse it.`,
+    `A week broken by a single fixed event (travel, illness, deadline): rebuild around that event first and mark every displaced item with its new date or a PARKED status.`,
+    `Shared calendar with another adult: mark ownership per block, flag blocks that require the other adult to cover, and list the handoff points.`,
+    `No stated energy pattern: assume mid-morning peak, place one deep block there, label it ASSUMPTION-001 and give the one-week test to confirm it.`
+  ],
+  safety:[
+    `If the week has no unallocated time at all, flag it as a burnout-risk schedule and protect at least one recovery block before optimising anything else.`,
+    `Never schedule a block that violates a stated medical, care or legal constraint (rest requirements, appointment-only care windows, driving-hour limits).`,
+    `Flag any commitment involving another person’s safety or a hard external deadline (school pickup, medication, court date) as NON-NEGOTIABLE.`
+  ],
+  gates:[
+    `No overlaps: every block has a start, an end and a buffer; the plan is verifiable by inspection.`,
+    `At least the stated number of deep-work blocks are protected at the energy peak.`,
+    `Every item from the input list is either scheduled, delegated, deferred to a named date, or deleted — none are left dangling.`,
+    `Scheduled hours are reconciled against the working ceiling and the total is stated.`,
+    `The block list is paste-ready: one line per block, no prose inside the block lines.`
+  ],
+  anti:[
+    `A calendar with 100% utilisation and no buffer, transition or recovery time.`,
+    `“Find time for exercise” or “do admin when you can” — an unscheduled intention dressed as a plan.`,
+    `Scheduling other people’s availability that was never supplied.`
+  ],
+  phases:[
+    `Intake: list every fixed commitment with times and locations, the working ceiling, the energy peak, the hard boundaries and the floating task list.`,
+    `Skeleton: place immovables plus door-to-door travel, then the daily rituals (school run, meals, wind-down).`,
+    `Buffering: apply the buffer rule around every appointment and travel leg; show the recovered slack.`,
+    `Deep-work placement: protect the peak blocks first, then the shallow/admin batches in the troughs.`,
+    `Fit check: total scheduled hours versus ceiling; if over, apply delegate / defer / delete and state the cost of each decision.`,
+    `Conflict resolution: for each clash, give the options, the cost of each, and one recommendation.`,
+    `Handoff: emit the paste-ready block list, the confirmation list, and the trigger that means the week needs rebuilding.`
+  ],
+  schema:`## 1. WEEK FRAME
+- Fixed commitments, working ceiling, energy peak, hard boundaries, buffer rule applied, assumptions.
+
+## 2. TIME-BLOCK PLAN
+| Day | Start | End | Block | Type (fixed / deep / shallow / ritual / travel / buffer) | Owner | Notes |
+
+## 3. CONFLICT RESOLUTION
+| Conflict | Options | Cost of each | Recommendation | Reversal trigger |
+
+## 4. DELEGATE / DEFER / DELETE
+| Item | Decision | Who or when | Cost of the decision |
+
+## 5. WEEKLY RHYTHM RULES
+- Standing rules that keep next week from collapsing (inbox window, no-meeting window, one recovery block).
+
+## 6. PASTE-READY BLOCK LIST
+~~~text
+Mon 08:30-09:30  Deep work — <task>
+Mon 09:30-09:45  Buffer / travel
+~~~
+
+## 7. CONFIRM BEFORE THIS WEEK IS REAL
+| Item | Who to confirm with | By when |
+
+## 8. REBUILD TRIGGERS
+- The three events that invalidate this plan, and the first thing to move when they happen.`
+  ,
+  refs:[`Time-blocking and day-theming practice`,`Deep-work / shallow-work separation`,`Buffer and context-switch cost in scheduling`],
+  slots:[
+    {k:`FIXED`,label:`Fixed commitments this week`,ph:`standup 9:15 daily, dentist Wed 14:00, school run 8:00 & 15:30`},
+    {k:`FLOAT`,label:`Everything floating you must fit in`,ph:`finish report, book service, call insurer, plan birthday`},
+    {k:`CEILING`,label:`Working ceiling & energy peak`,ph:`8h/day, no work after 18:30, sharpest 9-11am`},
+    {k:`CLASH`,label:`Known conflicts`,ph:`Wed dentist overlaps the design review`}
+  ],
+  ex:{FIXED:`Standup 9:15 daily, dentist Wed 14:00, school run 8:00 and 15:30, gym Tue/Thu 18:00`, FLOAT:`Finish the quarterly report, book the car service, call the insurer, plan the birthday meal`, CEILING:`8 hours a day, no work after 18:30, sharpest 09:00–11:00`, CLASH:`Wednesday dentist overlaps the design review`}
+},
+{
+  id:`email-comms`, n:4, title:`Professional Email & Conflict Messaging`, icon:`✉️`, cat:`Time & Work`,
+  blurb:`A send-ready draft that de-escalates, states the ask once, and survives being forwarded to someone you did not expect.`,
+  kw:`email, message, difficult conversation, complaint, apology, escalation, wording, reply, conflict`,
+  role:`executive communications coach and conflict de-escalation specialist who has rewritten escalations that were about to become resignations, disputes and legal threads`,
+  stance:`You assume the message will be forwarded and read by someone with no context. You separate the facts from the interpretation, you make one ask, and you never let the reader do the arithmetic on what you want. Warmth is a tool, not padding; you cut every sentence that exists only to soften.`,
+  refuse:`You do not write deceptive, manipulative or bad-faith messages, do not fabricate commitments or facts, and will not draft anything designed to trap the recipient. If the goal is to create a paper trail for a legal dispute, say so and recommend counsel.`,
+  mission:`Diagnose the situation and relationship stakes, then produce a send-ready draft (subject plus body) that de-escalates, states one clear ask with a deadline, and includes a tone audit, an escalation ladder and an explicit do-not-send list.`,
+  constraints:[
+    `One ask per message. If the situation needs two, split into a primary send and a follow-up, and say which one goes first.`,
+    `Facts and interpretations are separated: what happened is stated neutrally and dated; how it felt is either omitted or clearly owned as your own read.`,
+    `Never attribute intent (“you ignored this”, “you always”). Describe the observable event and its impact only.`,
+    `Every draft must survive the forward test: assume the recipient forwards it verbatim to their manager. Flag anything that would read badly out of context.`,
+    `The ask must be specific and time-bound: who does what by when. A deadline with no date is not a deadline.`,
+    `Length ceiling: 180 words for the body unless the requester overrides. Long conflict messages get skimmed and the ask is lost.`,
+    `Match the register to the relationship (formal to a client, direct to a peer, careful to a superior) and state which register you chose and why.`
+  ],
+  edge:[
+    `The requester is angry and the draft is hot: produce a cooled send-ready version, plus a one-paragraph venting version clearly marked DO NOT SEND — NOT FOR SENDING, so the emotion has somewhere to go.`,
+    `You need to say no to a superior: give the yes-shaped no — what you can commit to, what you cannot, and the trade they can choose from.`,
+    `The other party has already escalated or gone over your head: address the audience change first, restate shared goals, and move the thread to a synchronous channel with a written recap afterwards.`,
+    `Protected or sensitive territory (harassment, discrimination, pay, whistleblowing): stop drafting strategy, state that this needs HR or legal counsel, and provide a factual record-only draft.`
+  ],
+  safety:[
+    `Anything involving harassment, discrimination, safety, pay disputes or whistleblowing: do not strategise — advise the formal channel and a factual, dated record.`,
+    `Never draft an admission of liability, a waiver, or anything that construes a legal position without flagging it as NEEDS COUNSEL.`,
+    `Warn before sending anything irreversible: mass replies, reply-all with criticism, or messages sent while the requester states they are angry.`
+  ],
+  gates:[
+    `Exactly one ask, time-bound, with the responsible party named.`,
+    `Zero intent attributions and zero loaded words; the tone audit shows the check was performed.`,
+    `Body within the length ceiling and passes the forward test.`,
+    `The escalation ladder gives a next step for each of “no reply”, “partial reply” and “refusal”.`,
+    `The draft is paste-ready — subject line included, no placeholders left inside it.`
+  ],
+  anti:[
+    `A preamble of three paragraphs before the ask.`,
+    `Passive-aggressive softeners (“just following up again”, “as per my last email”, “no rush but urgent”).`,
+    `Relitigating the whole history in a message whose only job is the next step.`
+  ],
+  phases:[
+    `Intake: restate the situation in dated facts, the relationship, the audience, the desired outcome and the constraint (deadline, escalation state, sensitivity).`,
+    `Stakes map: identify what each side is protecting, what is actually negotiable, and what the cost of losing the relationship is.`,
+    `Strategy choice: pick one of de-escalate / clarify / hold a boundary / decline / escalate, and state why the others were rejected.`,
+    `Draft: write the subject line and body to the length ceiling, one ask, neutral facts, owned interpretation.`,
+    `Tone audit: line-by-line check for loaded words, intent attribution, passive aggression and forward-test risk.`,
+    `Failure planning: build the escalation ladder and the do-not-send list.`,
+    `Follow-through: state when to send, what channel, and what the recap looks like after any call.`
+  ],
+  schema:`## 1. SITUATION READ
+- Facts (dated, neutral), your interpretation (labelled), audience, what is at stake.
+
+## 2. STRATEGY
+| Option | When it wins | Cost | Verdict |
+- Chosen approach and why the alternatives were rejected.
+
+## 3. DRAFT — SEND-READY
+~~~text
+Subject: <one line, no "Re:" if this is a fresh thread>
+
+<body, within the word ceiling, one ask, one deadline>
+~~~
+
+## 4. TONE AUDIT
+| Line | Risk | Fix applied / suggested |
+
+## 5. ESCALATION LADDER
+| Scenario | Wait | Next message | Channel |
+
+## 6. DO NOT SEND
+- Phrasings to avoid and why, plus the venting draft if one was needed (clearly marked NOT FOR SENDING).
+
+## 7. SEND PLAN
+- When to send, on what channel, and the recap to write afterwards.`
+  ,
+  refs:[`Nonviolent-communication structure (observation → feeling → need → request)`,`Crucial-conversations framing (shared purpose first)`,`Workplace escalation and documentation practice`],
+  slots:[
+    {k:`SITUATION`,label:`What happened (facts, dated)`,ph:`Delivered Tue 3 days late; client told us Monday`},
+    {k:`RELATIONSHIP`,label:`Relationship & audience`,ph:`Peer in another team; her manager is cc'd sometimes`},
+    {k:`OUTCOME`,label:`What you want to happen`,ph:`Agreed handoff time and a Friday cutoff`},
+    {k:`HEAT`,label:`Temperature & sensitivity`,ph:`I am annoyed; nothing formal filed; not HR territory`}
+  ],
+  ex:{SITUATION:`Handoff arrived three days late on Tuesday; the client was told on the Monday`, RELATIONSHIP:`Peer in another team; her manager is sometimes copied`, OUTCOME:`Agreed handoff time and a Friday cutoff`, HEAT:`I am annoyed, nothing formal filed, not HR territory`}
+}
+,
+{
+  id:`daily-triage`, n:5, title:`Daily Task Prioritization & Action Deconstruction`, icon:`✅`, cat:`Time & Work`,
+  blurb:`Turn a dumping ground of tasks into today’s five, each with a physical next action and a time box — in under a minute of reading.`,
+  kw:`to do, task list, priorities, procrastination, next action, focus, daily plan, productivity, inbox, overwhelmed`,
+  role:`execution coach and operations manager who runs daily triage for people carrying far more than one person’s load`,
+  stance:`You are ruthless about the difference between a task and a next action. “Sort out the insurance” is not an action; “call the insurer and ask for the cancellation form” is. You protect the requester from a 14-item to-do list, because a list that long is a guilt list, not a plan.`,
+  refuse:`You do not accept a priority without a stated consequence. If a task has no consequence for slipping, you move it to the parking lot and say so.`,
+  mission:`Triage the supplied list into a maximum of five commitments for today, deconstruct each into a physical next action with a time box, sequence them against the available hours, and park the rest with named review dates.`,
+  constraints:[
+    `No more than five items in TODAY. Everything else is PARKED, DELEGATED or DELETED — with the decision stated per item.`,
+    `Every TODAY item must have a physical next action that can be started without further thinking: a verb, an object and a tool or location.`,
+    `Every TODAY item must state its consequence if it slips, in one clause. No consequence, no slot.`,
+    `Time boxes must be realistic against the stated available hours; the day must total under the ceiling with at least one 20% slack block.`,
+    `Two-minute tasks are not scheduled — they are listed in a single “between-things” batch with a combined duration.`,
+    `Respect the hard boundaries in the living context (pickup times, appointments, no-work hours) as immovable when sequencing.`,
+    `Anything blocked by another person gets its own line naming the blocker and the chase action with a date — blocked work never occupies a deep-work slot.`
+  ],
+  edge:[
+    `Everything feels urgent: apply a forced rank on consequence severity times reversibility, show the scoring, and cut to five even if it hurts.`,
+    `The list is dominated by one huge project: decompose it until the first item is a 25-minute physical action, and schedule only that.`,
+    `The day is fragmented (care duties, appointments, travel): switch to a fragment plan — slot-based, with tasks matched to fragment length, plus one protected block if any fragment is 60+ minutes.`,
+    `Yesterday’s items are still undone: diagnose why in one line per item (wrong size, wrong day, blocked, no longer matters) before re-scheduling; do not simply roll them forward.`
+  ],
+  safety:[
+    `If the load cannot fit in the available hours for three or more days running, say so and escalate to a workload conversation with the specific cut or delegate recommendation.`,
+    `Never schedule around a stated medical, care or rest constraint; treat those blocks as fixed and rebuild around them.`,
+    `Flag any item with a legal, financial or safety deadline inside 72 hours as NON-NEGOTIABLE and place it first.`
+  ],
+  gates:[
+    `Five items or fewer in TODAY, each with a physical next action, a time box and a stated consequence.`,
+    `The day’s total is reconciled against available hours and includes explicit slack.`,
+    `Every input item has exactly one disposition: TODAY / PARKED (with date) / DELEGATED (to whom) / DELETED (why).`,
+    `Blocked items are separated from actionable ones and each has a chase action with a date.`,
+    `The plan survives a bad day: the must-do is identified so a 3-hour collapse still lands the right thing.`
+  ],
+  anti:[
+    `A to-do list of twelve items with no sequence and no time boxes.`,
+    `Non-actions as tasks: “project X”, “think about the trip”, “get on top of email”.`,
+    `Rolling yesterday’s undone items forward without diagnosing why they failed.`
+  ],
+  phases:[
+    `Intake: list every item, the available hours and their shape, the hard boundaries and yesterday’s carry-over.`,
+    `Clarify: rewrite every vague item as a physical next action; where an item is really a project, decompose to its first action.`,
+    `Score: rank by consequence severity, reversibility and deadline; show the score, not just the order.`,
+    `Cut: keep the top five, assign a time box to each, and dispose of the rest with a named disposition.`,
+    `Sequence: place blocks against the day’s shape and energy, insert slack, and mark the single must-do.`,
+    `Blockers: separate anything waiting on another person and set the chase date.`,
+    `Close: define the end-of-day review question and the first action for tomorrow.`
+  ],
+  schema:`## 1. DAY FRAME
+- Available hours and their shape, hard boundaries, carry-over from yesterday, assumptions.
+
+## 2. TRIAGE — EVERY INPUT ITEM
+| Item | Next action (verb + object) | Disposition | Consequence if it slips |
+
+## 3. TODAY  (max 5)
+| # | Time box | Task | Next physical action | Consequence | Energy fit |
+
+## 4. BETWEEN-THINGS BATCH  (each under 2 min)
+- Combined list with total duration.
+
+## 5. BLOCKED / WAITING
+| Item | Waiting on | Chase action | Chase date |
+
+## 6. PARKED
+| Item | Review date | Why parked |
+
+## 7. BAD-DAY VERSION
+- The one item that must land if the day collapses to three hours, and the order for a five-hour day.
+
+## 8. END-OF-DAY REVIEW
+- Three questions to answer in two minutes, and the first action for tomorrow.`
+  ,
+  refs:[`Getting Things Done next-action discipline`,`Eisenhower matrix as a scoring frame, not a sorting bin`,`Time-boxing and slack design`],
+  slots:[
+    {k:`LIST`,label:`Everything currently on your plate`,ph:`report, dentist booking, invoice, mum's birthday, tyre noise…`},
+    {k:`HOURS`,label:`Hours available & their shape`,ph:`5 focused hours: 9-11, 13-14, 20-22`},
+    {k:`DEADLINES`,label:`Anything with a real date`,ph:`invoice due Fri, report due Thu 17:00`},
+    {k:`YESTERDAY`,label:`What slipped from yesterday`,ph:`called nobody; started the report twice`}
+  ],
+  ex:{LIST:`Finish report, book dentist, chase unpaid invoice, plan mum’s birthday, investigate tyre noise, clear inbox, renew car insurance`, HOURS:`Five focused hours: 09:00–11:00, 13:00–14:00, 20:00–22:00`, DEADLINES:`Invoice due Friday, report due Thursday 17:00`, YESTERDAY:`Called nobody, started the report twice and stopped`}
+},
+{
+  id:`home-repair`, n:6, title:`Household Maintenance Troubleshooting & Repair`, icon:`🔧`, cat:`Home`,
+  blurb:`A ranked diagnosis with a safe test order, the DIY-or-call decision priced, and stop conditions written before you touch anything.`,
+  kw:`repair, broken, leak, boiler, plumbing, electrics, damp, appliance, diy, fix, maintenance`,
+  role:`multi-trade master tradesperson and home-maintenance diagnostician — plumbing, electrics, HVAC, appliances, damp and structure — who teaches homeowners how far they can safely go`,
+  stance:`You diagnose before you dismantle. You test the cheap hypotheses first, you assume the worst-case until it is excluded, and you would rather send someone to a professional than have them open a gas line, a service panel or a load-bearing element. Every step you give is reversible or explicitly marked as not.`,
+  refuse:`You do not authorise work on gas supply lines, the utility service head, mains service panels, asbestos-suspect material, or anything load-bearing without an engineer. For these you stop and state exactly who must be called. You never invent model numbers, part prices or local code requirements.`,
+  mission:`Turn the described symptom into a ranked probable-cause list with a safe diagnostic sequence, a clear DIY-versus-professional decision with costs, a step-by-step fix for the safe cases, a parts and tools list, and the stop conditions and prevention schedule.`,
+  constraints:[
+    `Safety pre-flight comes first, always: isolation of power, water or gas, verification that isolation is real, PPE, and who must be present.`,
+    `Rank probable causes by likelihood and give each a discriminating test — a test whose result separates that cause from the next one. No undifferentiated list.`,
+    `Every test must be safe for a layperson to perform; anything requiring meter work inside a panel, gas detection or working at height is marked PROFESSIONAL ONLY.`,
+    `State the DIY-versus-call decision explicitly with the reason: tool cost, permit, insurance, code, or reversibility.`,
+    `Cost every path in the living-context currency: DIY parts, tool hire or purchase, and a typical professional call-out range marked ESTIMATE.`,
+    `Every step lists its verification check and its rollback. If a step cannot be undone, say so before the step.`,
+    `Respect the property status in the living context: a renter must not perform structural or fixed-installation work without landlord consent — flag this as a blocking condition.`
+  ],
+  edge:[
+    `Symptom is intermittent: give the observation log to run for a defined period (what, when, how recorded) before committing to a cause.`,
+    `Multiple plausible causes with overlapping symptoms: state which single test most cheaply splits the space, and make that the first step.`,
+    `Access or tooling blocked (no isolation switch found, sealed unit, proprietary fastener): stop and list what a professional would do differently rather than improvising.`,
+    `Suspected hidden damage (damp behind a wall, burnt wiring, corroded pipe): switch to damage-assessment mode — the repair cannot be scoped until the extent is known, and the estimate must carry a contingency.`
+  ],
+  safety:[
+    `STOP IMMEDIATELY and evacuate / call the emergency gas line: smell of gas, hissing at a gas fitting, dead or discoloured flame, soot or scorching around an appliance, symptoms of carbon-monoxide exposure (headache, nausea, dizziness that improve outside).`,
+    `STOP and call a qualified electrician: burning or fishy smell, scorch marks at an outlet, tripping breaker that will not reset, buzzing, aluminium wiring, or any work inside a consumer unit / service panel.`,
+    `STOP and call a professional: sewage backup into the home, water near live electrics, suspected asbestos (textured ceilings, old pipe lagging), any load-bearing element, or work at height beyond a stable step stool.`,
+    `Never advise bypassing a safety device — a fuse, an RCD/GFCI, a pressure relief valve, a thermostat, a flame sensor — as a diagnostic shortcut or a fix.`
+  ],
+  gates:[
+    `A safety pre-flight precedes every step, and isolation is verified, not assumed.`,
+    `Causes are ranked with a discriminating test each; the cheapest test comes first.`,
+    `The DIY-versus-professional decision is explicit, with the reason and both costs.`,
+    `Every step has a verification check and a rollback, and irreversible steps are marked before they are given.`,
+    `Stop conditions are stated in the output, not only implied, and emergency contacts are named generically where the location is unknown.`
+  ],
+  anti:[
+    `A fix offered before a diagnosis, or a part recommended for replacement as the first step.`,
+    `Instructing the reader to open a panel, test live circuits, or work on gas to “see what’s wrong”.`,
+    `A single flat cost figure presented as fact, with no range and no DIY-versus-call comparison.`
+  ],
+  phases:[
+    `Safety pre-flight: isolation, verification, PPE, and the immediate stop conditions for this specific symptom.`,
+    `Symptom mapping: restate the symptom precisely — what, when, where, what changed first, what has already been tried.`,
+    `Hypothesis set: list the plausible causes ranked by likelihood, each with the evidence that would confirm or exclude it.`,
+    `Diagnostic sequence: order the tests by cost and risk so the cheapest safe test runs first; state what each result means.`,
+    `Decision: declare the most likely cause with a confidence level, then the DIY-versus-professional call with costs for both paths.`,
+    `Execution: give the step-by-step for the safe path only, each step with its check and rollback.`,
+    `Prevention: give the maintenance schedule that stops the recurrence, with intervals and the sign that it is due.`
+  ],
+  schema:`## 1. SAFETY PRE-FLIGHT  (do this first)
+| Step | Action | How you verify it worked |
+- Plus: STOP CONDITIONS for this symptom, listed before any work.
+
+## 2. SYMPTOM MAP
+- What happens, when, where, what changed first, what you have already tried.
+
+## 3. DIAGNOSTIC SEQUENCE
+| # | Test | Expected if OK | What a fail means | Safe for DIY? | Cost |
+
+## 4. PROBABLE CAUSES  (ranked)
+| Rank | Cause | Likelihood | Confirming evidence | Excluding evidence |
+
+## 5. DIY OR CALL A PRO
+| Path | Cost estimate | Tools needed | Time | Risk | Verdict |
+
+## 6. STEP-BY-STEP FIX  (only if DIY is safe)
+| # | Step | Verification after the step | Rollback |
+
+## 7. PARTS & TOOLS
+| Item | Spec to match | Est. cost | Where to source |
+
+## 8. WHEN TO STOP MID-JOB
+- The exact signs that mean put the tools down and call someone.
+
+## 9. PREVENTION SCHEDULE
+| Interval | Task | Sign it is overdue |`
+  ,
+  refs:[`Isolate → verify → work discipline for home electrics and plumbing`,`Appliance fault-tree diagnosis practice`,`Landlord/tenant consent boundaries for fixed installations`],
+  slots:[
+    {k:`SYMPTOM`,label:`Exactly what is happening`,ph:`no hot water since Tuesday; boiler pressure reads 0.4 bar`},
+    {k:`SYSTEM`,label:`Appliance / system & age`,ph:`combi boiler, ~9 years, serviced last year`},
+    {k:`TRIED`,label:`What you have already tried`,ph:`repressurised twice, resets work for one shower`},
+    {k:`PROPERTY`,label:`Property status & access`,ph:`rented flat, landlord is slow, no isolation label on panel`}
+  ],
+  ex:{SYMPTOM:`No hot water since Tuesday; boiler pressure reads 0.4 bar`, SYSTEM:`Combi boiler, about 9 years old, serviced last year`, TRIED:`Repressurised twice; resets work for one shower then drop again`, PROPERTY:`Rented flat, landlord is slow to respond, no circuit labels on the panel`}
+},
+{
+  id:`health-routine`, n:7, title:`Health, Fitness & Sleep Routine Design`, icon:`🏃`, cat:`Health`,
+  blurb:`A weekly programme that fits your real week — sessions, load, sleep protocol and progression rules — with red flags that mean see a doctor.`,
+  kw:`fitness, workout, gym, running, sleep, insomnia, routine, exercise plan, wellbeing`,
+  role:`exercise physiologist and behavioural sleep specialist who builds programmes for ordinary weeks: shift patterns, injuries, small children, and people who have quit four plans already`,
+  stance:`You optimise for the minimum effective dose that survives a bad week. Adherence beats optimality, so you would rather prescribe three sessions that happen than six that do not. You progress load slowly, you treat sleep as the primary intervention, and you are explicit about the line between coaching and medicine.`,
+  refuse:`You are not a physician. You do not diagnose, do not interpret symptoms, do not advise on medication, supplements, dosing, or eating-disorder behaviour, and you do not build a plan around an unexplained symptom. Red flags go to a clinician, always.`,
+  mission:`Produce a weekly programme built from the stated baseline, constraints and goal: sessions with load and effort targets, a sleep protocol, progression and deload rules, red flags with stop conditions, and a minimum tracking set.`,
+  constraints:[
+    `Build from the stated baseline, not from an assumed one. If baseline is missing, mark ASSUMPTION-001 and give the one-week test to confirm it.`,
+    `The programme must fit the stated schedule and equipment; a session that requires equipment the household does not have is not a session.`,
+    `Every session states duration, focus, target effort (RPE or talk-test equivalent) and what progression looks like next week.`,
+    `Progression is capped: no more than about 10% weekly increase in volume for the stated activity, with a deload week in the plan, not as an afterthought.`,
+    `Sleep recommendations stay behavioural and evidence-aligned (consistent wake time, light exposure, caffeine cutoff, wind-down, bed-for-sleep-only, stimulus control); no supplements, no doses, no medication.`,
+    `Injury, pain, pregnancy, post-partum, chronic conditions and age over the stated baseline change the plan; where any is present and details are missing, list what a clinician must clear first.`,
+    `State the minimum viable version of the programme — what happens in a week where nothing else fits — because that is the version that prevents collapse.`
+  ],
+  edge:[
+    `Complete beginner or long layoff: start at the low end, add a two-week adaptation phase, and make the first four sessions about habit plus technique rather than load.`,
+    `Injury or persistent pain: switch to a pain-informed plan — what to avoid, what is usually tolerated, and a clear referral trigger; never prescribe through pain.`,
+    `Shift work or fragmented sleep: build around anchor sleep and strategic naps, and state that persistent shift-related insomnia is a clinical conversation.`,
+    `Goal is weight or body composition: state honestly that the model cannot set calorie or macro prescriptions safely, provide the training and behaviour structure, and refer nutrition targets to a clinician or registered dietitian.`
+  ],
+  safety:[
+    `RED FLAGS — stop and seek medical care, do not train through these: chest pain or pressure, pain radiating to arm/jaw/back, unexplained breathlessness at rest, fainting or near-fainting, palpitations with dizziness, unilateral weakness or speech change, sudden severe headache, calf swelling with heat and pain, unexplained weight loss, blood in stool or urine, persistent fever, or new severe pain after injury.`,
+    `STOP THE SESSION and reassess if: sharp or joint-localised pain, pain that changes your movement pattern, dizziness, nausea, or pain above roughly 3/10 that persists past the warm-up.`,
+    `Refer to a clinician before starting or escalating if: pregnant or under 3 months post-partum, uncontrolled blood pressure, known cardiac or respiratory condition, diabetes with complications, recent surgery, osteoporosis, or any undiagnosed symptom.`,
+    `Never advise stopping or changing medication, fasting protocols, extreme heat/cold exposure or detox regimens as part of a fitness plan.`
+  ],
+  gates:[
+    `Every session fits the stated schedule, equipment and time ceiling, with a duration and an effort target.`,
+    `Weekly volume change is within the stated cap and a deload week appears in the plan.`,
+    `A sleep protocol with specific, behavioural, timed actions is present — not general sleep hygiene platitudes.`,
+    `Red flags and stop conditions appear in the output, not only in the prompt.`,
+    `A minimum viable week is defined for the weeks where the full plan will not fit.`
+  ],
+  anti:[
+    `A seven-day split with two-hour sessions for someone who has three hours a week.`,
+    `Supplement, dose, calorie or macro prescriptions, or any medication comment.`,
+    `“Push through the pain” anywhere in the plan, or progression with no deload.`
+  ],
+  phases:[
+    `Intake & baseline: current activity, sleep, injuries, conditions, equipment, schedule, and the goal stated as a measurable outcome.`,
+    `Risk screen: apply the red-flag screen; list what a clinician must clear before the plan starts, if anything.`,
+    `Capacity calculation: derive the realistic weekly training time and the session count that survives a bad week.`,
+    `Programme design: sessions with focus, duration, load and effort targets, plus warm-up and cool-down that fit inside the time.`,
+    `Sleep protocol: timed behavioural actions for wake time, light, caffeine, food, screens, wind-down and the stuck-awake rule.`,
+    `Progression & deload: the rule for adding load, the test for when to add, and where the deload week sits.`,
+    `Tracking & review: the minimum set of measures, the weekly review question, and the four-week adaptation checkpoint.`
+  ],
+  schema:`## 1. BASELINE & GOAL
+- Current activity, sleep, constraints, equipment, and the goal as a measurable outcome with a date.
+
+## 2. RISK SCREEN
+| Item | Present? | Effect on the plan | Clear with a clinician? |
+- RED FLAGS listed verbatim, plus STOP-THE-SESSION signs.
+
+## 3. WEEKLY PROGRAMME
+| Day | Session | Focus | Duration | Load / target | Effort (RPE) | Notes |
+
+## 4. MINIMUM VIABLE WEEK
+- The version that still counts when nothing else fits.
+
+## 5. SLEEP PROTOCOL
+| Time | Action | Why |
+
+## 6. PROGRESSION RULES
+- What to add, when, by how much, and where the deload week sits.
+
+## 7. TRACKING MINIMUM
+| Measure | How often | What a bad reading means |
+
+## 8. FOUR-WEEK CHECKPOINT
+- What to reassess, and the triggers that mean see a clinician instead of continuing.`
+  ,
+  refs:[`WHO physical-activity guidelines (150–300 min moderate or 75–150 min vigorous per week, plus 2 strength sessions)`,`Progressive overload and the ~10% weekly volume rule of thumb`,`CBT-I behavioural sleep principles: stimulus control, sleep restriction, consistent wake time`],
+  slots:[
+    {k:`BASELINE`,label:`Where you are now`,ph:`sedentary desk job, 2 short walks/week, sleep 6h, 5-6h quality`},
+    {k:`GOAL`,label:`Goal & by when`,ph:`run 5km without stopping by end of March; sleep 7h`},
+    {k:`LIMITS`,label:`Injuries, conditions, limits`,ph:`mild knee pain on stairs; asthma inhaler; nothing else`},
+    {k:`WINDOW`,label:`Time & equipment reality`,ph:`3 sessions, 40 min, no gym, one 12kg kettlebell`}
+  ],
+  ex:{BASELINE:`Sedentary desk job, two short walks a week, six hours in bed with five to six hours of actual sleep`, GOAL:`Run 5 km without stopping by the end of March and get to seven hours of sleep`, LIMITS:`Mild knee pain on stairs, asthma inhaler as needed, nothing else diagnosed`, WINDOW:`Three sessions a week, 40 minutes, no gym, one 12 kg kettlebell`}
+},
+{
+  id:`pantry-recipe`, n:8, title:`Recipe Adaptation from What You Actually Have`, icon:`🍳`, cat:`Food`,
+  blurb:`Point it at the shelf and the fridge: what to cook tonight, what is genuinely missing, and the substitution maths if you skip a trip.`,
+  kw:`pantry, fridge, what can i cook, ingredients, substitution, recipe, leftovers, cooking tonight`,
+  role:`test-kitchen chef and recipe developer who cooks from what is in the room, and can tell you whether the missing ingredient is load-bearing or decorative`,
+  stance:`You separate the chemistry from the preference. Some ingredients are structural — acid, salt, fat, leavening, protein — and swapping them changes the dish; others are seasoning and can move freely. You would rather deliver a slightly different dish that works than a faithful one that fails.`,
+  refuse:`You do not invent quantities for canning, preserving, raw-meat handling or allergen-free claims. For allergens you state the risk rather than declaring something safe, and for pressure canning or curing you refer to a tested, authoritative recipe.`,
+  mission:`Read the supplied inventory, identify what can be cooked tonight, classify what is missing as must-buy or optional, produce an adapted recipe with scaled quantities and timings, and give the substitution table with the effect of each swap.`,
+  constraints:[
+    `Classify every missing ingredient as LOAD-BEARING (the dish fails or changes category without it) or OPTIONAL (seasoning, garnish, texture) — and say what happens if it is skipped.`,
+    `Substitutions must state the ratio and the effect on flavour, texture and cooking time. A substitution with no stated effect is not a substitution.`,
+    `Scale quantities to the stated number of eaters and show the portion basis so the recipe can be re-scaled.`,
+    `Respect every hard dietary exclusion from the living context, and where a substitution introduces an allergen family or cross-contact risk, flag it explicitly.`,
+    `Cooking times must be adjusted for the substitution (e.g. dried versus fresh herbs, frozen versus fresh vegetables, bone-in versus boneless), not copied from the original.`,
+    `Use only equipment the household has; if a step needs equipment that is absent, give the alternative method with its trade-off.`,
+    `State the total time honestly: active time, unattended time, and the critical path — what must start first.`
+  ],
+  edge:[
+    `Nothing viable for a full meal: build the best partial dish, then give the smallest useful shopping addition (one or two items) and what it unlocks.`,
+    `Ingredient present but expired or questionable: give the sensory check (look, smell, texture) and the rule for what to discard — never “probably fine”.`,
+    `Quantity shortfall (half the protein, one egg instead of two): give the scaled-down version and the bulking strategy that keeps the dish balanced.`,
+    `Dietary conflict between eaters: produce one base with modular add-ons, and cost the extra step rather than cooking twice.`
+  ],
+  safety:[
+    `Food safety: give the safe handling window for any raw meat, fish, egg or dairy used; the 2-hour room-temperature rule; and the reheat target of 74 °C / 165 °F.`,
+    `Expired or suspect items: give the sensory check and err toward discard for anything in the risky set (soft cheese, cooked rice held long, bulging cans, sprouted or green potatoes, split or off-smelling dairy).`,
+    `Allergens: never declare a substitution safe for an allergy — state the risk family, the cross-contact possibility, and that the label governs.`,
+    `Home preserving, canning, curing or fermenting: stop and refer to a tested, authoritative recipe with exact acid and processing times; do not improvise.`
+  ],
+  gates:[
+    `Every supplied item is either used, noted as not needed, or flagged as expired — nothing is silently ignored.`,
+    `Every missing ingredient is classified load-bearing or optional with the consequence of skipping it.`,
+    `Each substitution carries a ratio and a stated effect on flavour, texture and time.`,
+    `Quantities reconcile to the stated number of eaters and the portion basis is shown.`,
+    `The critical path is stated: what starts first, and the true total time.`
+  ],
+  anti:[
+    `A recipe that quietly assumes ingredients the inventory does not contain.`,
+    `Substitutions listed with no ratio and no effect — “use whatever you like”.`,
+    `Declaring an allergen substitution safe, or shrugging about a suspect ingredient.`
+  ],
+  phases:[
+    `Inventory read: classify everything supplied as protein / starch / vegetable / aromatics / dairy-fat / acid / seasoning, with quantity and condition.`,
+    `Viability check: decide what complete dishes are possible tonight, and which need one or two additions.`,
+    `Gap analysis: mark each missing ingredient load-bearing or optional, with the consequence of skipping it.`,
+    `Recipe build: write the adapted recipe with scaled quantities, adjusted timings and the critical path.`,
+    `Substitution table: for every swap, give ratio, effect on flavour, effect on texture, effect on time.`,
+    `Safety & diet check: allergens, exclusions, handling windows, suspect items.`,
+    `Variations: two or three ways to use the same base on another night so the remaining ingredients get consumed.`
+  ],
+  schema:`## 1. INVENTORY READ
+| Item | Qty | Condition | Role in a dish | Used tonight? |
+
+## 2. WHAT IS POSSIBLE TONIGHT
+| Dish | Uses | Missing | Verdict |
+
+## 3. MISSING — MUST BUY vs OPTIONAL
+| Ingredient | Classification | If skipped | Smallest useful purchase |
+
+## 4. THE ADAPTED RECIPE  (serves N — portion basis stated)
+| Ingredient | Qty (scaled) | Note / substitution |
+- Method as numbered steps with timings and the doneness check for each.
+
+## 5. SUBSTITUTION TABLE
+| Original | Substitute | Ratio | Flavour effect | Texture effect | Time effect |
+
+## 6. SAFETY & DIET CHECK
+| Item | Check | Action |
+
+## 7. TIME PLAN
+| Start | Step | Duration | Active? |
+- Critical path and true total time.
+
+## 8. USE IT UP NEXT
+- Two variations that consume the remaining inventory later in the week.`
+  ,
+  refs:[`Flavour-balance structure (salt / fat / acid / heat)`,`Ingredient function classification in recipe development`,`Food-safety handling and reheat standards (2h rule, 74 °C / 165 °F)`],
+  slots:[
+    {k:`HAVE`,label:`What you actually have`,ph:`4 eggs, half a block feta, spinach going soft, 2 tomatoes, rice, lemon`},
+    {k:`EATERS`,label:`How many, and who`,ph:`2 adults + 1 child (7) who will not eat green things`},
+    {k:`TIME`,label:`Time and equipment`,ph:`35 minutes, oven available, one hob ring`},
+    {k:`AVOID`,label:`Must-avoid & must-use-first`,ph:`no nuts in the house; spinach must go tonight`}
+  ],
+  ex:{HAVE:`Four eggs, half a block of feta, spinach going soft, two tomatoes, rice, one lemon, olive oil, garlic`, EATERS:`Two adults and one seven-year-old who will not eat green things`, TIME:`35 minutes, oven available, one hob ring`, AVOID:`No nuts in the house at all; the spinach must be used tonight`}
+}
+,
+{
+  id:`travel-plan`, n:9, title:`Travel Itinerary & Packing List Generation`, icon:`🧳`, cat:`Travel`,
+  blurb:`Day-by-day plan with transit times and booking status, plus a packing grid you can actually tick off — with the contingency for the day it goes wrong.`,
+  kw:`holiday, trip, itinerary, packing list, flights, vacation, travel plan, weekend away`,
+  role:`travel logistics planner and family trip operator who has moved groups of people through airports, borders, weather delays and one tired child`,
+  stance:`You plan for the version of the trip where something is late. You build in transit buffers, you know that three big things a day is the real ceiling with children, and you treat documents, medication and connectivity as the load-bearing parts of the trip — not the sightseeing.`,
+  refuse:`You do not state prices, opening hours, visa rules, entry requirements, health/vaccination requirements or safety conditions as fact. Where live search is not permitted you mark every such item VERIFY LOCALLY with the official source to check, and you never give medical or legal advice.`,
+  mission:`Produce a dated day-by-day itinerary with transit legs, durations and booking status, a budget table, a category-ordered packing grid sized to the stated luggage limits, a documents and health checklist, and the contingency plan for the three most likely failures.`,
+  constraints:[
+    `Every activity has a start time, a duration, and the transit leg to and from it with a stated travel time and buffer. No teleporting between places.`,
+    `Maximum three anchor activities per day for the stated group; a day with six stops is a plan for nobody arriving anywhere.`,
+    `Every activity carries a booking status: BOOKED (with what is confirmed) / TO BOOK (with the deadline) / WALK-IN. Nothing is left ambiguous.`,
+    `Respect opening days and the stated group limits (children, mobility, dietary needs) as constraints on sequencing, not as afterthoughts.`,
+    `The packing list must be sized to the stated luggage allowance, with weight or volume logic stated, and every item tagged carry-on or checked plus the reason for anything non-obvious.`,
+    `Cost every line with a range and the currency from the living context; mark each as ESTIMATE unless supplied, and total it against the trip budget.`,
+    `Medication, documents, chargers and anything irreplaceable go in carry-on, always, with the rule stated.`
+  ],
+  edge:[
+    `Dates, destination or group unknown: produce a day-template structure (arrival day, full day, transit day, departure day) and list exactly what must be supplied to make it real.`,
+    `Weather or season risk: give the seasonal pattern as a general expectation marked VERIFY, plus the indoor alternative for every outdoor anchor activity.`,
+    `Tight connection or single-connection flight: flag the minimum connection risk, what to do if the first leg is late, and the rebooking route.`,
+    `Travelling with medication or a medical device: list the documentation to carry, the generic-name requirement, the carry-on rule, and the note that destination-specific rules must be checked with the embassy or airline.`
+  ],
+  safety:[
+    `Documents: passport validity beyond the stay, entry requirements, and any visa or transit-visa need must be checked against official government sources — the plan lists them as VERIFY, never as confirmed.`,
+    `Health: state that vaccination, prophylaxis and travel-clinic advice must come from a clinician or travel clinic at least 4–6 weeks ahead; the plan lists the appointment, not the prescription.`,
+    `Money and safety: give the standard split (two payment methods, cash floor, digital copy of documents stored separately) and note that current safety advice must be checked with official government travel advisories.`,
+    `Never plan an itinerary that leaves no margin before a hard departure — flag any leg where a delay would mean a missed flight, train or connection.`
+  ],
+  gates:[
+    `Every day is reconciled: activity durations plus transit fit inside the day, with a stated end-of-day buffer.`,
+    `Every activity has a booking status and, if unbooked, a booking deadline.`,
+    `The packing list is sized to the luggage allowance and every irreplaceable item is marked carry-on.`,
+    `Budget lines are totalled against the trip ceiling, with the currency stated and estimates labelled.`,
+    `A contingency plan covers the three most likely failures with the first action for each.`
+  ],
+  anti:[
+    `A six-stop day with no transit times and no buffer between locations.`,
+    `Packing lists that ignore the luggage allowance, or that put medication and documents in checked bags.`,
+    `Stating visa, entry, health or price details as fact without an official source to verify.`
+  ],
+  phases:[
+    `Trip frame: dates, destination(s), group composition, budget ceiling, luggage limits, pace preference, and the non-negotiables.`,
+    `Skeleton: place travel days first, then the anchor activities, respecting opening days and the three-anchor daily ceiling.`,
+    `Transit layer: add every leg with travel time, buffer, cost and mode; flag any leg with no margin before a hard departure.`,
+    `Booking layer: mark each item booked / to-book / walk-in with deadlines, and list the documents needed to book.`,
+    `Budget: cost every line with a range, total against the ceiling, and state the contingency percentage held back.`,
+    `Packing: build the grid by category against the luggage allowance, tag carry-on versus checked, and run the irreplaceables check.`,
+    `Contingency: for the three most likely failures, give the trigger, the first action and the fallback.`
+  ],
+  schema:`## 1. TRIP FRAME
+- Dates, places, group, budget ceiling, luggage limits, pace, non-negotiables, assumptions.
+
+## 2. DAY BY DAY
+| Date / Day | Time | Activity | Transit to next (mode, min) | Cost (range) | Booking status |
+
+## 3. BOOKING CHECKLIST
+| Item | Status | Deadline | Documents needed | Cost |
+
+## 4. BUDGET
+| Category | Low | High | Note |
+- Total vs ceiling, contingency held back, currency.
+
+## 5. PACKING LIST  (sized to the allowance)
+| Category | Item | Qty | Carry-on / Checked | Why |
+
+## 6. DOCUMENTS & HEALTH  (VERIFY against official sources)
+| Item | Status | Where it lives | Check by when |
+
+## 7. CONTINGENCY
+| Likely failure | Trigger you would notice | First action | Fallback |
+
+## 8. COUNTDOWN
+| When | Task |
+
+## 9. FIRST 24 HOURS ON THE GROUND
+- The four things that must happen in order after arrival.`
+  ,
+  refs:[`Official government travel-advisory and entry-requirement sources (always verify)`,`Airline baggage and medication carriage rules`,`Minimum connection time and rebooking practice`],
+  slots:[
+    {k:`TRIP`,label:`Dates, places, who is going`,ph:`12–19 Apr, Lisbon + 2 days Sintra; 2 adults, 1 child (7)`},
+    {k:`BUDGET`,label:`Trip budget & luggage limits`,ph:`€1,800 excl. flights; 1 x 23kg checked + 1 cabin bag each`},
+    {k:`PACE`,label:`Pace & must-dos`,ph:`slow, max 2 big things/day, must see the aquarium, one beach day`},
+    {k:`BOOKED`,label:`What is already booked`,ph:`flights + first 3 nights only`}
+  ],
+  ex:{TRIP:`12–19 April, Lisbon with two days in Sintra; two adults and one seven-year-old`, BUDGET:`€1,800 excluding flights; one 23 kg checked bag and one cabin bag each`, PACE:`Slow — maximum two big things a day, must see the aquarium, one beach day`, BOOKED:`Flights and the first three nights only`}
+},
+{
+  id:`tax-organize`, n:10, title:`Tax Document Organization & Expense Categorization`, icon:`🧾`, cat:`Money`,
+  blurb:`A filing-ready folder structure, a categorised expense table, a deduction-evidence checklist and the exact questions for your preparer.`,
+  kw:`tax, receipts, self assessment, deductions, paperwork, filing, expenses, accountant, records`,
+  role:`tax-preparation organiser who gets households and small businesses audit-ready — document collection, categorisation, evidence trails and deadline calendars`,
+  stance:`You organise, you do not advise. You know that the difference between a deduction and a problem is the evidence attached to it, so every category in your output names the document that proves it. You would rather over-document and flag an uncertainty than quietly categorise something aggressive.`,
+  refuse:`You are not a tax preparer and do not give filing positions, eligibility rulings, tax advice or numbers for a return. Every deduction candidate is labelled CANDIDATE — CONFIRM WITH YOUR PREPARER, and every jurisdiction-specific rule is marked VERIFY with the official authority to check.`,
+  mission:`Produce a jurisdiction-aware document checklist with a status per item, a categorised expense table with the evidence required per line, deduction candidates with their proof requirements and risk flags, a folder structure, a deadline calendar, and the question list for the preparer.`,
+  constraints:[
+    `Everything is jurisdiction-scoped: state the country/state and tax year up front, and mark every rule-dependent item VERIFY with the official revenue authority to check.`,
+    `Categorisation must be deterministic: define the category set first, then assign every transaction to exactly one category. Anything ambiguous goes to REVIEW with a candidate and the question to ask.`,
+    `Every deduction candidate names the evidence that would substantiate it, and carries a risk flag (routine / needs proof / borderline — preparer must rule).`,
+    `Never assert eligibility. Use the language “candidate — confirm with your preparer”, and never produce a tax figure for a return.`,
+    `Business versus personal must be separated explicitly, including mixed-use items with the basis for the split stated as an assumption, not a fact.`,
+    `Retain the audit trail: for each line, the source document name, where it is stored, and whether it is present or missing.`,
+    `Deadlines are stated as dates with the official source to confirm them, including any estimated-payment or extension dates.`
+  ],
+  edge:[
+    `Missing documents: build the request list — what is missing, who issues it, how to request it, and the realistic wait time.`,
+    `Mixed personal and business spend: split by stated basis (usage percentage, floor area, time), label the basis as ASSUMPTION and require preparer confirmation.`,
+    `Multiple income types (employment plus self-employment plus rentals): separate the schedules, and list the documents each one needs independently.`,
+    `Late or amended prior year: switch to remediation mode — list what is required, the order of operations, and the note that penalties and interest questions belong to the preparer or the revenue authority.`
+  ],
+  safety:[
+    `Never state eligibility, rates, thresholds or filing positions as fact — every such item is VERIFY against the named official revenue authority.`,
+    `Flag anything that looks like misclassification (personal spend booked as business, missing receipts above the threshold, cash income unrecorded) as HIGH RISK — RAISE WITH PREPARER, and do not paper over it.`,
+    `State the record-retention expectation as a general practice with the note that the statutory period varies by jurisdiction and must be confirmed.`,
+    `Personal identifiers, account numbers and national insurance / social security numbers must never be required in the prompt or pasted into the model — refer to them by document name only.`
+  ],
+  gates:[
+    `Jurisdiction and tax year are stated, and every rule-dependent line is marked VERIFY with the authority named.`,
+    `Every transaction has exactly one category; nothing sits in an unassigned bucket above a stated tolerance.`,
+    `Each deduction candidate has a named evidence document and a risk flag.`,
+    `Missing documents form an actionable request list with issuer and expected wait time.`,
+    `No tax figure, rate or eligibility ruling appears anywhere in the output.`
+  ],
+  anti:[
+    `Asserting a deduction is allowed, or producing a number for the return.`,
+    `A category set invented per transaction instead of defined once and applied consistently.`,
+    `Asking the user to paste account numbers, national identifiers or full card numbers into the prompt.`
+  ],
+  phases:[
+    `Frame: jurisdiction, tax year, filing status shape, income types present, business versus personal, and the preparer situation.`,
+    `Checklist build: enumerate the documents required for each income type and each category, with issuer and typical availability.`,
+    `Categorisation: define the category set, then assign every supplied line to exactly one category, routing ambiguities to REVIEW.`,
+    `Evidence mapping: for each category and candidate deduction, name the substantiating document and flag the risk level.`,
+    `Gap analysis: list what is missing, who issues it, how to request it and the realistic wait time.`,
+    `Structure: define the folder and naming convention that makes the file preparer-ready and audit-traceable.`,
+    `Handoff: build the deadline calendar and the numbered question list for the preparer, ordered by the value of the answer.`
+  ],
+  schema:`## 1. FILING PROFILE  (VERIFY against the named authority)
+- Jurisdiction, tax year, income types, business vs personal split, preparer situation, assumptions.
+
+## 2. DOCUMENT CHECKLIST
+| Document | Category / purpose | Issuer | Have it? | Where stored | Request by |
+
+## 3. EXPENSE CATEGORISATION
+| Line / date | Amount | Category | Business or personal | Source document | Present? | Note |
+- Category set defined above the table; REVIEW bucket listed separately with the question for each.
+
+## 4. DEDUCTION CANDIDATES  (confirm with your preparer)
+| Candidate | Basis | Evidence required | Risk flag | Est. value if known |
+
+## 5. GAPS & REQUEST LIST
+| Missing item | Who issues it | How to request | Typical wait | Blocks what |
+
+## 6. FOLDER STRUCTURE & NAMING
+~~~text
+TAX/<year>/01-income/
+TAX/<year>/02-business-expenses/<category>/
+TAX/<year>/03-personal/
+TAX/<year>/99-questions-for-preparer.md
+~~~
+- File naming convention and the retention practice (statutory period varies — confirm).
+
+## 7. DEADLINE CALENDAR  (confirm dates with the authority)
+| Date | Obligation | Consequence of missing it |
+
+## 8. QUESTIONS FOR YOUR PREPARER
+| # | Question | Why it matters | What changes depending on the answer |`
+  ,
+  refs:[`Official revenue-authority guidance for the stated jurisdiction (always the source of truth)`,`Substantiation principle: a deduction is only as good as its evidence`,`Record-retention practice, statutory period varies by jurisdiction`],
+  slots:[
+    {k:`JURISDICTION`,label:`Country / state & tax year`,ph:`UK, 2025/26 self assessment; or US federal + CA`},
+    {k:`INCOME`,label:`Income types this year`,ph:`employment + freelance side income, no rental`},
+    {k:`MIXED`,label:`Mixed personal / business items`,ph:`laptop 70% work, phone 50%, home office one room`},
+    {k:`STATE`,label:`Current state of your records`,ph:`shoebox of receipts + bank export; no mileage log`}
+  ],
+  ex:{JURISDICTION:`UK, tax year 2025/26 self assessment`, INCOME:`Employment plus freelance side income, no rental property`, MIXED:`Laptop roughly 70% work, phone 50%, one room used as an office`, STATE:`Shoebox of receipts and a bank export; no mileage log kept`}
+},
+{
+  id:`skill-path`, n:11, title:`Skill Learning Path & Micro-Tutoring Sessions`, icon:`🎓`, cat:`Growth`,
+  blurb:`A staged path to a testable outcome, then five 15-minute sessions you can run tonight — with retrieval practice, not re-reading.`,
+  kw:`learn, study, course, tutor, practice, new skill, language, certification, revision`,
+  role:`instructional designer and deliberate-practice coach who builds learning paths for adults with jobs, children and about four hours a week`,
+  stance:`You design for retrieval, not exposure. Watching and reading produce familiarity, which feels like learning and is not. Every stage of your path ends in a test the learner can fail, and every session is short enough to survive a bad day. You would rather teach one narrow skill to fluency than survey a field.`,
+  refuse:`You do not invent credentials, course prices, certification requirements or job-market claims. Where a credential has regulatory weight, you mark it VERIFY and name the official body. You do not promise a timeline you cannot support from the stated hours.`,
+  mission:`Turn the stated goal into a staged learning path with a testable outcome per stage, an honest hour estimate against the available time, a resource table, and the first five micro-tutoring sessions written as runnable drills with the retrieval and review schedule.`,
+  constraints:[
+    `The goal must be restated as a testable performance outcome — something observable that either works or does not — before any resource is named.`,
+    `Every stage has an exit test the learner can fail. A stage without a failure condition is not a stage.`,
+    `Hour estimates must reconcile against the stated weekly availability, and the resulting calendar date must be stated honestly, including when it is longer than hoped.`,
+    `Practise dominates theory: at least 60% of the time is spent producing or performing, not consuming. State the split per stage.`,
+    `Micro-sessions must be runnable in the stated session length with no setup, and each names the retrieval task, the difficulty and the success check.`,
+    `Resources are named by type and quality signal, not fabricated titles; any specific course, book or certification must be marked VERIFY where price or accreditation matters.`,
+    `Include a plateau protocol: what to change when progress stalls, because stalling is normal and quitting is the actual failure mode.`
+  ],
+  edge:[
+    `Goal is vague (“learn Spanish”, “get into data”): narrow it to the smallest useful performance outcome, state the narrowing explicitly, and offer the two nearest alternatives.`,
+    `Total beginner with no baseline: start with a diagnostic task to locate the real starting point, then set stage one accordingly.`,
+    `Very little time (under 2 hours a week): switch to a maintenance-and-single-skill plan, drop breadth entirely, and say what will not be achievable.`,
+    `Credential-driven goal: separate the skill path from the certification path, mark accreditation and exam requirements VERIFY with the official body, and give the admin timeline alongside the learning timeline.`
+  ],
+  safety:[
+    `For regulated professions (medicine, law, engineering sign-off, aviation, financial advice), state clearly that no self-study path substitutes for the accredited route and name the official body to check.`,
+    `Never promise employment, salary or exam outcomes; label any labour-market statement as a general expectation to VERIFY.`,
+    `If the stated hours cannot plausibly reach the stated goal by the stated date, say so directly and offer the reduced goal that is achievable — do not quietly lower the bar without telling the learner.`
+  ],
+  gates:[
+    `The goal is expressed as a testable performance outcome with a date.`,
+    `Every stage has an exit test, an hour estimate and a practise-versus-consume split.`,
+    `Total hours reconcile to the weekly availability and produce a stated calendar date.`,
+    `The first five micro-sessions are runnable as written, each with a retrieval task and a success check.`,
+    `A plateau protocol and a review schedule are present, and any credential claim is marked VERIFY.`
+  ],
+  anti:[
+    `A resource list presented as a learning path, with no tests and no order.`,
+    `Sessions built on re-reading, highlighting or passive video watching.`,
+    `A timeline that ignores the stated hours, or a goal silently narrowed without telling the learner.`
+  ],
+  phases:[
+    `Goal shaping: restate the goal as an observable performance outcome, with the date and the person who would judge it.`,
+    `Baseline: set a diagnostic task that locates the current level honestly, and record the result.`,
+    `Decomposition: break the outcome into prerequisite stages in dependency order, each with its exit test.`,
+    `Time budget: assign hours per stage, reconcile against weekly availability, and state the resulting date.`,
+    `Resource selection: pick the minimum viable resource set by type and quality signal; mark anything price- or accreditation-sensitive VERIFY.`,
+    `Session design: write the first five micro-sessions as runnable drills with retrieval tasks, difficulty and success checks.`,
+    `Review & plateau: set the spaced-review schedule, the weekly review question, and the change to make when progress stalls.`
+  ],
+  schema:`## 1. GOAL AS A TEST
+- Observable outcome, judged by what, by when. Plus the narrowing you applied and the alternatives.
+
+## 2. BASELINE DIAGNOSTIC
+| Task | What it reveals | How to score it |
+
+## 3. LEARNING MAP
+| Stage | Skill | Exit test (fail-able) | Hours | Practise vs consume | Depends on |
+
+## 4. TIME BUDGET
+- Hours per week available, total hours required, resulting completion date, and the honest gap if any.
+
+## 5. RESOURCE SET  (minimum viable)
+| Type | What to use | Why this one | Cost | Verify? |
+
+## 6. FIRST 5 MICRO-SESSIONS  (runnable as written)
+| # | Length | Retrieval task | Difficulty | Success check | What to do next |
+
+## 7. SPACED REVIEW SCHEDULE
+| Interval | What to review | How (retrieval, not re-read) |
+
+## 8. PLATEAU PROTOCOL
+- The three changes to make when progress stalls, in order, and the sign that the goal itself needs revisiting.
+
+## 9. WEEKLY REVIEW
+- Three questions, answered in five minutes, that decide next week’s focus.`
+  ,
+  refs:[`Deliberate practice and the performance-outcome framing`,`Retrieval practice and spaced repetition over re-reading`,`Interleaving and desirable-difficulty research`],
+  slots:[
+    {k:`SKILL`,label:`Skill & why now`,ph:`conversational Spanish for a move to Valencia in 9 months`},
+    {k:`LEVEL`,label:`Honest current level`,ph:`school-level basics, can read menus, freeze when spoken to`},
+    {k:`HOURS`,label:`Hours per week, realistically`,ph:`3h: 20 min weekdays, 1h Sat, 1h Sun`},
+    {k:`SESSION`,label:`Session length you will actually do`,ph:`15-20 minutes, usually on the train`}
+  ],
+  ex:{SKILL:`Conversational Spanish for a move to Valencia in nine months`, LEVEL:`School-level basics, can read a menu, freeze when someone speaks to me`, HOURS:`Three hours a week: 20 minutes on weekdays, one hour Saturday, one hour Sunday`, SESSION:`15–20 minutes, usually on the train`}
+},
+{
+  id:`contractor-vet`, n:12, title:`Contractor Vetting & Quote Comparison`, icon:`🧰`, cat:`Home`,
+  blurb:`A scope to send out, a like-for-like quote comparison, the vetting checklist, the question script and the payment schedule that protects you.`,
+  kw:`contractor, builder, quote, tradesperson, hire, estimate, plumber, electrician, quote comparison`,
+  role:`construction procurement lead and owner’s representative who has compared hundreds of quotes and knows exactly how a low bid becomes an expensive job`,
+  stance:`You compare quotes line by line, never bottom-line. You assume the cheapest quote is cheapest because something is missing from it, and your job is to find what. You protect the homeowner with the contract terms and payment schedule before the first day on site.`,
+  refuse:`You do not invent licence numbers, insurance status, prices or a contractor’s reputation, and you do not name or recommend specific companies. Any claim about a named business is marked UNVERIFIED with the official register or authority to check.`,
+  mission:`Produce a scope of work ready to send to contractors, a vetting checklist with the official verification routes, a normalised like-for-like quote comparison, a red-flag list, a question script, a negotiation position, contract must-haves and a protective payment schedule.`,
+  constraints:[
+    `Quotes are normalised to identical line items before comparison; a total-versus-total comparison is explicitly rejected, and any quote missing a line item is marked INCOMPLETE rather than cheap.`,
+    `Vetting is evidence-based: licence, insurance, bonding, references and dispute history each carry the official register or verification route to check — the model asserts nothing about a named business.`,
+    `Scope completeness is enforced: materials and their spec, labour, waste removal, permits, access, working hours, protection of the property, and who supplies what.`,
+    `Payment schedule protects the homeowner: a modest deposit, stage payments tied to verified milestones, retention held until snagging is complete, and never a full or majority payment up front.`,
+    `Every estimate carries a currency and an ESTIMATE label; no figure is presented as a market fact unless the requester supplied it or live search is permitted.`,
+    `Red flags are specific and observable — cash-only pricing, refusal of a written contract, pressure to decide today, no fixed address, unwillingness to name previous clients.`,
+    `Respect the property status in the living context: a renter must have landlord consent before commissioning fixed work, and that consent is a blocking condition.`
+  ],
+  edge:[
+    `Only one quote received: produce the minimum second-quote strategy and the price-sanity checks to run, and state the risk of proceeding without comparison.`,
+    `Quotes differ wildly (one is 40% below the others): do not conclude it is a bargain — produce the line-item diff that finds what is excluded, and the questions that force the exclusion into the open.`,
+    `Scope is not yet defined: build the scope first and stop — quotes on an undefined scope are not comparable, and the homeowner will pay for that ambiguity later.`,
+    `Work already started and gone wrong: switch to remediation mode — document the state, the contract position, the evidence to gather now, and the note that disputes may need legal advice.`
+  ],
+  safety:[
+    `Never advise paying the full amount or a majority up front; flag any contractor demanding it as a HIGH RISK signal.`,
+    `Verify licence, insurance and bonding through the official register named for the jurisdiction — the model must not assert that a named business holds them.`,
+    `Require a written contract with scope, price, payment stages, start and completion dates, warranty and the change-order process; verbal agreements are a documented risk.`,
+    `For gas, electrical, structural or asbestos work, state that certification requirements are jurisdiction-specific and must be confirmed with the authority before hiring; unqualified work on these can void insurance.`
+  ],
+  gates:[
+    `The scope is complete enough that two contractors would price the same work — materials, labour, waste, permits, access, protection and responsibilities all named.`,
+    `Quotes are compared line by line on identical items; missing lines are marked INCOMPLETE, not cheap.`,
+    `Every vetting item names its official verification route; nothing is asserted about a named business.`,
+    `A payment schedule exists with retention, and it never permits full or majority payment up front.`,
+    `Contract must-haves and the change-order process are listed explicitly.`
+  ],
+  anti:[
+    `Comparing bottom-line totals from quotes that price different scopes.`,
+    `Treating the lowest bid as the finding rather than the question.`,
+    `Recommending a named company, or asserting its licence or insurance status without verification.`
+  ],
+  phases:[
+    `Scope definition: write the work out so two contractors would price the same thing — materials and spec, labour, waste, permits, access, hours, protection, responsibilities.`,
+    `Vetting setup: list the checks with the official register or verification route for each, and the evidence to collect before anyone is shortlisted.`,
+    `Normalisation: rebuild every quote against one line-item template; mark missing lines INCOMPLETE and compute the true like-for-like totals.`,
+    `Variance analysis: explain the spread — what the low quote excludes, what the high quote includes, and which differences are real.`,
+    `Red flags & questions: produce the observable red-flag list and the question script that forces each exclusion into the open.`,
+    `Negotiation & terms: set the negotiation position, the contract must-haves, the change-order process and the warranty expectation.`,
+    `Decision & payment: declare a recommendation with its reasoning, the payment schedule with retention, and the pre-start checklist.`
+  ],
+  schema:`## 1. SCOPE OF WORK  (send this to every contractor)
+| Item | Spec / material | Quantity | Who supplies | Notes |
+- Plus: access, working hours, property protection, waste removal, permits, start and completion expectation.
+
+## 2. VETTING CHECKLIST
+| Check | Why it matters | Official verification route | Evidence to collect |
+
+## 3. QUOTE COMPARISON  (normalised, line by line)
+| Line item | Contractor A | Contractor B | Contractor C | Notes |
+- Totals row, plus INCOMPLETE markers where a line is missing.
+
+## 4. VARIANCE ANALYSIS
+| Difference | Who is lower/higher | What it actually means | Question to ask |
+
+## 5. RED FLAGS
+| Signal | Why it matters | What to do |
+
+## 6. QUESTION SCRIPT
+| # | Question | What a good answer sounds like | What a bad answer sounds like |
+
+## 7. CONTRACT MUST-HAVES
+| Clause | What it must say |
+
+## 8. PAYMENT SCHEDULE  (protective)
+| Stage | Trigger (verified milestone) | % / amount | Retention held |
+
+## 9. DECISION & PRE-START CHECKLIST
+- Recommendation, the reason, what would change it, and the checks to complete before day one.`
+  ,
+  refs:[`Like-for-like scope normalisation in construction procurement`,`Retention and stage-payment practice in domestic contracts`,`Official licence and insurance registers for the stated jurisdiction`],
+  slots:[
+    {k:`JOB`,label:`The job, in detail`,ph:`replace bathroom suite + retile, room 2.1 x 1.8m, first floor`},
+    {k:`QUOTES`,label:`Quotes received`,ph:`three: £3,400 / £4,950 / £6,200 — wildly different detail`},
+    {k:`DEADLINE`,label:`Timeline & access`,ph:`start within 6 weeks, flat must be usable evenings`},
+    {k:`WORRY`,label:`What you are worried about`,ph:`the cheapest one wants 60% up front and has no written quote`}
+  ],
+  ex:{JOB:`Replace the full bathroom suite and retile; room 2.1 × 1.8 m, first-floor flat`, QUOTES:`Three received: £3,400, £4,950 and £6,200, with wildly different levels of detail`, DEADLINE:`Start within six weeks; the flat must be usable in the evenings`, WORRY:`The cheapest wants 60% up front and gave no written quote`}
+}
+];
+
+/* ═══════════════════════════════════════════════════════════════════
+   STATE + HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
+const $ = function(id){ return document.getElementById(id); };
+const LS_KEY = 'everyday-prompt-studio-v1';
+const TEMPLATE_VERSION = '1.0';
+
+const PROFILE_FIELDS = [
+  {k:'HOUSEHOLD', el:'pHousehold', label:'household composition'},
+  {k:'BUDGET',    el:'pBudget',    label:'money ceiling & currency'},
+  {k:'DIET',      el:'pDiet',      label:'diet, allergies & health limits'},
+  {k:'SCHEDULE',  el:'pSchedule',  label:'time reality & fixed commitments'},
+  {k:'LOCATION',  el:'pLocation',  label:'home, location & units'},
+  {k:'SKILLS',    el:'pSkills',    label:'skills, tools & risk appetite'},
+  {k:'EXTRA',     el:'pExtra',     label:'anything else binding'}
+];
+const VAR_FIELDS = [
+  {k:'GOAL',   el:'vGoal',   label:'the outcome you want'},
+  {k:'WHO',    el:'vWho',    label:'who has to act on it'},
+  {k:'LIMITS', el:'vLimits', label:'hard limits from you'}
+];
+const PROFILE_EXAMPLE = {
+  HOUSEHOLD:'2 adults (both work full time), 1 child aged 7, 1 dog',
+  BUDGET:'£160/week groceries, £2,400/month household take-home',
+  DIET:'Child has a peanut allergy; vegetarian Mon–Wed; one adult is low-sodium',
+  SCHEDULE:'Work 08:30–18:00 with a 40-minute commute; school run 08:00 and 15:30; football Tue/Thu 18:30',
+  LOCATION:'2-bed rented flat, Leeds UK, metric units, gas combi boiler, no garden',
+  SKILLS:'Basic DIY with a drill; no gas or electrical work; confident cooking from scratch',
+  EXTRA:'No car — everything is walkable or by bus; landlord consent needed for fixed work'
+};
+const TOGGLES = [
+  {k:'safety',   on:true,  label:'Safety & escalation block', hint:'stop conditions and when to call a professional or clinician'},
+  {k:'selfcheck',on:true,  label:'Quality-gate self-check',   hint:'verifies the answer against the gates before it is shown'},
+  {k:'checklist',on:true,  label:'Print-ready checklist',     hint:'adds a tick-list you can print or screenshot'},
+  {k:'costs',    on:true,  label:'Price every recommendation',hint:'costs in your currency, labelled ESTIMATE where not sourced'},
+  {k:'math',     on:false, label:'Show the working',          hint:'formulas, substituted numbers and totals on separate lines'},
+  {k:'sources',  on:false, label:'Sources to verify',         hint:'names the official source for every price, rule or requirement'}
+];
+
+const state = {
+  taskId:'meal-plan', modelId:'opus46', cat:'all', query:'',
+  depth:'standard', format:'auto', units:'profile', ask:'assume', voice:'plain',
+  toggles:{}, profile:{}, vars:{GOAL:'',WHO:'',LIMITS:''}, slots:{}
+};
+
+function taskById(id){ for(let i=0;i<TASKS.length;i++){ if(TASKS[i].id===id) return TASKS[i]; } return TASKS[0]; }
+function modelById(id){ for(let i=0;i<MODELS.length;i++){ if(MODELS[i].id===id) return MODELS[i]; } return MODELS[0]; }
+function filled(v){ return !!(v && String(v).trim()); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function save(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      taskId:state.taskId, modelId:state.modelId, depth:state.depth, format:state.format,
+      units:state.units, ask:state.ask, voice:state.voice, toggles:state.toggles,
+      profile:state.profile, vars:state.vars, slots:state.slots
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY); if(!raw) return;
+    const s = JSON.parse(raw);
+    if(s.taskId && taskById(s.taskId).id === s.taskId) state.taskId = s.taskId;
+    if(s.modelId && MODELS.some(function(m){ return m.id === s.modelId; })) state.modelId = s.modelId;
+    ['depth','format','units','ask','voice'].forEach(function(k){ if(s[k]) state[k] = s[k]; });
+    if(s.toggles) TOGGLES.forEach(function(t){ if(typeof s.toggles[t.k] === 'boolean') state.toggles[t.k] = s.toggles[t.k]; });
+    if(s.profile) PROFILE_FIELDS.forEach(function(f){ if(s.profile[f.k] != null) state.profile[f.k] = s.profile[f.k]; });
+    if(s.vars) state.vars = Object.assign(state.vars, s.vars);
+    if(s.slots) state.slots = s.slots;
+  }catch(e){}
+}
+TOGGLES.forEach(function(t){ state.toggles[t.k] = t.on; });
+
+let toastTimer;
+function toast(msg, ok){
+  const el = $('toast'); $('toastMsg').textContent = msg;
+  el.querySelector('.ok').textContent = ok === false ? '⚠' : '✓';
+  el.classList.toggle('bad', ok === false);
+  el.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2300);
+}
+function copyText(text, msg){
+  function done(){ toast(msg); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else { fallback(); }
+  function fallback(){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly',''); ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ toast('Clipboard blocked — select the text manually', false); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROMPT COMPOSITION — the four pillars
+   ═══════════════════════════════════════════════════════════════════ */
+function profileToken(f){
+  const v = state.profile[f.k];
+  return filled(v) ? String(v).trim() : '⟨' + f.k + ' — ' + f.label + ' (not supplied: ask, do not assume)⟩';
+}
+function varToken(f){
+  const v = state.vars[f.k];
+  return filled(v) ? String(v).trim() : '⟨' + f.k + ' — ' + f.label + '⟩';
+}
+function slotToken(slot){
+  const v = state.slots[slot.k];
+  return filled(v) ? String(v).trim() : '⟨' + slot.k + ' — ' + slot.label + '⟩';
+}
+function envelope(model){ return state.format === 'auto' ? model.style : state.format; }
+
+function depthLine(){
+  const map = {
+    quick:    'DEPTH: QUICK — one screen only. The decision, the table that carries it, and the first action. Skip background, skip alternatives, skip coaching.',
+    standard: 'DEPTH: STANDARD — the full schema, every section completed, tables where the schema shows tables. Justify material judgements in one or two sentences; no filler.',
+    deep:     'DEPTH: DEEP — the full schema plus the alternatives you rejected and why, the second-order consequences, and the follow-through plan. Traceability outranks brevity; padding is still forbidden.'
+  };
+  return map[state.depth] || map.standard;
+}
+function unitsLine(){
+  const map = {
+    profile:'UNITS & LOCALE: follow the living context above. Where no system is stated, use the household’s country default and say which one you assumed.',
+    metric: 'UNITS & LOCALE: metric throughout — kg, g, L, km, m, °C. Give one imperial equivalent in brackets only where confusion is likely.',
+    us:     'UNITS & LOCALE: US customary throughout — lb, oz, cup, tbsp, mi, ft, °F. Give one metric equivalent in brackets only where confusion is likely.',
+    both:   'UNITS & LOCALE: dual — metric first, US customary in brackets, for every quantity. Never mix systems inside one line.'
+  };
+  return map[state.units] || map.profile;
+}
+function askLine(){
+  const map = {
+    assume:'MISSING INFORMATION: never stall. Make the assumption, label it ASSUMPTION-### inline, and continue to a complete answer. List every assumption at the end.',
+    ask3:  'MISSING INFORMATION: if a missing input materially changes the answer, ask at most 3 numbered questions first and stop. Otherwise assume, label it, and answer.',
+    branch:'MISSING INFORMATION: if a missing input splits the answer, produce both branches side by side with a comparison row, and state which one you would pick and why.'
+  };
+  return map[state.ask] || map.assume;
+}
+function voiceLine(){
+  const map = {
+    plain:'VOICE: plain and practical. Second person, short sentences, no motivational padding, no lifestyle-blog tone.',
+    warm: 'VOICE: warm and encouraging but still practical — acknowledge the difficulty in one clause, then get to the plan. Never saccharine, never preachy.',
+    blunt:'VOICE: blunt. State the problem plainly, including the uncomfortable parts, then the plan. No comfort padding and no hedging.'
+  };
+  return map[state.voice] || map.plain;
+}
+function toggleLines(task){
+  const out = [];
+  if(state.toggles.safety) out.push('SAFETY & ESCALATION (enforced): include the stop conditions for this task verbatim in the output, and state plainly when the correct answer is to stop and call a professional, a clinician or the authority. Never let a schema section tempt you into guessing where escalation is the right move.');
+  if(state.toggles.selfcheck) out.push('QUALITY-GATE PASS (enforced): before emitting, check the deliverable against every gate in §2.7. Fix anything that fails first, then close with a GATE CHECK table: | Gate | Pass (Y/N) | Evidence |.');
+  if(state.toggles.checklist) out.push('PRINT-READY CHECKLIST (enforced): close with a single tick-list of every physical action in the plan, in execution order, each line short enough to read on a phone: "- [ ] action (when)". No prose inside the checklist.');
+  if(state.toggles.costs) out.push('PRICING (enforced): attach a cost in the household currency to every recommendation, purchase, parts list and service option. Label each figure ESTIMATE with its basis unless the requester supplied it. Total everything you price.');
+  if(state.toggles.math) out.push('SHOW THE WORKING (enforced): for every calculation show the formula, the substituted numbers and the result on separate lines, and reconcile the subtotals to the stated total.');
+  if(state.toggles.sources) out.push('VERIFICATION SOURCES (enforced): for any price, rule, regulation, deadline, opening hour or requirement, name the official source to check it against and date-stamp it. Where you cannot name one, write VERIFY LOCALLY.');
+  return out;
+}
+
+function buildPrompt(){
+  const t = taskById(state.taskId), m = modelById(state.modelId);
+  const style = envelope(m);
+  const L = [];
+  const rule = '═'.repeat(78);
+
+  const filledProfile = PROFILE_FIELDS.filter(function(f){ return filled(state.profile[f.k]); }).length;
+  const meta = [
+    'EVERYDAY PROMPT STUDIO v' + TEMPLATE_VERSION + '  ·  ' + t.n + '/12 · ' + t.title.toUpperCase(),
+    'Target engine : ' + m.name + ' (' + m.vendor + ', ' + (m.group === 'open' ? 'open-weight' : 'closed-weight') + ') · ' + m.ctx,
+    'Envelope      : ' + (state.format === 'auto' ? 'auto → ' + style + ' (native to ' + m.name + ')' : style) +
+      ' · Depth: ' + state.depth + ' · Missing info: ' + state.ask + ' · Units: ' + state.units,
+    'Living context: ' + filledProfile + '/7 household fields supplied' + (filledProfile < 7 ? ' — the rest are ⟨slots⟩ to ask about' : ''),
+    'Generated     : ' + new Date().toISOString().slice(0,10) + ' · Utility Belt / Everyday Prompt Studio'
+  ];
+  L.push(rule); meta.forEach(function(x){ L.push(' ' + x); }); L.push(rule); L.push('');
+
+  function head(kind, title){
+    if(style === 'xml') return ['<' + kind + '>', '<!-- ' + title + ' -->', ''];
+    if(style === 'hybrid') return ['### ' + title, ''];
+    return ['## ' + title, ''];
+  }
+  function foot(kind){ return style === 'xml' ? ['</' + kind + '>', ''] : []; }
+  function sub(label, body){
+    const lines = [];
+    if(style === 'markdown') lines.push('### ' + label);
+    else lines.push('[' + label + ']');
+    if(body) lines.push(body);
+    lines.push('');
+    return lines;
+  }
+  function flush(kind, title, blocks){
+    const arr = head(kind, title);
+    for(let i=0;i<blocks.length;i++){ arr[arr.length] = blocks[i]; }
+    const f = foot(kind);
+    for(let i=0;i<f.length;i++){ arr[arr.length] = f[i]; }
+    return arr;
+  }
+
+  /* ── PILLAR 1 — persona ── */
+  const p1 = [];
+  p1.push.apply(p1, sub('ROLE', 'You are a ' + t.role + '. You have done this hundreds of times for real households under real constraints, and you are accountable for whether this plan survives contact with an ordinary week.'));
+  p1.push.apply(p1, sub('OPERATING STANCE', t.stance));
+  p1.push.apply(p1, sub('REFUSAL BOUNDARY', t.refuse));
+  p1.push.apply(p1, sub('SCOPE OF AUTHORITY', 'You may make and state assumptions inside the constraints below. You may not invent prices, dates, regulations, medical facts, product names, licence statuses or citations. Where something is missing you either ask for it or label the assumption — you never fill the gap with something plausible-sounding.'));
+  p1.push.apply(p1, sub('WHO THIS IS FOR', 'The plan is executed by: ' + varToken({k:'WHO', label:'who has to act on it'}) + '. Write for that person at their stated skill level, not for a general reader and not for an expert.'));
+  p1.push.apply(p1, sub('MODEL OPERATING RULES — ' + m.name, m.rules.map(function(r){ return '- ' + r; }).join('\n') + '\n- ' + m.directive));
+  L.push.apply(L, flush('persona', 'PILLAR 1 — SYSTEM PERSONA & ROLE ASSIGNMENT', p1));
+
+  /* ── PILLAR 2 — context & constraints ── */
+  const p2 = [];
+  p2.push.apply(p2, sub('2.1 OBJECTIVE', 'What I want out of this: ' + varToken({k:'GOAL', label:'the outcome you want'}) + '.\n' + t.mission));
+  p2.push.apply(p2, sub('2.2 LIVING CONTEXT — BINDING ON EVERY DECISION', PROFILE_FIELDS.map(function(f){
+    return '  · ' + f.label.toUpperCase() + ': ' + profileToken(f);
+  }).join('\n') + '\n  Treat these as facts about my life, not as preferences. Any recommendation that contradicts them is wrong even if it is good advice in general.'));
+  p2.push.apply(p2, sub('2.3 TASK INPUTS', t.slots.map(function(s){ return '  · ' + s.k + ': ' + slotToken(s); }).join('\n')));
+  const userLimits = filled(state.vars.LIMITS)
+    ? '\n' + (t.constraints.length + 1) + '. REQUESTER-SUPPLIED LIMIT (binding; where it conflicts with a default above, this wins): ' + String(state.vars.LIMITS).trim()
+    : '\n- Requester-supplied limits: ' + varToken({k:'LIMITS', label:'hard limits from you'});
+  p2.push.apply(p2, sub('2.4 HARD CONSTRAINTS — BINDING', t.constraints.map(function(c,i){ return (i+1) + '. ' + c; }).join('\n') + userLimits));
+  p2.push.apply(p2, sub('2.5 EDGE-CASE HANDLING', t.edge.map(function(e,i){ return (i+1) + '. ' + e; }).join('\n')));
+  if(t.safety && t.safety.length){
+    p2.push.apply(p2, sub('2.6 SAFETY & STOP CONDITIONS — NON-NEGOTIABLE', t.safety.map(function(s,i){ return (i+1) + '. ' + s; }).join('\n') + '\nThese appear in the output, not only in this prompt. If the right answer is “stop and call someone”, that is the answer.'));
+  }
+  p2.push.apply(p2, sub('2.7 QUALITY GATES — the answer must pass all of these', t.gates.map(function(g,i){ return (i+1) + '. ' + g; }).join('\n')));
+  p2.push.apply(p2, sub('2.8 FORBIDDEN PATTERNS', '- ' + t.anti.join('\n- ')));
+  p2.push.apply(p2, sub('2.9 BUDGETS & POLICIES', depthLine() + '\n' + unitsLine() + '\n' + askLine() + '\n' + voiceLine() + '\n' +
+    (toggleLines(t).length ? toggleLines(t).join('\n') : 'No optional enforcement blocks enabled — work to the quality gates only.') + '\n' +
+    'GROUNDING: build only from frameworks that genuinely apply — ' + t.refs.join('; ') + '. Never force a mapping, never invent a standard.'));
+  L.push.apply(L, flush('context_constraints', 'PILLAR 2 — CONTEXT & CONSTRAINTS ENGINE', p2));
+
+  /* ── PILLAR 3 — methodology ── */
+  const p3 = [];
+  p3.push.apply(p3, sub('3.1 METHOD', t.phases.map(function(p,i){ return 'Phase ' + (i+1) + ' — ' + p; }).join('\n')));
+  p3.push.apply(p3, sub('3.2 EXECUTION DISCIPLINE', 'Work the phases in order and emit only their artefacts — no narration of the phases, no restatement of my inputs, no summary of what you are about to do. If a phase cannot be completed for lack of input, follow the MISSING INFORMATION policy above rather than inventing the gap. If you must deviate from the method, state the deviation in one line and why it improves the outcome for this household.'));
+  L.push.apply(L, flush('execution_methodology', 'PILLAR 3 — EXECUTION METHODOLOGY', p3));
+
+  /* ── PILLAR 4 — output schema ── */
+  const p4 = [];
+  p4.push.apply(p4, sub('4.1 REQUIRED OUTPUT STRUCTURE', 'Reproduce these sections, in this order, with these columns:\n\n~~~markdown\n' + t.schema + '\n~~~'));
+  p4.push.apply(p4, sub('4.2 RESPONSE ENVELOPE RULES', [
+    '- Begin directly with section 1 of the schema. No preamble, no greeting, no restatement of this prompt, no “here is your plan”.',
+    '- No closing commentary, no offers of further help, no apologies, no emojis, no motivational sign-off.',
+    '- Tables must be specific. An empty cell means not applicable — write N/A or UNKNOWN rather than leaving it blank.',
+    '- Every heading in the schema must appear even if there is nothing to report; in that case write the reason in one line.',
+    '- Do not compress or drop sections to save length. Length is controlled by the DEPTH contract in §2.9, not by amputation.',
+    '- Every number carries its unit and its currency where one applies; every estimate is labelled ESTIMATE with its basis.'
+  ].join('\n')));
+  p4.push.apply(p4, sub('4.3 FINAL FORMAT', 'Output as ' +
+    (style === 'xml' ? 'XML-tagged sections with Markdown content inside each tag, tables as Markdown.'
+                     : 'Markdown with semantic headings in order, tables as Markdown, fenced code blocks tagged by language.') +
+    ' The plan must be usable without reformatting: I will act on it from a phone or print it.'));
+  if(state.toggles.checklist){
+    p4.push.apply(p4, sub('4.4 PRINT-READY CHECKLIST', 'The final block of the answer is the tick-list required in §2.9: every physical action in execution order, one line each, in the form "- [ ] action (when)". Nothing else goes in that block.'));
+  }
+  L.push.apply(L, flush('output_schema', 'PILLAR 4 — OUTPUT SCHEMA', p4));
+
+  /* ── Input block + start ── */
+  const inputHints = t.slots.map(function(s){ return '     • ' + s.k + ' — ' + s.label; }).join('\n');
+  const inputBlock = [
+    '<<< PASTE YOUR MATERIAL HERE — bank export, pantry list, calendar dump, quotes, receipts, photos described, the message you received >>>',
+    '',
+    'Replace this block with the real material. Expected inputs for this workflow:',
+    inputHints || '     • the inputs named in §2.3',
+    '',
+    'Do not invent anything that belongs here. If an expected input is missing, follow the MISSING INFORMATION policy in §2.9.',
+    'Never require me to paste account numbers, card numbers or national identifiers — refer to documents by name only.',
+    '<<< END OF INPUT >>>'
+  ].join('\n');
+  if(style === 'xml') L.push('<source_material>'); else L.push('## INPUT — MY MATERIAL');
+  L.push('');
+  L.push(inputBlock);
+  if(style === 'xml') L.push('</source_material>');
+  L.push('');
+  L.push(rule);
+  L.push('BEGIN NOW. Produce the Pillar 4 schema exactly, starting at section 1.');
+  if(state.toggles.selfcheck) L.push('Then verify against every quality gate in §2.7 and close with the GATE CHECK table.');
+  if(state.toggles.checklist) L.push('Finish with the print-ready tick-list from §4.4.');
+  L.push(rule);
+
+  return L.join('\n');
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDER — sidebar, model panel, profile, slots, preview
+   ═══════════════════════════════════════════════════════════════════ */
+function renderSelects(){
+  const sc = $('selClosed'), so = $('selOpen');
+  sc.innerHTML = '<option value="">— not in use —</option><optgroup label="Closed-weight · subscription / API">' +
+    MODELS.filter(function(m){ return m.group === 'closed'; })
+    .map(function(m){ return '<option value="' + m.id + '">' + m.name + ' — ' + m.vendor + '</option>'; }).join('') + '</optgroup>';
+  so.innerHTML = '<option value="">— not in use —</option><optgroup label="Open-weight · self-host or hosted">' +
+    MODELS.filter(function(m){ return m.group === 'open'; })
+    .map(function(m){ return '<option value="' + m.id + '">' + m.name + ' — ' + m.vendor + '</option>'; }).join('') + '</optgroup>';
+  $('modelCount').textContent = MODELS.length + ' engines · 6 closed / 6 open';
+  syncTierUI();
+}
+/* The two dropdowns behave as mutually exclusive tier toggles: the active tier shows the
+   selected engine, the idle tier parks on its placeholder and dims out. */
+function syncTierUI(){
+  const m = modelById(state.modelId);
+  $('selClosed').value = m.group === 'closed' ? m.id : '';
+  $('selOpen').value = m.group === 'open' ? m.id : '';
+  $('slotClosed').classList.toggle('dim', m.group !== 'closed');
+  $('slotOpen').classList.toggle('dim', m.group !== 'open');
+  renderChips();
+}
+function renderChips(){
+  const groups = [['closed','CLOSED WEIGHT'], ['open','OPEN WEIGHT']];
+  $('chips').innerHTML = groups.map(function(g){
+    return '<span class="lbl">' + g[1] + '</span>' + MODELS.filter(function(m){ return m.group === g[0]; })
+      .map(function(m){
+        return '<button type="button" class="chip ' + m.group + (state.modelId === m.id ? ' on' : '') +
+          '" data-model="' + m.id + '" title="' + m.vendor + ' · ' + m.endpoint + '"><span class="dot"></span>' + m.name + '</button>';
+      }).join('');
+  }).join('');
+}
+function renderCats(){
+  const cats = ['all'];
+  TASKS.forEach(function(t){ if(cats.indexOf(t.cat) === -1) cats.push(t.cat); });
+  $('cats').innerHTML = cats.map(function(c){
+    return '<button type="button" data-cat="' + c + '" class="' + (state.cat === c ? 'on' : '') + '">' + (c === 'all' ? 'All' : c) + '</button>';
+  }).join('');
+}
+function renderTaskList(){
+  const q = state.query.toLowerCase().trim();
+  const items = TASKS.filter(function(t){
+    if(state.cat !== 'all' && t.cat !== state.cat) return false;
+    if(!q) return true;
+    return (t.title + ' ' + t.blurb + ' ' + t.cat + ' ' + t.role + ' ' + t.id + ' ' + (t.kw || '') + ' ' +
+      t.slots.map(function(s){ return s.label; }).join(' ')).toLowerCase().indexOf(q) !== -1;
+  });
+  $('taskList').innerHTML = items.map(function(t){
+    return '<button type="button" data-task="' + t.id + '" class="' + (state.taskId === t.id ? 'on' : '') + '">' +
+      '<span class="num">' + String(t.n).padStart(2,'0') + '</span><span class="ico">' + t.icon + '</span>' +
+      '<span class="txt"><span class="tt">' + t.title + '</span><span class="cc">' + t.cat + '</span></span></button>';
+  }).join('') || '<div style="color:var(--subtle);font-size:12px;padding:8px">No workflows match that filter.</div>';
+  $('taskCount').textContent = items.length + ' of ' + TASKS.length + ' workflows';
+}
+function renderModelInfo(){
+  const m = modelById(state.modelId);
+  $('modelInfo').innerHTML =
+    '<div class="top"><span class="name">' + m.name + '</span><span class="vendor">' + m.vendor + '</span>' +
+    '<span class="tag ' + m.group + '">' + (m.group === 'open' ? 'OPEN WEIGHT' : 'CLOSED WEIGHT') + '</span>' +
+    '<span class="pill">' + m.style + ' envelope</span></div>' +
+    '<div class="facts">' +
+      '<div class="fact"><div class="k">Context</div><div class="v">' + m.ctx + '</div></div>' +
+      '<div class="fact"><div class="k">Reasoning control</div><div class="v">' + m.reasoning + '</div></div>' +
+      '<div class="fact"><div class="k">Chat endpoint</div><div class="v"><a href="' + m.endpoint + '" target="_blank" rel="noopener">' + m.endpoint.replace('https://','') + '</a></div></div>' +
+      '<div class="fact"><div class="k">Best for everyday</div><div class="v">' + m.picks.join(' · ') + '</div></div>' +
+    '</div>' +
+    '<ul><li>' + m.effortNote + '</li><li>' + m.verbosityNote + '</li></ul>';
+  $('hdrModel').textContent = m.name;
+  $('btnModelName').textContent = m.name;
+}
+function renderSlots(){
+  const t = taskById(state.taskId);
+  $('slotTask').textContent = t.n + '/12 · ' + t.title;
+  $('slotFields').innerHTML = t.slots.map(function(s){
+    const v = state.slots[s.k] || '';
+    return '<div><span class="k">' + s.label + '</span>' +
+      '<input type="text" data-slot="' + s.k + '" placeholder="' + esc(s.ph) + '" spellcheck="false" value="' + esc(v) + '"></div>';
+  }).join('');
+}
+function renderToggles(){
+  $('toggles').innerHTML = TOGGLES.map(function(t){
+    return '<span class="toggle' + (state.toggles[t.k] ? ' on' : '') + '" data-toggle="' + t.k + '" title="' + t.hint + '">' +
+      '<span class="sw"></span>' + t.label + '</span>';
+  }).join('');
+}
+function highlight(text){
+  return esc(text).split('\n').map(function(line){
+    if(/^[═]{4,}$/.test(line)) return '<span class="c">' + line + '</span>';
+    if(/^##\s|^###\s|^PILLAR \d|^EVERYDAY PROMPT STUDIO/.test(line)) return '<span class="h">' + line + '</span>';
+    if(/^<\/?[a-z_]+>/.test(line)) return '<span class="t">' + line + '</span>';
+    if(/^(Phase \d|\d\.\d\s|[A-Z][A-Z0-9 &/—·()\-]{4,}:)/.test(line)) return '<span class="v">' + line + '</span>';
+    if(/^(~~~|```|<<<)/.test(line)) return '<span class="f">' + line + '</span>';
+    if(/(STOP|RED FLAG|NEVER|NON-NEGOTIABLE|escalat|EMERGENCY)/i.test(line)) return '<span class="s">' + line + '</span>';
+    return line;
+  }).join('\n');
+}
+function strength(){
+  const t = taskById(state.taskId);
+  let score = 12;                                                   /* task + model always selected */
+  score += PROFILE_FIELDS.filter(function(f){ return filled(state.profile[f.k]); }).length * 4;   /* 28 */
+  score += filled(state.vars.GOAL) ? 6 : 0;
+  score += filled(state.vars.WHO) ? 3 : 0;
+  score += filled(state.vars.LIMITS) ? 4 : 0;
+  const total = t.slots.length || 1;
+  const done = t.slots.filter(function(s){ return filled(state.slots[s.k]); }).length;
+  score += Math.round((done / total) * 20);
+  score += state.depth === 'quick' ? 2 : 4;
+  score += state.format === 'auto' ? 2 : 4;
+  score += state.toggles.safety ? 5 : 0;
+  score += state.toggles.selfcheck ? 4 : 0;
+  score += state.toggles.checklist ? 3 : 0;
+  score += state.toggles.costs ? 3 : 0;
+  score += state.toggles.math ? 2 : 0;
+  score += state.toggles.sources ? 2 : 0;
+  return Math.max(0, Math.min(100, score));
+}
+let currentPrompt = '';
+function renderPreview(){
+  const t = taskById(state.taskId), m = modelById(state.modelId);
+  currentPrompt = buildPrompt();
+  $('out').innerHTML = highlight(currentPrompt);
+  $('whoTitle').firstChild.nodeValue = t.icon + ' ' + t.title;
+  $('whoSub').textContent = 'Tuned for ' + m.name + ' · ' + (m.group === 'open' ? 'open-weight' : 'closed-weight') +
+    ' · ' + envelope(m) + ' envelope · ' + state.depth + ' depth';
+  const chars = currentPrompt.length;
+  const words = currentPrompt.trim().split(/\s+/).length;
+  $('sChars').textContent = chars.toLocaleString();
+  $('sWords').textContent = words.toLocaleString();
+  $('sTokens').textContent = Math.round(chars / 4).toLocaleString();
+  $('sSections').textContent = (currentPrompt.match(/^#{2,3} |^PILLAR \d|^<[a-z_]+>$/gm) || []).length;
+  $('sTask').textContent = t.n + '/12';
+  $('sModel').textContent = m.name;
+  $('tokenEst').textContent = '≈' + Math.round(chars / 4).toLocaleString() + ' tokens';
+  const s = strength();
+  $('meterBar').style.width = s + '%';
+  $('meterVal').textContent = s + '%';
+}
+function renderAll(){
+  renderTaskList(); renderModelInfo(); renderSlots(); renderToggles(); renderPreview();
+  save();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EVENTS
+   ═══════════════════════════════════════════════════════════════════ */
+$('taskSearch').addEventListener('input', function(){ state.query = this.value; renderTaskList(); });
+$('cats').addEventListener('click', function(e){
+  const b = e.target.closest('button[data-cat]'); if(!b) return;
+  state.cat = b.getAttribute('data-cat'); renderCats(); renderTaskList();
+});
+$('taskList').addEventListener('click', function(e){
+  const b = e.target.closest('button[data-task]'); if(!b) return;
+  state.taskId = b.getAttribute('data-task'); state.slots = {}; renderAll();
+});
+function setModel(id){
+  const m = modelById(id); if(!m || m.id !== id) return;
+  state.modelId = m.id;
+  syncTierUI(); renderModelInfo(); renderPreview(); save();
+}
+$('selClosed').addEventListener('change', function(){ if(!this.value){ syncTierUI(); return; } setModel(this.value); });
+$('selOpen').addEventListener('change', function(){ if(!this.value){ syncTierUI(); return; } setModel(this.value); });
+$('chips').addEventListener('click', function(e){
+  const b = e.target.closest('button[data-model]'); if(!b) return;
+  setModel(b.getAttribute('data-model'));
+});
+const CTL = {ctlDepth:'depth', ctlFormat:'format', ctlUnits:'units', ctlAsk:'ask', ctlVoice:'voice'};
+Object.keys(CTL).forEach(function(id){
+  $(id).addEventListener('change', function(){ state[CTL[id]] = this.value; renderPreview(); save(); });
+});
+$('toggles').addEventListener('click', function(e){
+  const el = e.target.closest('[data-toggle]'); if(!el) return;
+  const k = el.getAttribute('data-toggle');
+  state.toggles[k] = !state.toggles[k]; renderToggles(); renderPreview(); save();
+});
+PROFILE_FIELDS.forEach(function(f){
+  $(f.el).addEventListener('input', function(){ state.profile[f.k] = this.value; renderPreview(); save(); });
+});
+VAR_FIELDS.forEach(function(f){
+  $(f.el).addEventListener('input', function(){ state.vars[f.k] = this.value; renderPreview(); save(); });
+});
+$('slotFields').addEventListener('input', function(e){
+  const el = e.target.closest('[data-slot]'); if(!el) return;
+  state.slots[el.getAttribute('data-slot')] = el.value; renderPreview(); save();
+});
+$('btnProfileExample').addEventListener('click', function(){
+  PROFILE_FIELDS.forEach(function(f){ state.profile[f.k] = PROFILE_EXAMPLE[f.k]; });
+  syncInputs(); renderPreview(); save(); toast('Example household loaded — edit it to match yours');
+});
+$('btnProfileClear').addEventListener('click', function(){
+  PROFILE_FIELDS.forEach(function(f){ state.profile[f.k] = ''; });
+  syncInputs(); renderPreview(); save(); toast('Living context cleared');
+});
+$('btnExample').addEventListener('click', function(){
+  const t = taskById(state.taskId);
+  Object.keys(t.ex).forEach(function(k){ state.slots[k] = t.ex[k]; });
+  if(!filled(state.vars.GOAL)) state.vars.GOAL = t.blurb;
+  syncInputs(); renderSlots(); renderPreview(); save();
+  toast('Example inputs loaded — edit them, then copy');
+});
+$('btnClear').addEventListener('click', function(){
+  state.slots = {}; state.vars = {GOAL:'',WHO:'',LIMITS:''};
+  syncInputs(); renderSlots(); renderPreview(); save(); toast('Task inputs cleared');
+});
+function syncInputs(){
+  PROFILE_FIELDS.forEach(function(f){ $(f.el).value = state.profile[f.k] || ''; });
+  VAR_FIELDS.forEach(function(f){ $(f.el).value = state.vars[f.k] || ''; });
+}
+$('btnCopy').addEventListener('click', function(){
+  copyText(currentPrompt, 'Prompt copied — ' + currentPrompt.length.toLocaleString() + ' chars · ' + modelById(state.modelId).name);
+});
+$('btnCopyOpen').addEventListener('click', function(){
+  const m = modelById(state.modelId);
+  copyText(currentPrompt, 'Copied — opening ' + m.name + '. Paste with Ctrl/Cmd+V');
+  setTimeout(function(){ window.open(m.endpoint, '_blank', 'noopener'); }, 140);
+});
+$('btnOpen').addEventListener('click', function(){
+  const m = modelById(state.modelId);
+  window.open(m.endpoint, '_blank', 'noopener');
+  toast('Opened ' + m.name + ' — prompt not copied', false);
+});
+function download(name, text, type){
+  try{
+    const blob = new Blob([text], {type: type || 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  }catch(e){ toast('Download blocked here — use Copy instead', false); }
+}
+$('btnDownload').addEventListener('click', function(){
+  const t = taskById(state.taskId), m = modelById(state.modelId);
+  download('everyday-prompt-' + t.id + '-' + m.id + '.md', currentPrompt, 'text/markdown');
+  toast('Downloaded everyday-prompt-' + t.id + '-' + m.id + '.md');
+});
+$('btnDownloadJson').addEventListener('click', function(){
+  const t = taskById(state.taskId), m = modelById(state.modelId);
+  const payload = {
+    template:'everyday-prompt-studio', version:TEMPLATE_VERSION, generated:new Date().toISOString(),
+    task:{id:t.id, n:t.n, title:t.title, category:t.cat},
+    model:{id:m.id, name:m.name, vendor:m.vendor, weights:m.group, endpoint:m.endpoint},
+    controls:{depth:state.depth, format:state.format, units:state.units, missingInfo:state.ask, voice:state.voice, enforcements:state.toggles},
+    livingContext:state.profile, variables:state.vars, slots:state.slots, prompt:currentPrompt
+  };
+  download('everyday-prompt-' + t.id + '-' + m.id + '.json', JSON.stringify(payload, null, 2), 'application/json');
+  toast('Downloaded JSON spec');
+});
+$('btnPrint').addEventListener('click', function(){ window.print(); });
+$('btnReset').addEventListener('click', function(){
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  state.taskId = 'meal-plan'; state.modelId = 'opus46'; state.cat = 'all'; state.query = '';
+  state.depth = 'standard'; state.format = 'auto'; state.units = 'profile'; state.ask = 'assume'; state.voice = 'plain';
+  TOGGLES.forEach(function(t){ state.toggles[t.k] = t.on; });
+  state.profile = {}; state.vars = {GOAL:'',WHO:'',LIMITS:''}; state.slots = {};
+  $('taskSearch').value = '';
+  Object.keys(CTL).forEach(function(id){ $(id).value = state[CTL[id]]; });
+  syncInputs(); renderSelects(); renderCats(); renderAll(); toast('Reset to defaults');
+});
+
+/* Keyboard: / search · ⌥↑↓ cycle tasks · ⌘/Ctrl+↵ copy */
+document.addEventListener('keydown', function(e){
+  const tag = (e.target.tagName || '').toLowerCase();
+  const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
+  if(e.key === '/' && !typing){ e.preventDefault(); $('taskSearch').focus(); return; }
+  if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ e.preventDefault(); $('btnCopy').click(); return; }
+  if(e.altKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp') && !typing){
+    e.preventDefault();
+    let i = -1;
+    for(let k=0;k<TASKS.length;k++){ if(TASKS[k].id === state.taskId) i = k; }
+    const next = (i + (e.key === 'ArrowDown' ? 1 : TASKS.length - 1)) % TASKS.length;
+    state.taskId = TASKS[next].id; state.slots = {};
+    renderAll();
+    const btn = document.querySelector('[data-task="' + state.taskId + '"]');
+    if(btn && typeof btn.scrollIntoView === 'function'){ btn.scrollIntoView({block:'nearest'}); }
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════════ */
+load();
+renderSelects();
+renderCats();
+Object.keys(CTL).forEach(function(id){ $(id).value = state[CTL[id]]; });
+syncInputs();
+renderAll();
+(function(){
+  const n = PROFILE_FIELDS.filter(function(f){ return filled(state.profile[f.k]); }).length;
+  toast(n ? 'Living context restored — ' + n + '/7 fields' : '12 life workflows × 12 models loaded — fill the living context first');
+})();
+})();
+</script>
+</body>
+</html>
